@@ -1,0 +1,128 @@
+//
+//
+//
+
+// --- Todo for old tonc ---
+Fix memset16, which has a bug for large, uneven copies.
+Near the check after memset32, "lsr r1, r1" should be "lsr r1, #16" 
+and I'm an utter twat for not realising it. Shifting a number by 
+itself, what was I thinking?!?
+
+// --- Todo (20070803) ---
+
++ add dma_cpy functions. In name I mean.
++ put oft-used globals in common.c (nm, too few to bother)
+* key_reset, or something like it for avoiding key bounce
+* oe_hide for multiple objects. Seriously.
+* PAD macro for arrays. Can't have alignment issues, can we?
+* add sound stuff
+* Dooby div ? (+ bin-search)
+* tonc_atan2 ?
+/ faders
+* windowers
+* ASSERT ?
++ DMA_BUILD and TM_BUILD
++ something for oft-used key-switches: if(up) x++; else if(down) x--;
+* txt_init_se should have options iso bupofs
+
+- turn ints off in irq_init? Yes !!!
+- lut / div lut / atan lut ?
++ affine functions
+- mode7 functions (in asm plz)
+- basic mosaic / fade / window
+
+/ Replace old text system for new, and update demos for it.
+- Refactor the tonc_video.h
++ Refactor/Remove tonc_bitmap.c ? Mostly superceded by bmp8.c/bmp16.c anyway
+	Hmm, maybe keep as backup?
++ Add bmp8_line()
+- Add more chr4 stuff?
++ Change mx_foo to use bmp8/16.
+- PONDER: redistribute  math.h ?
+- PONDER: move color/palette stuff to color.h ?
+/ Use libgba #defines for some of the reg-bits
+- make a vid_reset (and possibly sound reset)
+
+Legacy items:
+
+void bm8_hline(u8 *dst, int width, u8 clrid);
+void bm8_vline(u8 *dst, int height, u8 clrid, int pitch);
+//void bm8_line(u8 *dst, int dx, int y, u8 clrid, int pitch);
+void bm8_rect(u8 *dst, int width, int height, u8 clrid, int pitch);
+void bm8_frame(u8 *dst, int width, int height, u8 clrid, int pitch);
+
+// 16bit (mode 3/5, se)
+void bm16_hline(u16 *dst, int width, u16 clr);
+void bm16_vline(u16 *dst, int height, u16 clr, int pitch);
+void bm16_line(u16 *dst, int dx, int y, COLOR clr, int pitch);
+void bm16_rect(u16 *dst, int width, int height, u16 clr, int pitch);
+void bm16_frame(u16 *dst, int width, int height, u16 clr, int pitch);
+
+Possibly some se_foo() things too
+
+RESET_foo -> RESET_REG_foo
+
+
+// 20070921
+
+Working on libgba compatibility. Found a few things:
+
+REG_JOYCNT is :0140, not 0150
+SDS_ATR0 ->		SDS_ATMR0
+added DMA_GAMEPAK
+REG_SIOCNT and REG_JSTAT are vu16
+REG_WAVE -> REG_WAVE_RAM
+REG_FIFOA/B -> REG_FIFO_A/_B
+REG_TMxCNT_L/H #defines
+
+bool enum
+
+SoftReset flags. (Has parameters after all :\)
+
+
+A number of memmap defines should be altered
+
+
+// 20070804, sa
+
+Added bf_get, bf_merge and BF_MERGE.
+
+
+// 20060905, fr
+More name changes
+
+OAM_ENTRY -> OBJ_ATTR
+OAM_AFF_ENTRY -> OBJ_AFFINE
+
+oe -> obj
+OE_A -> OA
+oa -> oaff
+SB_ENTRY -> SCR_ENTRY
+Members in AFF_DST_EX.
+
+IO's foo_mem to REG_foo, etc
+BGPOINT -> BG_POINT
+
+
+// --- (20050717) ---
+++ several masks in toolbox2.c are incorrect.
+
+// --- (20050731) ---
+++ move _pbank up in SE_BUILD
+++ fixed memset16 for odd high counts
+
+// --- Done (20050731) ---
+++ rename OE_A0_AFF to uhm OE_A0_MODE
+++ Change text routines to use globals, not rely on structures 
+   so much, as it bugs the user (at least _this_ user).
+++ REMU_VAL, REMU_DIV (toncmath.h)
+++ added sinlut
+++ octant routine. S. Tested and working.
+
+++ VBlankIntrDelay
+++ Change swi_ex names to something more in line with the rest
+  CpuFastFill, Mod, DivSafe. Y'know, for consistency.
+++ remove BIT0 to BIT31, gawd that thing's ugly
+++ mod swi_fast_fill's wd-loader to "push {r0}". Silly me.
+++ SE_BUILD
+++ OE_Ax_BUILD
