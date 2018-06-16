@@ -159,7 +159,7 @@ int tte_cmd_vt100(const char *text)
 }
 
 
-ssize_t tte_con_nocash(struct _reent *r, int fd, const char *text, size_t len)
+ssize_t tte_con_nocash(struct _reent *r, void *fd, const char *text, size_t len)
 {
 	if(text==NULL || len<=0)
 		return -1;
@@ -180,7 +180,7 @@ ssize_t tte_con_nocash(struct _reent *r, int fd, const char *text, size_t len)
 /*!	\note	While this function 'works', I am not 100% sure I'm 
 		handling everything correctly.
 */
-ssize_t tte_con_write(struct _reent *r, int fd, const char *text, size_t len)
+ssize_t tte_con_write(struct _reent *r, void *fd, const char *text, size_t len)
 {
 	if(!sConInitialized || !text || len<=0)
 		return -1;

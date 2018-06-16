@@ -463,8 +463,8 @@ void tte_set_margins(int left, int top, int right, int bottom);
 void tte_init_con(void);
 int tte_cmd_vt100(const char *text);
 
-ssize_t tte_con_write(struct _reent *r, int fd, const char *text, size_t len);
-ssize_t tte_con_nocash(struct _reent *r, int fd, const char *text, size_t len);
+ssize_t tte_con_write(struct _reent *r, void *fd, const char *text, size_t len);
+ssize_t tte_con_nocash(struct _reent *r, void *fd, const char *text, size_t len);
 
 /*! Wrapper 'function' to hide that we're making iprintf do
 	things it doesn't usually do.
