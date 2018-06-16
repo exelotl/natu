@@ -86,7 +86,7 @@ export DEPSDIR	:=	$(CURDIR)/build
 $(BUILD):
 	@[ -d lib ] || mkdir -p lib
 	@[ -d $@ ] || mkdir -p $@
-	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 docs:
 	doxygen libtonc.dox
@@ -94,6 +94,11 @@ docs:
 clean:
 	@echo clean ...
 	@rm -fr $(BUILD)
+
+install:
+	@mkdir -p $(DESTDIR)$(DEVKITPRO)/tonc/lib
+	@cp -rv include $(DESTDIR)$(DEVKITPRO)/tonc/include
+	@cp -v lib/libtonc.a $(DESTDIR)$(DEVKITPRO)/tonc/lib/
 
 #---------------------------------------------------------------------------------
 
