@@ -98,9 +98,9 @@ clean:
 	@rm -fr $(BUILD)
 
 install:
-	@mkdir -p $(DESTDIR)$(DEVKITPRO)/tonc/lib
-	@cp -rv include $(DESTDIR)$(DEVKITPRO)/tonc/include
-	@cp -v lib/libtonc.a $(DESTDIR)$(DEVKITPRO)/tonc/lib/
+	@mkdir -p $(DESTDIR)$(DEVKITPRO)/libtonc/lib
+	@cp -rv include $(DESTDIR)$(DEVKITPRO)/libtonc/include
+	@cp -v lib/libtonc.a $(DESTDIR)$(DEVKITPRO)/libtonc/lib/
 
 #-------------------------------------------------------------------------------
 dist:
