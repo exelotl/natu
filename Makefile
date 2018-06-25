@@ -28,6 +28,8 @@ IARCH		:= -mthumb-interwork -marm
 bTEMPS		:= 0	# Save gcc temporaries (.i and .s files)
 bDEBUG2		:= 0	# Generate debug info (bDEBUG2? Not a full DEBUG flag. Yet)
 
+VERSION		:=	1.4.3
+
 #---------------------------------------------------------------------------------
 # Options for code generation
 #---------------------------------------------------------------------------------
@@ -99,6 +101,12 @@ install:
 	@mkdir -p $(DESTDIR)$(DEVKITPRO)/tonc/lib
 	@cp -rv include $(DESTDIR)$(DEVKITPRO)/tonc/include
 	@cp -v lib/libtonc.a $(DESTDIR)$(DEVKITPRO)/tonc/lib/
+
+#-------------------------------------------------------------------------------
+dist:
+#-------------------------------------------------------------------------------
+	@tar -cvjf libtonc-src-$(VERSION).tar.bz2 asm src include \
+		Makefile todo.txt libtonc.dox base.c base.h
 
 #---------------------------------------------------------------------------------
 
