@@ -6,15 +6,27 @@ type
   FnVI* = proc (x:int) {.noconv.}      ## void foo(int x) function pointer
   FnII* = proc (x:int):int {.noconv.}  ## int foo(int x) function pointer
 
-# TODO: these can't be exported, need to find a solution :\
-{.pragma:iwramData, codegenDecl: "IWRAM_DATA $# $#".}    ## Put variable in IWRAM (default).
-{.pragma:ewramData, codegenDecl: "EWRAM_DATA $# $#".}    ## Put variable in EWRAM.
-{.pragma:ewramBss, codegenDecl: "EWRAM_BSS $# $#".}      ## Put non-initialized variable in EWRAM.
-{.pragma:iwramCode, codegenDecl: "IWRAM_CODE $# $#$#".}  ## Put procedure in IWRAM.
-{.pragma:ewramCode, codegenDecl: "EWRAM_CODE $# $#$#".}  ## Put procedure in EWRAM.
+# To be used with codegenDecl pragma:
+const
+  IWRAM_DATA = "IWRAM_DATA $# $#"    ## Put variable in IWRAM (default).
+  EWRAM_DATA = "EWRAM_DATA $# $#"    ## Put variable in EWRAM.
+  EWRAM_BSS = "EWRAM_BSS $# $#"      ## Put non-initialized variable in EWRAM.
+  IWRAM_CODE = "IWRAM_CODE $# $#$#"  ## Put procedure in IWRAM.
+  EWRAM_CODE = "EWRAM_CODE $# $#$#"  ## Put procedure in EWRAM.
 
-# TODO
-# Figure out how to do these pragmas, if I need them:  {.align4.}  {.align:N.}
+# Note: in the next Nim release we might be able to use macros as pragmas for var/let symbols
+# see https://github.com/nim-lang/Nim/commit/044cef152f6006927a905d69dc527cada8206b0f
+# Which would allow us to do
+#   var foo {.ewram.}: int
+# but codegenDecl is good enough for now
+
+# Unfortunately these can't be exported
+# {.pragma:iwramData, codegenDecl: "IWRAM_DATA $# $#".}    ## Put variable in IWRAM (default).
+# {.pragma:ewramData, codegenDecl: "EWRAM_DATA $# $#".}    ## Put variable in EWRAM.
+# {.pragma:ewramBss, codegenDecl: "EWRAM_BSS $# $#".}      ## Put non-initialized variable in EWRAM.
+# {.pragma:iwramCode, codegenDecl: "IWRAM_CODE $# $#$#".}  ## Put procedure in IWRAM.
+# {.pragma:ewramCode, codegenDecl: "EWRAM_CODE $# $#$#".}  ## Put procedure in EWRAM.
+# TODO: Figure out how to do {.align4.} {.align:N.} pragmas, if I need them
 # e.g. {.pragma: align4, codegenDecl: "$# $# ALIGN4".}
 # but that only seems to work for variables, not types??
 

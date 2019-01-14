@@ -1,30 +1,40 @@
 nim-tonc
 ========
 
-This repo contains bindings for the awesome 'tonclib' GBA programming library by J. Vijn (cearn).
+This repo contains bindings for the awesome tonclib by J. Vijn (cearn). Tonclib provides everything you need to program the Game Boy Advance, and is the accompanying material to a [really good tutorial](https://www.coranac.com/tonc/text/toc.htm)!
 
+### Features
 
+- Full GBA memory map + flag definitions
+- BIOS routines
+- Interrupt manager
+- A very powerful text system
+- Surfaces (draw to tiles like a canvas)
+- Efficient copy routines
+- Random number generator
+- Sin/Cos/Div LUTs + other math functions
+- Hardware sprites, affine matrix helpers
+- Color/palette utilities
+- Convenient access to button states
 
-Goodies
--------
+### Goodies
+
 Some things that differ from the original tonclib:
 
 - Pleasant fixed-point and 2D vector types (taking advantage of Nim features)
 - mGBA logging functions
 
+### Usage
 
-Usage
------
+You will need [devkitARM](https://devkitpro.org/wiki/Getting_Started) with GBA tools and libraries. Download the [Tonc example code](https://www.coranac.com/projects/tonc/) and copy the tonclib folder to your devkitPro installation (e.g. C:/devkitPro/tonclib).
 
-You will need [devkitARM](https://devkitpro.org/wiki/Getting_Started) with GBA tools and libraries. Now download the [Tonc example code](https://www.coranac.com/projects/tonc/) and copy the tonclib folder to your devkitPro installation (e.g. C:\\devkitPro\tonclib).
+**NOTE:** Before using tonclib you should recompile it with `make clean && make`. Try building some of the Tonc 'advanced' demos to make sure your environment is good.
 
-For development you can use the standard devkitARM makefiles / project structure, so that Nim outputs C code into the 'source' directory. See `examples/helloworld`. Make sure to set `arm.standalone.gcc.path` in nim.cfg to be correct for your system.
+For developing with Nim you can use the standard devkitARM makefiles / project structure, but modified to use tonclib instead of libgba. In your project's `nim.cfg` you should target ARM CPU, 'standalone' OS, disable runtime checks, and set it to output C code into the 'source' directory. Check the examples in this repo for how this is done.
 
-
-Todo
-----
+### Todo
 
 - More examples and testing
 - Generate documentation?
 - Clean up `surface.nim`
-
+- Figure out why you sometimes need to run `make` twice to fix undefined references after importing a new module?

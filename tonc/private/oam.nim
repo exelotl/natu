@@ -85,14 +85,13 @@ template getHeight*(obj: ObjAttr): int =
   ## Get the height of an object in pixels
   getHeight(unsafeAddr obj)
 
-# var a:ObjAttr
-# let foo = a
-# echo foo.getWidth()
 
 proc copy*(dst, src: ObjAttrPtr; count: uint) {.importc: "obj_copy", header: "tonc.h".}
   ## Copy attributes 0-2 in `count` ObjAttrs.
+
 proc hideMulti*(obj: ObjAttrPtr; count: uint32) {.importc: "obj_hide_multi", header: "tonc.h".}
   ## Hide an array of ObjAttrs
+
 proc unhideMulti*(obj: ObjAttrPtr; mode: uint16; count: uint) {.importc: "obj_unhide_multi", header: "tonc.h".}
   ## Unhide an array of ObjAttrs
 
@@ -167,9 +166,7 @@ proc rotscaleEx*(obj: var ObjAttr; oaff: var ObjAffine; asx: ptr AffSrcEx) {.imp
 template rotscaleEx*(obj: var ObjAttr; oaff: var ObjAffine; asx: AffSrcEx) =
   rotscaleEx(obj, oaff, unsafeAddr asx)
 
-##  inverse (object -> screen) functions, could be useful
-##  inverses (prototypes)
-
+#  inverse (object -> screen) functions, could be useful
 proc affScaleInv*(oa: var ObjAffine; wx, wy: Fixed) {.importc: "obj_aff_scale_inv", header: "tonc.h".}
 proc affRotateInv*(oa: var ObjAffine; theta: uint16) {.importc: "obj_aff_rotate_inv", header: "tonc.h".}
 proc affShearxInv*(oa: var ObjAffine; hx: Fixed) {.importc: "obj_aff_shearx_inv", header: "tonc.h".}

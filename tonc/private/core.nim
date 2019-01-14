@@ -14,7 +14,7 @@ template `<<=`*[T](a,b:T):T =  a = a shl b
 # Data
 # ----
 
-proc tonccpy*(dst: pointer; src: pointer; size: uint): pointer {.importc: "tonccpy", header: "tonc.h".}
+proc tonccpy*(dst: pointer; src: pointer|cstring; size: SomeInteger): pointer {.importc: "tonccpy", header: "tonc.h".}
   ## VRAM-safe cpy.
   ## This version mimics memcpy in functionality, with the benefit of working for VRAM as well. It is also 
   ## slightly faster than the original memcpy, but faster implementations can be made.
@@ -24,16 +24,16 @@ proc tonccpy*(dst: pointer; src: pointer; size: uint): pointer {.importc: "toncc
   ## Returns `dst`
   ## Note: The pointers and size need not be word-aligned.
 
-proc toncset*(dst: pointer, src: uint8, size: uint) {.importc: "toncset", header: "tonc.h".}
+proc toncset*(dst: pointer, src: uint8, size: SomeInteger) {.importc: "toncset", header: "tonc.h".}
   ## VRAM-safe memset, byte version. Size in bytes.
 
-proc toncset16*(dst: pointer, src: uint16, size: uint) {.importc: "toncset16", header: "tonc.h".}
+proc toncset16*(dst: pointer, src: uint16, size: SomeInteger) {.importc: "toncset16", header: "tonc.h".}
   ## VRAM-safe memset, halfword version. Size in hwords.
 
-proc toncset32*(dst: pointer, src: uint32, size: uint) {.importc: "toncset32", header: "tonc.h".}
+proc toncset32*(dst: pointer, src: uint32, size: SomeInteger) {.importc: "toncset32", header: "tonc.h".}
   ## VRAM-safe memset, word version. Size in words.
 
-proc memset16*(dst:pointer, hw:uint16, hwcount:uint) {.importc: "memset16", header: "tonc.h".}
+proc memset16*(dst:pointer, hw:uint16, hwcount:SomeInteger) {.importc: "memset16", header: "tonc.h".}
   ## Fastfill for halfwords, analogous to memset()
   ## Uses `memset32()` if `hwcount>5`
   ## `dst`     Destination address.
@@ -42,7 +42,7 @@ proc memset16*(dst:pointer, hw:uint16, hwcount:uint) {.importc: "memset16", head
   ## Note: `dst` *must* be halfword aligned.
   ## Note: `r0` returns as `dst + hwcount*2`.
 
-proc memcpy16*(dst:pointer, src:pointer, hwcount:uint) {.importc: "memcpy16", header: "tonc.h".}
+proc memcpy16*(dst:pointer, src:pointer|cstring, hwcount:SomeInteger) {.importc: "memcpy16", header: "tonc.h".}
   ## Copy for halfwords.
   ## Uses `memcpy32()` if `hwn > 6` and `src` and `dst` are aligned equally.
   ## `dst`     Destination address.
@@ -51,7 +51,7 @@ proc memcpy16*(dst:pointer, src:pointer, hwcount:uint) {.importc: "memcpy16", he
   ## Note: `dst` and `src` *must* be halfword aligned.
   ## Note: `r0` and `r1` return as `dst + hwcount*2` and `src + hwcount*2`.
 
-proc memset32*(dst:pointer, wd:uint32, wcount:uint) {.importc: "memset32", header: "tonc.h".}
+proc memset32*(dst:pointer, wd:uint32, wcount:SomeInteger) {.importc: "memset32", header: "tonc.h".}
   ## Fast-fill by words, analogous to memset()
   ## Like CpuFastSet(), only without the requirement of 32byte chunks and no awkward store-value-in-memory-first issue.
   ## `dst`     Destination address.
@@ -60,7 +60,7 @@ proc memset32*(dst:pointer, wd:uint32, wcount:uint) {.importc: "memset32", heade
   ## Note: `dst` *must* be word aligned.
   ## Note: `r0` returns as `dst + wdcount*4`.
 
-proc memcpy32*(dst:pointer, src:pointer, wcount:uint) {.importc: "memcpy32", header: "tonc.h".}
+proc memcpy32*(dst:pointer, src:pointer|cstring, wcount:SomeInteger) {.importc: "memcpy32", header: "tonc.h".}
   ## Fast-copy by words.
   ## Like CpuFastFill(), only without the requirement of 32byte chunks
   ## `dst`     Destination address.
@@ -108,7 +108,7 @@ template hword2word*(h0, h1: uint16): uint32 =
 # DMA
 # ---
 
-proc dmaCpy*(dst: pointer; src: pointer; count: uint; ch: uint; mode: uint32) {.importc: "dma_cpy", header: "tonc.h".}
+proc dmaCpy*(dst: pointer; src: pointer|cstring; count: SomeInteger; ch: uint; mode: uint32) {.importc: "dma_cpy", header: "tonc.h".}
   ## Generic DMA copy routine.
   ## `dst`   Destination address.
   ## `src`   Source address.
@@ -117,7 +117,7 @@ proc dmaCpy*(dst: pointer; src: pointer; count: uint; ch: uint; mode: uint32) {.
   ## `mode`  DMA transfer mode.
   ## Note: `count` is the number of copies, not the size in bytes.
 
-proc dmaFill*(dst: pointer; src: uint32; count: uint; ch: uint; mode: uint32) {.importc: "dma_fill", header: "tonc.h".}
+proc dmaFill*(dst: pointer; src: uint32; count: SomeInteger; ch: uint; mode: uint32) {.importc: "dma_fill", header: "tonc.h".}
   ## Generic DMA fill routine.
   ## `dst`   Destination address.
   ## `src`   Source value.
@@ -126,14 +126,14 @@ proc dmaFill*(dst: pointer; src: uint32; count: uint; ch: uint; mode: uint32) {.
   ## `mode`  DMA transfer mode.
   ## Note: `count` is the number of copies, not the size in bytes.
   
-proc dma3Cpy*(dst: pointer; src: pointer; size: uint) {.importc: "dma3_cpy", header: "tonc.h".}
+proc dma3Cpy*(dst: pointer; src: pointer|cstring; size: SomeInteger) {.importc: "dma3_cpy", header: "tonc.h".}
   ## Specific DMA copier, using channel 3, word transfers.
   ## `dst`  Destination address.
   ## `src`  Source address.
   ## `size` Number of bytes to copy
   ## Note: `size` is the number of bytes
 
-proc dma3Fill*(dst: pointer; src: uint32; size: uint) {.importc: "dma3_fill", header: "tonc.h".}
+proc dma3Fill*(dst: pointer; src: uint32; size: SomeInteger) {.importc: "dma3_fill", header: "tonc.h".}
   ## Specific DMA filler, using channel 3, word transfers.
   ## `dst`  Destination address.
   ## `src`  Source value.
@@ -198,18 +198,18 @@ const
   QRAN_MASK* = ((1 shl QRAN_SHIFT) - 1)
   QRAN_MAX* = QRAN_MASK
 
-var qranSeed* {.importc: "__qran_seed", header: "tonc.h".}: int32
+var qranSeed* {.importc: "__qran_seed", header: "tonc.h".}: int
   ## Current state of the random number generator. 
   
-proc sqran*(seed: int32): int32 {.importc: "sqran", header: "tonc.h".}
+proc sqran*(seed: int): int {.importc: "sqran", header: "tonc.h".}
   ## Seed the random number generator.
   ## Returns the old seed.
   
-proc qran*(): int32 {.importc: "qran", header: "tonc.h".}
+proc qran*(): int {.importc: "qran", header: "tonc.h".}
   ## Quick (and very dirty) pseudo-random number generator
   ## Returns: random in range [0,8000h>
   
-proc qranRange*(min: int32; max: int32): int32 {.importc: "qran_range", header: "tonc.h".}
+proc qranRange*(min: int; max: int): int {.importc: "qran_range", header: "tonc.h".}
   ## Returns a random number in range [`min`, `max`>
   ## Note: (max-min) must be lower than 8000h
 

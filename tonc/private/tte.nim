@@ -78,7 +78,7 @@ type
     ##  The formatting of the glyphs themselves should fit the rendering
     ##  procedure. The default renderers use 1bpp 8x8 tiled graphics,
     ##  where for multi-tiled cells the tiles are in a *vertical*
-    ##  'strip' format. In an 16x16 cell, the 4 tiles would be arranged as:
+    ##  'strip' format. In a 16x16 cell, the 4 tiles would be arranged as:
     ##  +---+---+
     ##  | 0 | 2 |
     ##  +---+---+
@@ -175,19 +175,19 @@ proc tteSetContext*(tc: TextContext) {.importc: "tte_set_context", header: "tonc
 proc tteGetContext*(): TextContext {.importc: "tte_get_context", header: "tonc.h".}
   ## Get the master context pointer.
 proc tteGetGlyphId*(ch: int): uint {.importc: "tte_get_glyph_id", header: "tonc.h".}
-  ## ! Get the glyph index of character \a ch.
+  ## Get the glyph index of character `ch`.
 proc tteGetGlyphWidth*(gid: uint): int {.importc: "tte_get_glyph_width", header: "tonc.h".}
-  ## ! Get the width of glyph \a id.
+  ## Get the width of glyph `id`.
 proc tteGetGlyphHeight*(gid: uint): int {.importc: "tte_get_glyph_height", header: "tonc.h".}
-  ## ! Get the height of glyph \a id.
+  ## Get the height of glyph `id`.
 proc tteGetGlyphData*(gid: uint): pointer {.importc: "tte_get_glyph_data", header: "tonc.h".}
-  ## ! Get the glyph data of glyph \a id.
+  ## Get the glyph data of glyph `id`.
 proc tteSetColor*(typ: uint; clr: uint16) {.importc: "tte_set_color", header: "tonc.h".}
-  ## Set color of \a type to \a cattr.
+  ## Set color of `type` to `cattr`.
 proc tteSetColors*(colors: ptr uint16) {.importc: "tte_set_colors", header: "tonc.h".}
   ## Load important color data.
 proc tteSetColorAttr*(typ: uint; cattr: uint16) {.importc: "tte_set_color_attr", header: "tonc.h".}
-  ## Set color attribute of \a type to \a cattr.
+  ## Set color attribute of `type` to `cattr`.
 proc tteSetColorAttrs*(cattrs: ptr uint16) {.importc: "tte_set_color_attrs", header: "tonc.h".}
   ## Load important color attribute data.
 proc tteCmdDefault*(str: cstring): cstring {.importc: "tte_cmd_default", header: "tonc.h".}
@@ -462,7 +462,7 @@ proc tteInitObj*(dst: ObjAttrPtr; attr0, attr1, attr2: uint32; clrs: uint32, bup
   ## `attr0`  Base obj.attr0. 
   ## `attr1`  Base obj.attr1.
   ## `attr2`  Base obj.attr2.
-  ## `clrs`   Colors to use for the text. The palette entries used depends on \a attr2 and \a bupofs.
+  ## `clrs`   Colors to use for the text. The palette entries used depends on `attr2` and `bupofs`.
   ## `bupofs` Flags for font bit-unpacking. Basically indicates pixel values (and hence palette use).
   ## `font`   Font to initialize with.
   ## `proc`   Character plotting procedure.

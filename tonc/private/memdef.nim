@@ -779,7 +779,8 @@ const
   ATTR0_SQUARE*:uint16 = 0x0000    ## Square shape
   ATTR0_WIDE*:uint16 = 0x4000      ## Tall shape (height &gt; width)
   ATTR0_TALL*:uint16 = 0x8000      ## Wide shape (height &lt; width)
-  
+
+const
   ATTR0_Y_MASK*:uint16 = 0x00FF
   ATTR0_Y_SHIFT*:uint16 = 0
 
