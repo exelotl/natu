@@ -14,7 +14,7 @@ template `<<=`*[T](a,b:T):T =  a = a shl b
 # Data
 # ----
 
-proc tonccpy*(dst: pointer; src: pointer|cstring; size: SomeInteger): pointer {.importc: "tonccpy", header: "tonc.h".}
+proc tonccpy*[T](dst: pointer; src: pointer; size: SomeInteger): pointer {.importc: "tonccpy", header: "tonc.h".}
   ## VRAM-safe cpy.
   ## This version mimics memcpy in functionality, with the benefit of working for VRAM as well. It is also 
   ## slightly faster than the original memcpy, but faster implementations can be made.
@@ -42,7 +42,7 @@ proc memset16*(dst:pointer, hw:uint16, hwcount:SomeInteger) {.importc: "memset16
   ## Note: `dst` *must* be halfword aligned.
   ## Note: `r0` returns as `dst + hwcount*2`.
 
-proc memcpy16*(dst:pointer, src:pointer|cstring, hwcount:SomeInteger) {.importc: "memcpy16", header: "tonc.h".}
+proc memcpy16*(dst:pointer, src:pointer, hwcount:SomeInteger) {.importc: "memcpy16", header: "tonc.h".}
   ## Copy for halfwords.
   ## Uses `memcpy32()` if `hwn > 6` and `src` and `dst` are aligned equally.
   ## `dst`     Destination address.
@@ -60,7 +60,7 @@ proc memset32*(dst:pointer, wd:uint32, wcount:SomeInteger) {.importc: "memset32"
   ## Note: `dst` *must* be word aligned.
   ## Note: `r0` returns as `dst + wdcount*4`.
 
-proc memcpy32*(dst:pointer, src:pointer|cstring, wcount:SomeInteger) {.importc: "memcpy32", header: "tonc.h".}
+proc memcpy32*(dst:pointer, src:pointer, wcount:SomeInteger) {.importc: "memcpy32", header: "tonc.h".}
   ## Fast-copy by words.
   ## Like CpuFastFill(), only without the requirement of 32byte chunks
   ## `dst`     Destination address.
@@ -108,7 +108,7 @@ template hword2word*(h0, h1: uint16): uint32 =
 # DMA
 # ---
 
-proc dmaCpy*(dst: pointer; src: pointer|cstring; count: SomeInteger; ch: uint; mode: uint32) {.importc: "dma_cpy", header: "tonc.h".}
+proc dmaCpy*(dst: pointer; src: pointer; count: SomeInteger; ch: uint; mode: uint32) {.importc: "dma_cpy", header: "tonc.h".}
   ## Generic DMA copy routine.
   ## `dst`   Destination address.
   ## `src`   Source address.
@@ -126,7 +126,7 @@ proc dmaFill*(dst: pointer; src: uint32; count: SomeInteger; ch: uint; mode: uin
   ## `mode`  DMA transfer mode.
   ## Note: `count` is the number of copies, not the size in bytes.
   
-proc dma3Cpy*(dst: pointer; src: pointer|cstring; size: SomeInteger) {.importc: "dma3_cpy", header: "tonc.h".}
+proc dma3Cpy*(dst: pointer; src: pointer; size: SomeInteger) {.importc: "dma3_cpy", header: "tonc.h".}
   ## Specific DMA copier, using channel 3, word transfers.
   ## `dst`  Destination address.
   ## `src`  Source address.

@@ -52,10 +52,10 @@ proc main() =
     keyPoll()
     
     # move the ship
-    if keyHeld(KEY_LEFT): pos.x -= 1
-    if keyHeld(KEY_RIGHT): pos.x += 1
-    if keyHeld(KEY_UP): pos.y -= 1
-    if keyHeld(KEY_DOWN): pos.y += 1
+    if keyIsDown(KEY_LEFT): pos.x -= 1
+    if keyIsDown(KEY_RIGHT): pos.x += 1
+    if keyIsDown(KEY_UP): pos.y -= 1
+    if keyIsDown(KEY_DOWN): pos.y += 1
     
     # update sprite position
     oamMem[0].setPos(pos)

@@ -8,11 +8,11 @@ type
 
 # To be used with codegenDecl pragma:
 const
-  IWRAM_DATA = "IWRAM_DATA $# $#"    ## Put variable in IWRAM (default).
-  EWRAM_DATA = "EWRAM_DATA $# $#"    ## Put variable in EWRAM.
-  EWRAM_BSS = "EWRAM_BSS $# $#"      ## Put non-initialized variable in EWRAM.
-  IWRAM_CODE = "IWRAM_CODE $# $#$#"  ## Put procedure in IWRAM.
-  EWRAM_CODE = "EWRAM_CODE $# $#$#"  ## Put procedure in EWRAM.
+  IWRAM_DATA* = "IWRAM_DATA $# $#"    ## Put variable in IWRAM (default).
+  EWRAM_DATA* = "EWRAM_DATA $# $#"    ## Put variable in EWRAM.
+  EWRAM_BSS* = "EWRAM_BSS $# $#"      ## Put non-initialized variable in EWRAM.
+  IWRAM_CODE* = "IWRAM_CODE $# $#$#"  ## Put procedure in IWRAM.
+  EWRAM_CODE* = "EWRAM_CODE $# $#$#"  ## Put procedure in EWRAM.
 
 # Note: in the next Nim release we might be able to use macros as pragmas for var/let symbols
 # see https://github.com/nim-lang/Nim/commit/044cef152f6006927a905d69dc527cada8206b0f

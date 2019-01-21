@@ -1,7 +1,9 @@
 nim-tonc
 ========
 
-This repo contains bindings for the awesome tonclib by J. Vijn (cearn). Tonclib provides everything you need to program the Game Boy Advance, and is the accompanying material to a [really good tutorial](https://www.coranac.com/tonc/text/toc.htm)!
+This repo contains bindings for the awesome tonclib by J. Vijn (cearn).
+
+Tonclib provides everything you need to program the Game Boy Advance, and is the accompanying material to a [really good tutorial](https://www.coranac.com/tonc/text/toc.htm)!
 
 ### Features
 
@@ -15,7 +17,7 @@ This repo contains bindings for the awesome tonclib by J. Vijn (cearn). Tonclib 
 - Sin/Cos/Div LUTs + other math functions
 - Hardware sprites, affine matrix helpers
 - Color/palette utilities
-- Convenient access to button states
+- Button states (hit, down, released)
 
 ### Goodies
 
