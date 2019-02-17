@@ -10,7 +10,7 @@ endif
 include $(DEVKITARM)/gba_rules
 
 # we're using tonc instead of libgba
-LIBTONC := $(DEVKITPRO)/tonclib
+LIBTONC := $(DEVKITPRO)/libtonc $(DEVKITPRO)/tonclib
 
 # this directory should contain nimbase.h
 NIM_LIB := $(shell dirname $(shell dirname $(shell which nim)))/lib
