@@ -44,9 +44,9 @@ const
 
 # TODO: check the compiled output for these to make sure they're performant?
 
-proc fix*(n: int): Fixed = (n << FIX_SHIFT).Fixed
+proc fixed*(n: int): Fixed = (n << FIX_SHIFT).Fixed
   ## Convert an integer to fixed-point
-proc fix*(n: float32): Fixed = (n * FIX_SCALE.float32).Fixed
+proc fixed*(n: float32): Fixed = (n * FIX_SCALE.float32).Fixed
   ## Convert a float to fixed-point
 
 proc toInt*(a: Fixed): int = a.int >> FIX_SHIFT
@@ -66,6 +66,7 @@ proc `/`*(a, b: Fixed): Fixed = ((a.int << FIX_SHIFT) div b.int).Fixed
 proc `==`*(a, b: Fixed): bool {.borrow.}
 proc `<`*(a, b: Fixed): bool {.borrow.}
 proc `<=`*(a, b: Fixed): bool {.borrow.}
+proc `-`*(a: Fixed): Fixed {.borrow.}
 
 proc mul64*(a, b: Fixed): Fixed = (((cast[int64](a)) * b.int) >> FIX_SHIFT).Fixed
   ## Multiply two fixed point values using 64bit math (to help avoid overflows)
@@ -169,7 +170,13 @@ proc vec2i*(x, y:int):Vec2i {.noinit.} =
   ## Initialise an integer vector
   result.x = x
   result.y = y
-  
+
+proc vec2i*():Vec2i {.noinit.} =
+  ## Initialise an integer vector to 0,0
+  result.x = 0
+  result.y = 0
+
+
 proc vec2f*(x, y:Fixed):Vec2f {.noinit.} =
   ## Initialise a fixed-point vector
   result.x = x
@@ -177,18 +184,24 @@ proc vec2f*(x, y:Fixed):Vec2f {.noinit.} =
 
 proc vec2f*(x, y:int|float32):Vec2f {.noinit.} =
   ## Initialise a fixed-point vector, values converted from int or float
-  result.x = fix(x)
-  result.y = fix(y)
+  result.x = fixed(x)
+  result.y = fixed(y)
+
+proc vec2f*():Vec2f {.noinit.} =
+  ## Initialise a fixed-point vector to 0,0
+  result.x = 0.Fixed
+  result.y = 0.Fixed
+
 
 proc vec2i*(v: Vec2f):Vec2i {.noinit.} =
   ## Convert an integer vector to a fixed-point vector
   result.x = toInt(v.x)
   result.y = toInt(v.y)
-  
+
 proc vec2f*(v: Vec2i):Vec2f {.noinit.} =
   ## Convert a fixed-point vector to an integer vector
-  result.x = fix(v.x)
-  result.y = fix(v.y)
+  result.x = fixed(v.x)
+  result.y = fixed(v.y)
 
 
 # Integer vector operations
@@ -360,3 +373,15 @@ proc `center=`*(r: var Rect, p: Vec2i) =
   r.top = p.y - hh
   r.right = p.x + hw
   r.bottom = p.y + hh
+
+proc topLeft*(r: Rect): Vec2i =
+  vec2i(r.left, r.top)
+  
+proc topRight*(r: Rect): Vec2i =
+  vec2i(r.right, r.top)
+  
+proc bottomLeft*(r: Rect): Vec2i =
+  vec2i(r.left, r.bottom)
+  
+proc bottomRight*(r: Rect): Vec2i =
+  vec2i(r.right, r.bottom)
