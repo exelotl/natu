@@ -1,6 +1,6 @@
-examples/*/build
-examples/*/source
-
+.vscode/
+examples/*/build/
+examples/*/source/
 *.elf
 *.gba
 *.sav
