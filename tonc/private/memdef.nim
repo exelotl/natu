@@ -292,7 +292,7 @@ template BLDY_BUILD*(ey: uint16): uint16 =
 const
   SSW_INC*:uint16 = 0              ## Increasing sweep rate
   SSW_DEC*:uint16 = 0x0008         ## Decreasing sweep rate
-  SSW_OFF*:uint16 = 0x0008         ## Disable sweep altogether   TODO: is this correct? these both have the same value...
+  SSW_OFF*:uint16 = 0x0008         ## Disable sweep altogether
   SSW_SHIFT_MASK*:uint16 = 0x0007
   SSW_SHIFT_SHIFT*:uint16 = 0
 
@@ -777,8 +777,8 @@ const
   ATTR0_4BPP*:uint16 = 0x0000      ## Use 4bpp (16 color) tiles
   ATTR0_8BPP*:uint16 = 0x2000      ## Use 8bpp (256 color) tiles
   ATTR0_SQUARE*:uint16 = 0x0000    ## Square shape
-  ATTR0_WIDE*:uint16 = 0x4000      ## Tall shape (height &gt; width)
-  ATTR0_TALL*:uint16 = 0x8000      ## Wide shape (height &lt; width)
+  ATTR0_WIDE*:uint16 = 0x4000      ## Tall shape (height > width)
+  ATTR0_TALL*:uint16 = 0x8000      ## Wide shape (height < width)
 
 const
   ATTR0_Y_MASK*:uint16 = 0x00FF

@@ -9,17 +9,27 @@
 #  CLAMP
 #  IN_RANGE(x, min, max) -- instead use (min..max).contains(x)
 
-template sgn*[T](x: T): T =
+template sgn*[T: SomeInteger](x: T): T =
   ## Get the sign of `x`
   if x >= 0: 1
   else: -1
 
-template sgn3*[T](x: T): T =
+template sgn3*[T: SomeInteger](x: T): T =
   ## Tri-state sign: -1 for negative, 0 for 0, +1 for positive.  
   if x > 0: 1
   elif x < 0: -1
   else: 0
 
+template sgn*(x: Fixed): Fixed =
+  ## Get the sign of `x`
+  if x >= fixed(0): fixed(1)
+  else: fixed(-1)
+  
+template sgn3*(x: Fixed): Fixed =
+  ## Tri-state sign: -1 for negative, 0 for 0, +1 for positive.  
+  if x > fixed(0): fixed(1)
+  elif x < fixed(0): fixed(-1)
+  else: fixed(0)
 
 template reflect*[T](x, min, max: T): T =
   ## Reflects `x` at boundaries `min` and `max`
@@ -230,6 +240,10 @@ proc `/`*(a: Vec2i, n:int):Vec2i {.noinit.} =
 proc `*`*(a, b: Vec2i):int =
   ## Dot product of two vectors
   (a.x * b.x) + (a.y * b.y)
+
+proc `-`*(a: Vec2i):Vec2i {.noinit.} =
+  ## Equivalent to a * -1
+  vec2i(-a.x, -a.y)
   
 proc `+=`*(a: var Vec2i, b: Vec2i) =
   ## Vector compound addition
@@ -278,7 +292,11 @@ proc `/`*(a: Vec2f, n:Fixed|int):Vec2f {.noinit.} =
 proc `*`*(a, b: Vec2f):Fixed =
   ## Dot product of two fixed point vectors
   (a.x * b.x) + (a.y * b.y)
-  
+
+proc `-`*(a: Vec2f):Vec2f {.noinit.} =
+  ## Equivalent to a * -1
+  vec2f(-a.x, -a.y)
+
 proc `+=`*(a: var Vec2f, b: Vec2f) =
   ## Vector compound addition
   a.x += b.x

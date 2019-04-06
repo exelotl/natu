@@ -217,8 +217,8 @@ var romMem* {.importc:"rom_mem", header:"tonc.h".}: ptr UncheckedArray[uint16]
 # SRAM
 
 const maxSramSize = 0x10000  # 64KB
-
-var sramMem* {.importc:"sram_mem", header:"tonc.h".}: array[maxSramSize, uint8]
+# var sramMem* {.importc:"sram_mem", header:"tonc.h".}: array[arrsize(maxSramSize, uint8), uint8]
+var sramMem* {.importc:"sram_mem", header:"tonc.h".}: ptr UncheckedArray[uint8]
   ## SRAM pointer
 
 

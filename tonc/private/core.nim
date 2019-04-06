@@ -14,7 +14,7 @@ template `<<=`*[T](a,b:T):T =  a = a shl b
 # Data
 # ----
 
-proc tonccpy*[T](dst: pointer; src: pointer; size: SomeInteger): pointer {.importc: "tonccpy", header: "tonc.h".}
+proc tonccpy*(dst: pointer; src: pointer; size: SomeInteger): pointer {.importc: "tonccpy", header: "tonc.h", discardable.}
   ## VRAM-safe cpy.
   ## This version mimics memcpy in functionality, with the benefit of working for VRAM as well. It is also 
   ## slightly faster than the original memcpy, but faster implementations can be made.
@@ -24,13 +24,13 @@ proc tonccpy*[T](dst: pointer; src: pointer; size: SomeInteger): pointer {.impor
   ## Returns `dst`
   ## Note: The pointers and size need not be word-aligned.
 
-proc toncset*(dst: pointer, src: uint8, size: SomeInteger) {.importc: "toncset", header: "tonc.h".}
+proc toncset*(dst: pointer, src: uint8, size: SomeInteger): pointer {.importc: "toncset", header: "tonc.h", discardable.}
   ## VRAM-safe memset, byte version. Size in bytes.
 
-proc toncset16*(dst: pointer, src: uint16, size: SomeInteger) {.importc: "toncset16", header: "tonc.h".}
+proc toncset16*(dst: pointer, src: uint16, size: SomeInteger): pointer {.importc: "toncset16", header: "tonc.h", discardable.}
   ## VRAM-safe memset, halfword version. Size in hwords.
 
-proc toncset32*(dst: pointer, src: uint32, size: SomeInteger) {.importc: "toncset32", header: "tonc.h".}
+proc toncset32*(dst: pointer, src: uint32, size: SomeInteger): pointer {.importc: "toncset32", header: "tonc.h", discardable.}
   ## VRAM-safe memset, word version. Size in words.
 
 proc memset16*(dst:pointer, hw:uint16, hwcount:SomeInteger) {.importc: "memset16", header: "tonc.h".}
