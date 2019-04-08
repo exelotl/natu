@@ -97,6 +97,14 @@ proc `+`*(a: int, b: Fixed): Fixed = ((a << FIX_SHIFT) + b.int).Fixed
 proc `-`*(a: int, b: Fixed): Fixed = ((a << FIX_SHIFT) - b.int).Fixed
 proc `*`*(a: int, b: Fixed): Fixed = (a * b.int).Fixed
 
+proc `==`*(a: Fixed, b: int): bool = a == (b << FIX_SHIFT).Fixed
+proc `<`*(a: Fixed, b: int): bool = a < (b << FIX_SHIFT).Fixed
+proc `<=`*(a: Fixed, b: int): bool = a <= (b << FIX_SHIFT).Fixed
+
+proc `==`*(a: int, b: Fixed): bool = (a << FIX_SHIFT).Fixed == b
+proc `<`*(a: int, b: Fixed): bool = (a << FIX_SHIFT).Fixed < b
+proc `<=`*(a: int, b: Fixed): bool = (a << FIX_SHIFT).Fixed <= b
+
 proc `+=`*(a: var Fixed, b: Fixed|int) =  a = a + b
 proc `-=`*(a: var Fixed, b: Fixed|int) =  a = a - b
 proc `*=`*(a: var Fixed, b: Fixed|int) =  a = a * b
