@@ -1,13 +1,16 @@
 ## Mathematical functions
 ## ======================
 
-# The following macros are omitted because they're already in the standard library
+# The following templates are omitted because they're already in the standard library
 #  ABS
 #  MAX
 #  MIN
 #  SWAP
 #  CLAMP
 #  IN_RANGE(x, min, max) -- instead use (min..max).contains(x)
+
+# The following new templates are added:
+#  approach(x, target, amount)
 
 template sgn*[T: SomeInteger](x: T): T =
   ## Get the sign of `x`
@@ -20,16 +23,16 @@ template sgn3*[T: SomeInteger](x: T): T =
   elif x < 0: -1
   else: 0
 
-template sgn*(x: Fixed): Fixed =
+template sgn*(x: Fixed): int =
   ## Get the sign of `x`
-  if x >= fixed(0): fixed(1)
-  else: fixed(-1)
+  if x >= fixed(0): 1
+  else: -1
   
-template sgn3*(x: Fixed): Fixed =
+template sgn3*(x: Fixed): int =
   ## Tri-state sign: -1 for negative, 0 for 0, +1 for positive.  
-  if x > fixed(0): fixed(1)
-  elif x < fixed(0): fixed(-1)
-  else: fixed(0)
+  if x > fixed(0): 1
+  elif x < fixed(0): -1
+  else: 0
 
 template reflect*[T](x, min, max: T): T =
   ## Reflects `x` at boundaries `min` and `max`
@@ -46,7 +49,15 @@ template wrap*[T](x, min, max: T): T =
   if x >= max: x + min - max
   elif x < min: x + max - min
   else: x
-  
+
+template approach*[T](x, target, step: T): T =
+  ## Move `x` towards `target` by `step` without exceeding target.
+  ## Step should be a positive number.
+  if x < target:
+    min(x + step, target)
+  else:
+    max(x - step, target)
+
 const
   FIX_SHIFT*:int = 8
   FIX_SCALE*:int = (1 << FIX_SHIFT)
@@ -59,9 +70,9 @@ proc fixed*(n: int): Fixed = (n << FIX_SHIFT).Fixed
 proc fixed*(n: float32): Fixed = (n * FIX_SCALE.float32).Fixed
   ## Convert a float to fixed-point
 
-proc toInt*(a: Fixed): int = a.int >> FIX_SHIFT
+proc toInt*(a: Fixed): int = a.int div FIX_SCALE
   ## Convert a fixed point value to an integer.
-proc toInt32*(a: Fixed): int32 = a.int32 >> FIX_SHIFT.int32
+proc toInt32*(a: Fixed): int32 = a.int32 div FIX_SCALE.int32
   ## Convert a fixed point value to a 32-bit integer.
 proc toFloat32*(a: Fixed): float32 = a.float32 / FIX_SCALE.float32
   ## Convert a fixed point value to floating point.
@@ -70,7 +81,7 @@ proc `$`*(a: Fixed): string {.borrow.} # TODO: better implementation?
 
 proc `+`*(a, b: Fixed): Fixed = (a.int + b.int).Fixed
 proc `-`*(a, b: Fixed): Fixed = (a.int - b.int).Fixed
-proc `*`*(a, b: Fixed): Fixed = ((a.int * b.int) >> FIX_SHIFT).Fixed
+proc `*`*(a, b: Fixed): Fixed = ((a.int * b.int) div FIX_SCALE).Fixed
 proc `/`*(a, b: Fixed): Fixed = ((a.int << FIX_SHIFT) div b.int).Fixed
 
 proc `==`*(a, b: Fixed): bool {.borrow.}
@@ -78,7 +89,7 @@ proc `<`*(a, b: Fixed): bool {.borrow.}
 proc `<=`*(a, b: Fixed): bool {.borrow.}
 proc `-`*(a: Fixed): Fixed {.borrow.}
 
-proc mul64*(a, b: Fixed): Fixed = (((cast[int64](a)) * b.int) >> FIX_SHIFT).Fixed
+proc mul64*(a, b: Fixed): Fixed = (((cast[int64](a)) * b.int) div FIX_SCALE).Fixed
   ## Multiply two fixed point values using 64bit math (to help avoid overflows)
 proc div64*(a, b: Fixed): Fixed = (((cast[int64](a)) << FIX_SHIFT) div b.int).Fixed
   ## Divide two fixed point values using 64bit math (to help avoid overflows)
