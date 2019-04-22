@@ -115,15 +115,24 @@ export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 #---------------------------------------------------------------------------------
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
-.PHONY: $(BUILD) clean
+.PHONY: $(BUILD) all clean
 
 #---------------------------------------------------------------------------------
+# default target
+# after compiling the nim source, re-run make so we don't miss any new .c files
+#---------------------------------------------------------------------------------
+all:
+	@nim c main.nim
+	@make --no-print-directory $(BUILD)
+
+#---------------------------------------------------------------------------------
+# create the build directory, then re-run make from within that directory, which
+# results in skipping the above setup and instead executes the main targets
+#---------------------------------------------------------------------------------
 $(BUILD):
-	nim c main.nim
 	@[ -d $@ ] || mkdir -p $@
 	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
-all	: $(BUILD)
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...

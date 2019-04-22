@@ -39,4 +39,3 @@ For developing with Nim you can use the standard devkitARM makefiles / project s
 - More examples and testing
 - Generate documentation?
 - Clean up `surface.nim`
-- Figure out why you sometimes need to run `make` twice to fix undefined references after importing a new module?

@@ -1,7 +1,7 @@
 ## Mathematical functions
 ## ======================
 
-# The following templates are omitted because they're already in the standard library
+# The following utilities are omitted because they're already in the standard library
 #  ABS
 #  MAX
 #  MIN
