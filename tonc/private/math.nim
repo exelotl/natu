@@ -88,6 +88,7 @@ proc `==`*(a, b: Fixed): bool {.borrow.}
 proc `<`*(a, b: Fixed): bool {.borrow.}
 proc `<=`*(a, b: Fixed): bool {.borrow.}
 proc `-`*(a: Fixed): Fixed {.borrow.}
+proc abs*(a: Fixed): Fixed {.borrow.}
 
 proc mul64*(a, b: Fixed): Fixed = (((cast[int64](a)) * b.int) div FIX_SCALE).Fixed
   ## Multiply two fixed point values using 64bit math (to help avoid overflows)
