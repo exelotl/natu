@@ -1,9 +1,9 @@
 nim-tonc
 ========
 
-This repo contains bindings for the awesome tonclib by J. Vijn (cearn).
+This repo contains Nim bindings for the awesome libtonc by J. Vijn (cearn).
 
-Tonclib provides everything you need to program the Game Boy Advance, and is the accompanying material to a [really good tutorial](https://www.coranac.com/tonc/text/toc.htm)!
+Libtonc provides everything you need to program the Game Boy Advance, and is the accompanying material to [Tonc](https://www.coranac.com/tonc/text/toc.htm) which is the de-facto tutorial for GBA development.
 
 ### Features
 
@@ -21,21 +21,22 @@ Tonclib provides everything you need to program the Game Boy Advance, and is the
 
 ### Goodies
 
-Some things that differ from the original tonclib:
+Some things that differ from the original libtonc:
 
 - Pleasant fixed-point and 2D vector types (taking advantage of Nim features)
 - mGBA logging functions
 
 ### Usage
 
-You will need [devkitARM](https://devkitpro.org/wiki/Getting_Started) with GBA tools and libraries. Download the [Tonc example code](https://www.coranac.com/projects/tonc/) and copy the tonclib folder to your devkitPro installation (e.g. C:/devkitPro/tonclib).
+You will need [devkitARM](https://devkitpro.org/wiki/Getting_Started) with GBA tools and libraries. If you are using the graphical installer, simply check "tools for GBA development" during setup. Otherwise be sure to install the `gba-dev` group of packages. Either way, the libtonc package is included so you should be good to go!
 
-**NOTE:** Before using tonclib you should recompile it with `make clean && make`. Try building some of the Tonc 'advanced' demos to make sure your environment is good.
+Before diving into Nim, try building some of the Tonc 'advanced' demos to make sure your environment is good.
 
-For developing with Nim you can use the standard devkitARM makefiles / project structure, but modified to use tonclib instead of libgba. In your project's `nim.cfg` you should target ARM CPU, 'standalone' OS, disable runtime checks, and set it to output C code into the 'source' directory. Check the examples in this repo for how this is done.
+For developing with Nim you can use the standard devkitARM makefiles / project structure, but modified to use libtonc instead of libgba. In your project's `nim.cfg` you should target ARM CPU, 'standalone' OS, disable runtime checks, and set it to output C code into the 'source' directory. Check the examples in this repo for how this is done.
 
 ### Todo
 
 - More examples and testing
 - Generate documentation?
 - Clean up `surface.nim`
+- Maxmod bindings
