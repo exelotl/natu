@@ -22,7 +22,7 @@ const
 const
   SCREEN_LINES* = 228  ## Total scanlines
 
-# [what are these?]
+# Alpha blend layers (use with REG_BLDMOD)
 const
   LAYER_BG0* = 0x0001
   LAYER_BG1* = 0x0002
@@ -322,3 +322,19 @@ proc m5Frame*(left, top, right, bottom: int; clr: Color) {.importc: "m5_frame", 
   ## `bottom` Bottom size, exclusive.
   ## `clr`    Color.
   ## Note: Normalized, but not clipped.
+
+
+# Extras
+# ------
+
+# Convenience procs for working with tile map entries
+
+proc tid*(se:ScrEntry): int = (se and SE_ID_MASK).int
+proc hflip*(se:ScrEntry): bool = (se and SE_HFLIP) != 0
+proc vflip*(se:ScrEntry): bool = (se and SE_VFLIP) != 0
+proc palbank*(se:ScrEntry): int = ((se and SE_PALBANK_MASK) shr SE_PALBANK_SHIFT).int
+
+proc `tid=`*(se:var ScrEntry, val: int) =     se = ((val.uint16 shl SE_ID_SHIFT) and SE_ID_MASK) or (se and not SE_ID_MASK)
+proc `hflip=`*(se:var ScrEntry, val: bool) =  se = (val.uint16 shl 10) or (se and not SE_HFLIP)
+proc `vflip=`*(se:var ScrEntry, val: bool) =  se = (val.uint16 shl 11) or (se and not SE_VFLIP)
+proc `palbank=`*(se:var ScrEntry, val: int) = se = ((val.uint16 shl SE_PALBANK_SHIFT) and SE_PALBANK_MASK) or (se and not SE_PALBANK_MASK)
