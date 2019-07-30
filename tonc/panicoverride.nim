@@ -6,12 +6,18 @@ import volatile
 {.push stack_trace: off, profiler:off.}
 
 when nimvm:
+  discard
+  
+  # Doesn't compile on Nim >= 0.20
+  # Is there any situation where it's needed?
+  #[
   proc rawoutput(s: string) =
     echo s
     
   proc panic(s: string) {.noreturn.} =
     raise newException(Exception, s)
-    
+  ]#
+  
 else:
   let REG_DEBUG_ENABLE = cast[ptr uint16](0x4FFF780)
   let REG_DEBUG_FLAGS = cast[ptr uint16](0x4FFF700)
