@@ -22,9 +22,13 @@ else:
   let REG_DEBUG_ENABLE = cast[ptr uint16](0x4FFF780)
   let REG_DEBUG_FLAGS = cast[ptr uint16](0x4FFF700)
   let REG_DEBUG_STRING = cast[cstring](0x4FFF600)
-
+  
   proc mgbaLog(level: int, s: cstring) =
-    copyMem(REG_DEBUG_STRING, s, 256)
+    for i in 0..<256:
+      let c = s[i]
+      if c == '\0': break
+      volatileStore(unsafeAddr REG_DEBUG_STRING[i], c)
+    #copyMem(REG_DEBUG_STRING, s, 256)
     volatileStore(REG_DEBUG_FLAGS, (0x100 or level).uint16)
 
   proc rawoutput(s: cstring) =

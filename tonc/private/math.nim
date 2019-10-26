@@ -50,13 +50,13 @@ template wrap*[T](x, min, max: T): T =
   elif x < min: x + max - min
   else: x
 
-template approach*[T](x, target, step: T): T =
+template approach*[T](x: var T, target, step: T) =
   ## Move `x` towards `target` by `step` without exceeding target.
   ## Step should be a positive number.
   if x < target:
-    min(x + step, target)
+    x = min(x + step, target)
   else:
-    max(x - step, target)
+    x = max(x - step, target)
 
 const
   FIX_SHIFT*:int = 8
@@ -187,11 +187,11 @@ type
   Point = Vec2i
   Point32 = Vec2i
   
-  Vec2i* = object {.bycopy.}
+  Vec2i* {.bycopy.} = object
     ## Integer 2D vector/point type
     x*, y*: int
     
-  Vec2f* = object {.bycopy.}
+  Vec2f* {.bycopy.} = object
     ## Fixed point 24:8 2D vector/point type
     x*, y*: Fixed
 
