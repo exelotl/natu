@@ -25,6 +25,7 @@ Some things that differ from the original libtonc:
 
 - Pleasant fixed-point and 2D vector types (taking advantage of Nim features)
 - mGBA logging functions
+- Maxmod bindings for music/sfx
 
 ### Usage
 
@@ -32,11 +33,12 @@ You will need [devkitARM](https://devkitpro.org/wiki/Getting_Started) with GBA t
 
 Before diving into Nim, try building some of the Tonc 'advanced' demos to make sure your environment is good.
 
-For developing with Nim you can use the standard devkitARM makefiles / project structure, but modified to use libtonc instead of libgba. In your project's `nim.cfg` you should target ARM CPU, 'standalone' OS, disable runtime checks, and set it to output C code into the 'source' directory. Check the examples in this repo for how this is done.
+For developing with Nim you can use the standard devkitARM makefiles / project structure, but modified to use libtonc instead of libgba. In your project's `nim.cfg` you should set `--cpu:arm --os:standalone --gc:none`, disable runtime checks, and set it to output C code into the 'source' directory.
+
+The examples in the repo already do this, so you can just copy those :)
 
 ### Todo
 
-- More examples and testing
+- More examples?
 - Generate documentation?
 - Clean up `surface.nim`
-- Maxmod bindings
