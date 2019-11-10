@@ -12,20 +12,20 @@ type
     II_DMA0,     II_DMA1,    II_DMA2,    II_DMA3,
     II_KEYPAD,   II_GAMEPAK, II_MAX
 
-# Options for irq_set
+# Options for `irqSet`
 const
-  ISR_LAST* = 0x0040      ## Last isr in line (Lowest priority)
-  ISR_REPLACE* = 0x0080   ## Replace old isr if existing (prio ignored)
+  ISR_LAST*:uint32 = 0x0040      ## Last isr in line (Lowest priority)
+  ISR_REPLACE*:uint32 = 0x0080   ## Replace old isr if existing (prio ignored)
 
 const
-  ISR_PRIO_MASK* = 0x003F
-  ISR_PRIO_SHIFT* = 0
+  ISR_PRIO_MASK*:uint32 = 0x003F
+  ISR_PRIO_SHIFT*:uint32 = 0
 
-template ISR_PRIO*(n: untyped): untyped =
+template ISR_PRIO*(n: uint32): uint32 =
   ((n) shl ISR_PRIO_SHIFT)
 
 const
-  ISR_DEF* = (ISR_LAST or ISR_REPLACE)
+  ISR_DEF*:uint32 = (ISR_LAST or ISR_REPLACE)
 
 
 type
@@ -43,12 +43,12 @@ proc irqInit*(isr: FnPtr = nil) {.importc: "irq_init", header: "tonc.h".}
   ## Clears ISR table and sets up a master isr.
   ## `isr` Master ISR. If NULL, `isrMasterNest` is used
 
-proc irqSetMaster*(isr: FnPtr = nil): FnPtr {.importc: "irq_set_master", header: "tonc.h".}
+proc irqSetMaster*(isr: FnPtr = nil): FnPtr {.importc: "irq_set_master", header: "tonc.h", discardable.}
   ## Set a master ISR
   ## `isr` Master ISR. If NULL, `isrMasterMulti` is used
   ## Returns: Previous master ISR
 
-proc irqAdd*(irqId: IrqIndex; isr: FnPtr = nil): FnPtr {.importc: "irq_add", header: "tonc.h".}
+proc irqAdd*(irqId: IrqIndex; isr: FnPtr = nil): FnPtr {.importc: "irq_add", header: "tonc.h", discardable.}
   ## Add a specific ISR
   ## Special case of `irqSet`. If the interrupt has an ISR already it'll be replaced; if not it will add it in the back.
   ## `irqId` Index of irq.
@@ -56,14 +56,14 @@ proc irqAdd*(irqId: IrqIndex; isr: FnPtr = nil): FnPtr {.importc: "irq_add", hea
   ## Returns: Previous ISR
   ## Note: `irqId` is *NOT* a bit-mask, it is an index!
 
-proc irqDelete*(irqId: IrqIndex): FnPtr {.importc: "irq_delete", header: "tonc.h".}
+proc irqDelete*(irqId: IrqIndex): FnPtr {.importc: "irq_delete", header: "tonc.h", discardable.}
   ## Remove an ISR
   ## It'll be replaced; if not it will add it in the back.
   ## `irqId` Index of irq.
   ## Returns: Previous ISR
   ## Note: `irqId` is *NOT* a bit-mask, it is an index!
 
-proc irqSet*(irqId: IrqIndex; isr: FnPtr = nil; opts: uint32 = ISR_DEF): FnPtr {.importc: "irq_set", header: "tonc.h".}
+proc irqSet*(irqId: IrqIndex; isr: FnPtr = nil; opts: uint32 = ISR_DEF): FnPtr {.importc: "irq_set", header: "tonc.h", discardable.}
   ## General IRQ manager
   ## This routine manages the ISRs of interrupts and their priorities.
   ## `irqId` Index of irq.

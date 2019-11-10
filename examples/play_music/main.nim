@@ -24,7 +24,7 @@ proc main() =
   irqEnable(II_VBLANK)
   
   # register maxmod VBlank handler
-  discard irqAdd(II_VBLANK, maxmod.vblank)
+  irqAdd(II_VBLANK, maxmod.vblank)
   
   # init with 8 channels
   maxmod.init(soundbankBin, 8)
@@ -37,7 +37,7 @@ proc main() =
     
     if keyHit(KEY_A):
       # play sound effect
-      discard maxmod.effect(sfxShoot)
+      maxmod.effect(sfxShoot)
     
     # update maxmod
     maxmod.frame()
