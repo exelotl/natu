@@ -3,8 +3,6 @@
 
 type
   FnPtr* = proc () {.noconv.}          ## void foo() function pointer, used for interrupt handlers etc.
-  FnVI* = proc (x:int) {.noconv.}      ## void foo(int x) function pointer
-  FnII* = proc (x:int):int {.noconv.}  ## int foo(int x) function pointer
 
 # To be used with codegenDecl pragma:
 const
@@ -29,6 +27,9 @@ const
 # TODO: Figure out how to do {.align4.} {.align:N.} pragmas, if I need them
 # e.g. {.pragma: align4, codegenDecl: "$# $# ALIGN4".}
 # but that only seems to work for variables, not types??
+# update:
+#   {.align:N.} pragma should be a thing in the next Nim release
+#   see https://github.com/nim-lang/Nim/pull/12643 and https://github.com/nim-lang/Nim/pull/12666
 
 type
   Block* {.importc: "BLOCK", header: "tonc.h", bycopy.} = object
@@ -93,7 +94,7 @@ type
     ## Extended scale-rotate destination struct
     ## This contains the P-matrix and a fixed-point offset, the
     ##  combination can be used to rotate around an arbitrary point.
-    ##  Mainly intended for BgAffineSet, but the struct can be used
+    ## Mainly intended for BgAffineSet, but the struct can be used
     ##  for object transforms too.
     pa* {.importc: "pa".}: int16
     pb* {.importc: "pb".}: int16
@@ -127,7 +128,7 @@ type
     src* {.importc: "src".}: pointer
     dst* {.importc: "dst".}: pointer
     cnt* {.importc: "cnt".}: uint32
-
+  
   TmrRec* {.importc: "TMR_REC", header: "tonc.h", bycopy.} = object
     ## Timer struct, range: 0400:0100 - 0400:010F
     ## note: The attribute is required, because union's counted as u32 otherwise.
@@ -142,14 +143,14 @@ type Palbank* = array[16, Color]
 ## VRAM array types
 ## These types allow VRAM access as arrays or matrices in their most natural types.
 type
-  Screenline* = ptr array[32, ScrEntry]
-  ScreenMat* = ptr array[32, ptr array[32, ScrEntry]]
-  Screenblock* = ptr array[1024, ScrEntry]
-  M3Line* = ptr array[240, Color]
-  M4Line* = ptr array[240, uint8]  ## NOTE: u8, not u16!!
-  M5Line* = ptr array[160, Color]
-  Charblock* = ptr array[512, Tile]
-  Charblock8* = ptr array[256, Tile8]
+  Screenline* = array[32, ScrEntry]
+  ScreenMat* = array[32, array[32, ScrEntry]]
+  Screenblock* = array[1024, ScrEntry]
+  M3Line* = array[240, Color]
+  M4Line* = array[240, uint8]  ## NOTE: u8, not u16!! (be careful not to write single bytes to VRAM)
+  M5Line* = array[160, Color]
+  Charblock* = array[512, Tile]
+  Charblock8* = array[256, Tile8]
 
 type
   ObjAttr* {.importc: "OBJ_ATTR", header: "tonc.h", bycopy.} = object
@@ -180,9 +181,9 @@ type
     ## Pointer to object affine parameters.
 
 
-# sizeof currently doesn't work with object types at compile time
-# and there is no pragma to inform the compiler otherwise
-# so we need these constants:
+# sizeof doesn't work with imported object types at compile time
+# and the {.size:X.} pragma is only intended for enums, so we can't reliably specify the size ourselves
+# so we'll have to make do with these constants for now...
 const
   sizeof_Block* = 8 * sizeof(uint32)
   sizeof_Tile* = 8 * sizeof(uint32)
@@ -192,7 +193,7 @@ const
   sizeof_AffDst* = 4 * sizeof(int16)
   sizeof_AffDstEx* = 4 * sizeof(int16) + 2 * sizeof(int32)
   sizeof_Point16* = 2 * sizeof(int16)
-  sizeof_DmaRec* = 2 * sizeof(pointer) + sizeof(uint32)   # TODO: check sizeof pointer is correct at compile time
+  sizeof_DmaRec* = 2 * sizeof(pointer) + sizeof(uint32)
   sizeof_TmrRec* = 3 * sizeof(uint16)
   sizeof_Palbank* = 16 * sizeof(Color)
   sizeof_Screenline* = 32 * sizeof(ScrEntry)
@@ -205,4 +206,3 @@ const
   sizeof_Charblock8* = 256 * sizeof_Tile8
   sizeof_ObjAttr* = 8
   sizeof_ObjAffine* = 8
-  

@@ -163,11 +163,11 @@ proc clrFadeFast*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: uint; alpha
 template rgb15*(red, green, blue: int): Color =
   ## Create a 15bit BGR color.
   (red + (green shl 5) + (blue shl 10)).Color
-  
+
 template rgb15safe*(red, green, blue: int): Color =
   ## Create a 15bit BGR color, with proper masking of R,G,B components.
   ((red and 31) + ((green and 31) shl 5) + ((blue and 31) shl 10)).Color
-  
+
 template rgb8*(red, green, blue: uint8): Color =
   ## Create a 15bit BGR color, using 8bit components
   ((red.uint shr 3) + ((green.uint shr 3) shl 5) + ((blue.uint shr 3) shl 10)).Color
@@ -178,13 +178,13 @@ template rgb8*(rgb: int): Color =
 
 
 proc cbbClear*(cbb: int) =
-  memset32(addr(tileMem[cbb]), 0, CBB_SIZE div 4) # TODO: check that addr() is the right thing to do here?
+  memset32(addr tileMem[cbb], 0, CBB_SIZE div 4)
 
 proc sbbClear*(sbb: int) =
-  memset32(addr(seMem[sbb]), 0, SBB_SIZE div 4)
+  memset32(addr seMem[sbb], 0, SBB_SIZE div 4)
 
 proc sbbClearRow*(sbb, row: int) =
-  memset32(addr(seMem[sbb][(row) * 32]), 0, 32 div 2)
+  memset32(addr seMem[sbb][row*32], 0, 32 div 2)
 
 proc bgIsAffine*(n:int):bool {.importc: "BG_IS_AFFINE", header: "tonc.h".}
 proc bgIsAvail*(n:int):bool {.importc: "BG_IS_AVAIL", header: "tonc.h".}
@@ -243,7 +243,7 @@ proc bgRotscaleEx*(bgaff: ptr BgAffine; asx: ptr AffSrcEx) {.importc: "bg_rotsca
   ## `asx`   Affine source data: screen and texture origins, scales and angle.
 
 
-proc m3Clear*() = memset32(vidMem, 0, M3_SIZE div 4)
+proc m3Clear*() = memset32(addr vidMem, 0, M3_SIZE div 4)
 proc m3Fill*(clr: Color) {.importc: "m3_fill", header: "tonc.h".}
   ## Fill the mode 3 background with color `clr`.
 proc m3Plot*(x, y: int; clr: Color) {.importc: "m3_plot", header: "tonc.h".}

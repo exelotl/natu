@@ -45,48 +45,29 @@ const
 
 # STRUCTURED MEMORY MAP
 # ---------------------
-# These are some macros for easier access of various
+# These are some defines for easier access of various
 #  memory sections. They're all arrays or matrices, using the
-#  types that would be the most natural for that concept.
-
-# template divSize(bytes:uint32, t:typedesc):uint32 =
-  # bytes div (sizeof t).uint32
-
-# template DefArr(name:untyped, cname:string, nbytes:uint32, t:typedesc) =
-#   var `name`* {.importc:cname.}: array[nbytes div (sizeof t).uint32, t]
-
-# DefArr palBgMem, "pal_bg_mem", PAL_BG_SIZE, Color
-
-template arrsize(nbytes:uint32, t:typedesc):uint32 =
-  nbytes div uint32(sizeof t)
-template arrsize(nbytes:uint32, itemsize:int):uint32 =
-  nbytes div uint32(itemsize)
+#  types that would be the most natural for the concept.
 
 # Palette
 
-#### Uhh, I can't get a pointer to these if I specify the size using constants/expressions... probably a language bug. :(
-
-# var palBgMem* {.importc:"pal_bg_mem", header:"tonc.h".}: array[arrsize(PAL_BG_SIZE, Color), Color]
-var palBgMem* {.importc:"pal_bg_mem", header:"tonc.h".}: ptr UncheckedArray[Color]
+var palBgMem* {.importc:"pal_bg_mem", header:"tonc.h".}: array[256, Color]
   ## Background palette.
   ## ::
   ##   palBgMem[i] = color i
-  
-# var palObjMem* {.importc:"pal_obj_mem", header:"tonc.h".}: array[arrsize(PAL_OBJ_SIZE, Color), Color]
-var palObjMem* {.importc:"pal_obj_mem", header:"tonc.h".}: ptr UncheckedArray[Color]
+
+var palObjMem* {.importc:"pal_obj_mem", header:"tonc.h".}: array[256, Color]
   ## Object palette.
   ## ::
   ##   palObjMem[i] = color i
 
-# var palBgBank* {.importc:"pal_bg_bank", header:"tonc.h".}: array[arrsize(PAL_BG_SIZE, Palbank), Palbank]
-var palBgBank* {.importc:"pal_bg_bank", header:"tonc.h".}: ptr UncheckedArray[Palbank]
+var palBgBank* {.importc:"pal_bg_bank", header:"tonc.h".}: array[16, Palbank]
   ## Background palette matrix.
   ## ::
   ##   palBgBank[y] = bank y
   ##   palBgBank[y][x] = color y*16+x
 
-# var palObjBank* {.importc:"pal_obj_bank", header:"tonc.h".}: array[arrsize(PAL_OBJ_SIZE, Palbank), Palbank]
-var palObjBank* {.importc:"pal_obj_bank", header:"tonc.h".}: ptr UncheckedArray[Palbank]
+var palObjBank* {.importc:"pal_obj_bank", header:"tonc.h".}: array[16, Palbank]
   ## Object palette matrix.
   ## ::
   ##   palObjBank[y] = bank y
@@ -95,93 +76,76 @@ var palObjBank* {.importc:"pal_obj_bank", header:"tonc.h".}: ptr UncheckedArray[
 
 # VRAM
 
-# var tileMem* {.importc:"tile_mem", header:"tonc.h".}: array[arrsize(VRAM_BG_SIZE, sizeof_Charblock), Charblock]
-var tileMem* {.importc:"tile_mem", header:"tonc.h".}: ptr UncheckedArray[Charblock]
+var tileMem* {.importc:"tile_mem", header:"tonc.h".}: array[4, Charblock]
   ## Charblocks, 4bpp tiles.
   ## ::
   ##   tileMem[y] = charblock y         (Tile[])
   ##   tileMem[y][x] = block y, tile x  (Tile)
-  
-# var tile8Mem* {.importc:"tile8_mem", header:"tonc.h".}: array[arrsize(VRAM_BG_SIZE, sizeof_Charblock8), Charblock8]
-var tile8Mem* {.importc:"tile8_mem", header:"tonc.h".}: ptr UncheckedArray[Charblock8]
+
+var tile8Mem* {.importc:"tile8_mem", header:"tonc.h".}: array[4, Charblock8]
   ## Charblocks, 8bpp tiles.
   ## ::
   ##   tile8Mem[y] = charblock y         (Tile[])
   ##   tile8Mem[y][x] = block y, tile x  (Tile)
-  
-# var tileMemObj* {.importc:"tile_mem_obj", header:"tonc.h".}: array[arrsize(VRAM_OBJ_SIZE, sizeof_Charblock), Charblock]
-var tileMemObj* {.importc:"tile_mem_obj", header:"tonc.h".}: ptr UncheckedArray[Charblock]
+
+var tileMemObj* {.importc:"tile_mem_obj", header:"tonc.h".}: array[2, Charblock]
   ## Object charblocks, 4bpp tiles.
   ## ::
   ##   tileMemObj[y] = charblock y         (Tile[])
   ##   tileMemObj[y][x] = block y, tile x  (Tile)
-  
-# var tile8MemObj* {.importc:"tile8_mem_obj", header:"tonc.h".}: array[arrsize(VRAM_OBJ_SIZE, sizeof_Charblock8), Charblock8]
-var tile8MemObj* {.importc:"tile8_mem_obj", header:"tonc.h".}: ptr UncheckedArray[Charblock8]
+
+var tile8MemObj* {.importc:"tile8_mem_obj", header:"tonc.h".}: array[2, Charblock8]
   ## Object charblocks, 8bpp tiles.
   ## ::
   ##   tile8MemObj[y] = charblock y         (Tile[])
   ##   tile8MemObj[y][x] = block y, tile x  (Tile)
 
-# var seMem* {.importc:"se_mem", header:"tonc.h".}: array[arrsize(VRAM_BG_SIZE, Screenblock), Screenblock]
-var seMem* {.importc:"se_mem", header:"tonc.h".}: ptr UncheckedArray[Screenblock]
+var seMem* {.importc:"se_mem", header:"tonc.h".}: array[32, Screenblock]
   ## Screenblocks as arrays
   ## ::
   ##   se_mem[y] = screenblock y              (ScrEntry[])
   ##   se_mem[y][x] = screenblock y, entry x  (ScrEntry)
 
-# var seMat* {.importc:"se_mat", header:"tonc.h".}: array[arrsize(VRAM_BG_SIZE, ScreenMat), ScreenMat]
-var seMat* {.importc:"se_mat", header:"tonc.h".}: ptr UncheckedArray[ScreenMat]
+var seMat* {.importc:"se_mat", header:"tonc.h".}: array[32, ScreenMat]
   ## Screenblock as matrices
   ## ::
   ##   se_mat[s] = screenblock s                     (ScrEntry[][])
   ##   se_mat[s][y][x] = screenblock s, entry (x,y)  (ScrEntry)
 
-# var vidMem* {.importc:"vid_mem", header:"tonc.h".}: array[arrsize(M3_SIZE, Color), Color]
-var vidMem* {.importc:"vid_mem", header:"tonc.h".}: ptr UncheckedArray[Color]
+var vidMem* {.importc:"vid_mem", header:"tonc.h".}: array[240*160, Color]
   ## Main mode 3/5 frame as an array
   ## ::
   ##   vid_mem[i] = pixel i   (Color)
 
-# var m3Mem* {.importc:"m3_mem", header:"tonc.h".}: array[arrsize(M3_SIZE, M3Line), M3Line]
-var m3Mem* {.importc:"m3_mem", header:"tonc.h".}: ptr UncheckedArray[M3Line]
+var m3Mem* {.importc:"m3_mem", header:"tonc.h".}: array[160, M3Line]
   ## Mode 3 frame as a matrix
   ## ::
   ##   m3_mem[y][x]  = pixel (x, y)          ( Color )
 
-
-# var m4Mem* {.importc:"m4_mem", header:"tonc.h".}: array[arrsize(M4_SIZE, M4Line), M4Line]
-var m4Mem* {.importc:"m4_mem", header:"tonc.h".}: ptr UncheckedArray[M4Line]
+var m4Mem* {.importc:"m4_mem", header:"tonc.h".}: array[160, M4Line]
   ## Mode 4 first page as a matrix
   ## Note: This is a byte-buffer. Not to be used for writing.
   ## ::
   ##   m4_mem[y][x]  = pixel (x, y)          ( u8 )
 
-
-# var m5Mem* {.importc:"m5_mem", header:"tonc.h".}: array[arrsize(M5_SIZE, M5Line), M5Line]
-var m5Mem* {.importc:"m5_mem", header:"tonc.h".}: ptr UncheckedArray[M5Line]
+var m5Mem* {.importc:"m5_mem", header:"tonc.h".}: array[128, M5Line]
   ## Mode 5 first page as a matrix
   ## ::
   ##   m5_mem[y][x]  = pixel (x, y)          ( Color )
 
-
-# var vidMemFront* {.importc:"vid_mem_front", header:"tonc.h".}: array[arrsize(VRAM_PAGE_SIZE, Color), Color]
-var vidMemFront* {.importc:"vid_mem_front", header:"tonc.h".}: ptr UncheckedArray[Color]
+var vidMemFront* {.importc:"vid_mem_front", header:"tonc.h".}: array[160*128, uint16]
   ## First page array
 
-# var vidMemBack* {.importc:"vid_mem_back", header:"tonc.h".}: array[arrsize(VRAM_PAGE_SIZE, Color), Color]
-var vidMemBack* {.importc:"vid_mem_back", header:"tonc.h".}: ptr UncheckedArray[Color]
+var vidMemBack* {.importc:"vid_mem_back", header:"tonc.h".}: array[160*128, uint16]
   ## Second page array
 
-# var m4MemBack* {.importc:"m4_mem_back", header:"tonc.h".}: array[arrsize(M4_SIZE, M4Line), M4Line]
-var m4MemBack* {.importc:"m4_mem_back", header:"tonc.h".}: ptr UncheckedArray[M4Line]
+var m4MemBack* {.importc:"m4_mem_back", header:"tonc.h".}: array[160, M4Line]
   ## Mode 4 second page as a matrix
   ## This is a byte-buffer. Not to be used for writing.
   ## ::
   ##   m4_mem[y][x]  = pixel (x, y)          ( u8 )
 
-# var m5MemBack* {.importc:"m5_mem_back", header:"tonc.h".}: array[arrsize(M5_SIZE, M5Line), M5Line]
-var m5MemBack* {.importc:"m5_mem_back", header:"tonc.h".}: ptr UncheckedArray[M5Line]
+var m5MemBack* {.importc:"m5_mem_back", header:"tonc.h".}: array[128, M5Line]
   ## Mode 5 second page as a matrix
   ## ::
   ##   m5_mem[y][x]  = pixel (x, y)          ( Color )
@@ -189,18 +153,15 @@ var m5MemBack* {.importc:"m5_mem_back", header:"tonc.h".}: ptr UncheckedArray[M5
 
 # OAM
 
-# var oamMem* {.importc:"oam_mem", header:"tonc.h".}: array[arrsize(OAM_SIZE, sizeof_ObjAttr), ObjAttr]
-var oamMem* {.importc:"oam_mem", header:"tonc.h".}: ptr UncheckedArray[ObjAttr]
+var oamMem* {.importc:"oam_mem", header:"tonc.h".}: array[128, ObjAttr]
   ## Object attribute memory
   ## ::
   ##   oamMem[i] = object i            (ObjAttr)
 
-# var objMem* {.importc:"obj_mem", header:"tonc.h".}: array[arrsize(OAM_SIZE, sizeof_ObjAttr), ObjAttr]
-var objMem* {.importc:"obj_mem", header:"tonc.h".}: ptr UncheckedArray[ObjAttr]
+var objMem* {.importc:"obj_mem", header:"tonc.h".}: array[128, ObjAttr]
   ## Alias for ``oamMem``
 
-# var objAffMem* {.importc:"obj_aff_mem", header:"tonc.h".}: array[arrsize(OAM_SIZE, sizeof_ObjAffine), ObjAffine]
-var objAffMem* {.importc:"obj_aff_mem", header:"tonc.h".}: ptr UncheckedArray[ObjAffine]
+var objAffMem* {.importc:"obj_aff_mem", header:"tonc.h".}: array[32, ObjAffine]
   ## Object affine memory
   ## ::
   ##   objAffMem[i] = object matrix i      ( OBJ_AFFINE )  
@@ -208,17 +169,14 @@ var objAffMem* {.importc:"obj_aff_mem", header:"tonc.h".}: ptr UncheckedArray[Ob
 
 # ROM
 
-const maxRomSize:uint32 = 0x2000000  # 32MB
-
-# var romMem* {.importc:"rom_mem", header:"tonc.h".}: array[arrsize(maxRomSize, uint16), uint16]
-var romMem* {.importc:"rom_mem", header:"tonc.h".}: ptr UncheckedArray[uint16]
+const maxRomSize = 0x2000000  # 32MB
+var romMem* {.importc:"rom_mem", header:"tonc.h".}: array[maxRomSize div sizeof(uint16), uint16]
   ## ROM pointer
 
 # SRAM
 
 const maxSramSize = 0x10000  # 64KB
-# var sramMem* {.importc:"sram_mem", header:"tonc.h".}: array[arrsize(maxSramSize, uint8), uint8]
-var sramMem* {.importc:"sram_mem", header:"tonc.h".}: ptr UncheckedArray[uint8]
+var sramMem* {.importc:"sram_mem", header:"tonc.h".}: array[maxSramSize, uint8]
   ## SRAM pointer
 
 
@@ -231,15 +189,12 @@ var REG_IFBIOS* {.importc:"REG_IFBIOS", header:"tonc.h".}: uint16        ## IRQ 
 var REG_RESET_DST* {.importc:"REG_RESET_DST", header:"tonc.h".}: uint16  ## Destination for after SoftReset (REG_BASE - 0x00000006)
 var REG_ISR_MAIN* {.importc:"REG_ISR_MAIN", header:"tonc.h".}: FnPtr     ## IRQ handler address (REG_BASE - 0x00000004)
 
-
 # Display registers
-
 var REG_DISPCNT* {.importc:"REG_DISPCNT", header:"tonc.h".}: uint32    ## Display control (REG_BASE + 0x00000000)
 var REG_DISPSTAT* {.importc:"REG_DISPSTAT", header:"tonc.h".}: uint16  ## Display status (REG_BASE + 0x00000004)
 var REG_VCOUNT* {.importc:"REG_VCOUNT", header:"tonc.h".}: uint16      ## Scanline count (REG_BASE + 0x00000006)
 
 # Background control registers
-
 var REG_BGCNT* {.importc:"REG_BGCNT", header:"tonc.h".}: array[4, uint16]   ## Bg control array (REG_BASE + 0x00000008)
 var REG_BG0CNT* {.importc:"REG_BG0CNT", header:"tonc.h".}: uint16         ## Bg0 control (REG_BASE + 0x00000008)
 var REG_BG1CNT* {.importc:"REG_BG1CNT", header:"tonc.h".}: uint16         ## Bg1 control (REG_BASE + 0x0000000A)
@@ -258,7 +213,6 @@ var REG_BG3HOFS* {.importc:"REG_BG3HOFS", header:"tonc.h".}: uint16       ## Bg3
 var REG_BG3VOFS* {.importc:"REG_BG3VOFS", header:"tonc.h".}: uint16       ## Bg3 vertical scroll (REG_BASE + 0x0000001E)
 
 # Affine background parameters. (write only!)
-
 var REG_BG_AFFINE* {.importc:"REG_BG_AFFINE", header:"tonc.h".}: array[2, BgAffine] ## Bg affine array (REG_BASE + 0x00000000)
 var REG_BG2PA* {.importc:"REG_BG2PA", header:"tonc.h".}: int16  ## Bg2 matrix.pa (REG_BASE + 0x00000020)
 var REG_BG2PB* {.importc:"REG_BG2PB", header:"tonc.h".}: int16  ## Bg2 matrix.pb (REG_BASE + 0x00000022)
