@@ -160,17 +160,21 @@ proc clrFadeFast*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: uint; alpha
 ## Colors
 ## ------
 
-proc rgb15*(red, green, blue: int): Color =
+template rgb15*(red, green, blue: int): Color =
   ## Create a 15bit BGR color.
-  return (red + (green shl 5) + (blue shl 10)).Color
+  (red + (green shl 5) + (blue shl 10)).Color
   
-proc rgb15safe*(red, green, blue: int): Color =
+template rgb15safe*(red, green, blue: int): Color =
   ## Create a 15bit BGR color, with proper masking of R,G,B components.
-  return ((red and 31) + ((green and 31) shl 5) + ((blue and 31) shl 10)).Color
+  ((red and 31) + ((green and 31) shl 5) + ((blue and 31) shl 10)).Color
   
-proc rgb8*(red, green, blue: uint8): Color =
+template rgb8*(red, green, blue: uint8): Color =
   ## Create a 15bit BGR color, using 8bit components
-  return ((red shr 3) + ((green shr 3) shl 5) + ((blue shr 3) shl 10)).Color
+  ((red.uint shr 3) + ((green.uint shr 3) shl 5) + ((blue.uint shr 3) shl 10)).Color
+
+template rgb8*(rgb: int): Color =
+  ## Create a 15 bit BGR color from a 24-bit RGB color of the form 0xRRGGBB
+  (((rgb and 0xff0000) shr 19) + (((rgb and 0x00ff00) shr 11) shl 5) + (((rgb and 0x0000ff) shr 3) shl 10)).Color
 
 
 proc cbbClear*(cbb: int) =

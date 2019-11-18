@@ -1,13 +1,3 @@
-# Custom stuff:
-  
-# define some C-like bit shift operators
-# mostly because I get my left and right mixed up  :')
-template `>>`*[T](a,b:T):T =  a shr b
-template `<<`*[T](a,b:T):T =  a shl b
-template `>>=`*[T](a,b:T):T =  a = a shr b
-template `<<=`*[T](a,b:T):T =  a = a shl b
-
-
 # Tonc core functionality
 # =======================
 
