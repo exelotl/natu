@@ -43,7 +43,6 @@
 # Constants
 # ---------
 
-
 const
   TTE_TAB_WIDTH* = 24
   
@@ -56,13 +55,12 @@ const
 # Types
 # -----
 
-type FnDrawg* = proc (gid: uint) {.noconv.}
-  ## Glyph render function format.
-  
-type FnErase* = proc (left, top, right, bottom: int) {.noconv.}
-  ## Erase rectangle function format.
-
 type
+  FnDrawg* = proc (gid: uint) {.noconv.}
+    ## Glyph render function format.
+  FnErase* = proc (left, top, right, bottom: int) {.noconv.}
+    ## Erase rectangle function format.
+  
   Font* = ptr FontObj
   FontObj* {.importc: "TFont", header: "tonc.h", bycopy.} = object
     ## Font description struct.
@@ -137,8 +135,8 @@ var verdana10Font* {.importc: "verdana10Font", header: "tonc.h".}: FontObj    ##
 var verdana9b4Font* {.importc: "verdana9_b4Font", header: "tonc.h".}: FontObj ## Verdana 9. VWF 8x12@4.
 
 # Default fonts
-var fwfDefault {.importc: "fwf_default", header: "tonc.h".}: FontObj  ## sys8
-var vwfDefault {.importc: "vwf_default", header: "tonc.h".}: FontObj  ## verdana9i
+var fwfDefault* {.importc: "fwf_default", header: "tonc.h".}: FontObj  ## sys8
+var vwfDefault* {.importc: "vwf_default", header: "tonc.h".}: FontObj  ## verdana9i
 
 # Default Initializers
 # --------------------
@@ -220,27 +218,27 @@ proc tteCmdDefault*(str: cstring): cstring {.importc: "tte_cmd_default", header:
   ## `str` Start of command. Assumes the initial "\{" is lobbed off already.
   ## Returns: pointer to after the parsed command.
   ## Note: Routine does text wrapping. Make sure margins are set.
-  
+
 proc ttePutc*(ch: int): int {.importc: "tte_putc", header: "tonc.h", discardable.}
   ## Plot a single character; does wrapping too.
   ## `ch` Character to plot (not glyph-id).
   ## Returns: Character width.
   ## Note: Overhead: ~70 cycles.
-  
+
 proc tteWrite*(text: cstring): int {.importc: "tte_write", header: "tonc.h", discardable.}
   ## Render a string.
   ## `text` String to parse and write.
   ## Returns: Number of parsed characters.
-  
+
 proc tteWriteEx*(x: int; y: int; text: cstring; clrlut: ptr uint16): int {.importc: "tte_write_ex", header: "tonc.h", discardable.}
   ## Extended string writer, with positional and color info
 
 proc tteEraseRect*(left: int; top: int; right: int; bottom: int) {.importc: "tte_erase_rect", header: "tonc.h".}
   ## Erase a porttion of the screen (ignores margins)
-  
+
 proc tteEraseScreen*() {.importc: "tte_erase_screen", header: "tonc.h".}
   ## Erase the screen (within the margins).
-  
+
 proc tteEraseLine*() {.importc: "tte_erase_line", header: "tonc.h".}
   ## Erase the whole line (within the margins).
 
@@ -249,7 +247,7 @@ proc tteGetTextSize*(str: cstring): Point16 {.importc: "tte_get_text_size", head
   ## `str` String to check.
   ## Returns: width and height, packed into a POINT16.
   ## Note: This function *ignores* tte commands, so don't use on strings that use commands.
-  
+
 proc tteInitBase*(font: Font; drawProc: FnDrawg; eraseProc: FnErase) {.importc: "tte_init_base", header: "tonc.h".}
 
 # Text Attribute Functions
@@ -269,7 +267,7 @@ proc tteGetPaper*(): uint16 {.importc: "tte_get_paper", header: "tonc.h".}
   ## Get paper color attribute.
 proc tteGetSpecial*(): uint16 {.importc: "tte_get_special", header: "tonc.h".}
   ## Get special color attribute.
-proc tteGetSurface*(): Surface {.importc: "tte_get_surface", header: "tonc.h".}
+proc tteGetSurface*(): SurfacePtr {.importc: "tte_get_surface", header: "tonc.h".}
   ## Get a pointer to the text surface.
 proc tteGetFont*(): Font {.importc: "tte_get_font", header: "tonc.h".}
   ## Get the active font
@@ -294,11 +292,11 @@ proc tteSetPaper*(cattr: uint16) {.importc: "tte_set_paper", header: "tonc.h".}
   ## Set paper color attribute.
 proc tteSetSpecial*(cattr: uint16) {.importc: "tte_set_special", header: "tonc.h".}
   ## Set special color attribute.
-proc tteSetSurface*(srf: Surface) {.importc: "tte_set_surface", header: "tonc.h".}
+proc tteSetSurface*(srf: SurfacePtr) {.importc: "tte_set_surface", header: "tonc.h".}
   ## Set the text surface.
 proc tteSetFont*(font: Font) {.importc: "tte_set_font", header: "tonc.h".}
   ## Set the font
-proc tteSetDrawg*(fn: FnDrawg) {.importc: "tte_set_drawg", header: "tonc.h".}
+proc tteSetDrawg*(fn: FnDrawg = nil) {.importc: "tte_set_drawg", header: "tonc.h".}
   ## Set the character plotter
 proc tteSetErase*(fn: FnErase) {.importc: "tte_set_erase", header: "tonc.h".}
   ## Set the erase function
@@ -324,32 +322,40 @@ proc tteSetMargins*(left: int; top: int; right: int; bottom: int) {.importc: "tt
 # Note: At present, the regular tilemap text ignores screenblock
 #  boundaries, so 512px wide maps may not work properly.
 
-proc tteInitSe*(bgnr: int; bgcnt: uint16; se0: ScrEntry; clrs: uint32; bupofs: uint32; font: Font; fn: FnDrawg) {.importc: "tte_init_se", header: "tonc.h".}
-  ## 
-proc seErase*(left: int; top: int; right: int; bottom: int) {.importc: "se_erase", header: "tonc.h".}
+proc tteInitSe*(bgnr: int; bgcnt: uint16; se0: ScrEntry; clrs: uint32; bupofs: uint32; font: Font = addr(fwfDefault); fn: FnDrawg = nil) {.importc: "tte_init_se", header: "tonc.h".}
+  ## Initialize text system for screen-entry fonts.
+  ## `bgnr`   Number of background to be used for text.
+  ## `bgcnt`  Background control flags.
+  ## `se0`    Base screen entry. This allows a greater range in capabilities, like offset tile-starts and palettes.
+  ## `clrs`   colors to use for the text. The palette entries used depends on `se0` and `bupofs`.
+  ## `bupofs` Flags for font bit-unpacking. Basically indicates pixel values (and hence palette use).
+  ## `font`   Font to initialize with.
+  ## `fn`     Glyph renderer.
+
+proc seErase*(left: int; top: int; right: int; bottom: int) {.importc: "se_erase", header: "tonc.h", noconv.}
   ## Erase part of the regular tilemap canvas.
-proc seDrawgW8H8*(gid: uint) {.importc: "se_drawg_w8h8", header: "tonc.h".}
+proc seDrawgW8H8*(gid: uint) {.importc: "se_drawg_w8h8", header: "tonc.h", noconv.}
   ## Character-plot for reg BGs using an 8x8 font.
-proc seDrawgW8H16*(gid: uint) {.importc: "se_drawg_w8h16", header: "tonc.h".}
+proc seDrawgW8H16*(gid: uint) {.importc: "se_drawg_w8h16", header: "tonc.h", noconv.}
   ## Character-plot for reg BGs using an 8x16 font.
-proc seDrawg*(gid: uint) {.importc: "se_drawg", header: "tonc.h".}
+proc seDrawg*(gid: uint) {.importc: "se_drawg", header: "tonc.h", noconv.}
   ## Character-plot for reg BGs, any sized font.
-proc seDrawgS*(gid: uint) {.importc: "se_drawg_s", header: "tonc.h".}
+proc seDrawgS*(gid: uint) {.importc: "se_drawg_s", header: "tonc.h", noconv.}
   ## Character-plot for reg BGs, any sized, vertically tiled font.
 
 # Affine tilemaps
 # ---------------
-proc tteInitAse*(bgnr: int; bgcnt: uint16; ase0: uint8; clrs: uint32; bupofs: uint32; font: Font; fn: FnDrawg) {.importc: "tte_init_ase", header: "tonc.h".}
+proc tteInitAse*(bgnr: int; bgcnt: uint16; ase0: uint8; clrs: uint32; bupofs: uint32; font: Font = addr(fwfDefault); fn: FnDrawg = nil) {.importc: "tte_init_ase", header: "tonc.h".}
   ## 
-proc aseErase*(left: int; top: int; right: int; bottom: int) {.importc: "ase_erase", header: "tonc.h".}
+proc aseErase*(left: int; top: int; right: int; bottom: int) {.importc: "ase_erase", header: "tonc.h", noconv.}
   ## Erase part of the affine tilemap canvas.
-proc aseDrawgW8H8*(gid: uint) {.importc: "ase_drawg_w8h8", header: "tonc.h".}
+proc aseDrawgW8H8*(gid: uint) {.importc: "ase_drawg_w8h8", header: "tonc.h", noconv.}
   ## Character-plot for affine BGs using an 8x16 font.
-proc aseDrawgW8H16*(gid: uint) {.importc: "ase_drawg_w8h16", header: "tonc.h".}
+proc aseDrawgW8H16*(gid: uint) {.importc: "ase_drawg_w8h16", header: "tonc.h", noconv.}
   ## Character-plot for affine BGs using an 8x16 font.
-proc aseDrawg*(gid: uint) {.importc: "ase_drawg", header: "tonc.h".}
+proc aseDrawg*(gid: uint) {.importc: "ase_drawg", header: "tonc.h", noconv.}
   ## Character-plot for affine Bgs, any size.
-proc aseDrawgS*(gid: uint) {.importc: "ase_drawg_s", header: "tonc.h".}
+proc aseDrawgS*(gid: uint) {.importc: "ase_drawg_s", header: "tonc.h", noconv.}
   ## Character-plot for affine BGs, any sized, vertically oriented font.
 
 # 4bpp tiles
@@ -359,7 +365,7 @@ proc aseDrawgS*(gid: uint) {.importc: "ase_drawg_s", header: "tonc.h".}
 # versus row-major. Since column-major is 'better', this is
 # considered the primary sub-system for tiled text.
 
-proc tteInitChr4c*(bgnr: int; bgcnt, se0: uint16; cattrs, clrs: uint32; font: Font; fn: FnDrawg) {.importc: "tte_init_chr4c", header: "tonc.h".}
+proc tteInitChr4c*(bgnr: int; bgcnt, se0: uint16; cattrs, clrs: uint32; font: Font = addr(vwfDefault); fn: FnDrawg = nil) {.importc: "tte_init_chr4c", header: "tonc.h".}
   ## Initialize text system for 4bpp tiled, column-major surfaces.
   ## `bgnr`   Background number.
   ## `bgcnt`  Background control flags.
@@ -367,19 +373,19 @@ proc tteInitChr4c*(bgnr: int; bgcnt, se0: uint16; cattrs, clrs: uint32; font: Fo
   ## `cattrs` Color attributes; one byte per attr.
   ## `clrs`   ink(/shadow) colors.
   ## `font`   Font to initialize with.
-  ## `proc`   Glyph renderer
+  ## `fn`     Glyph renderer
   
-proc chr4cErase*(left, top, right, bottom: int) {.importc: "chr4c_erase", header: "tonc.h".}
+proc chr4cErase*(left, top, right, bottom: int) {.importc: "chr4c_erase", header: "tonc.h", noconv.}
   ## Erase part of the 4bpp text canvas.
 
-proc chr4cDrawgB1CTS*(gid: uint) {.importc: "chr4c_drawg_b1cts_fast", header: "tonc.h".}
+proc chr4cDrawgB1CTS*(gid: uint) {.importc: "chr4c_drawg_b1cts_fast", header: "tonc.h", noconv.}
   ## Render 1bpp fonts to 4bpp tiles, column-major
 
-proc chr4cDrawgB4CTS*(gid: uint) {.importc: "chr4c_drawg_b4cts_fast", header: "tonc.h".}
+proc chr4cDrawgB4CTS*(gid: uint) {.importc: "chr4c_drawg_b4cts_fast", header: "tonc.h", noconv.}
   ## Render 4bpp fonts to 4bpp tiles, column-major
 
 
-proc tteInitChr4r*(bgnr: int; bgcnt: uint16; se0: uint16; cattrs: uint32; clrs: uint32; font: Font; fn: FnDrawg) {.importc: "tte_init_chr4r", header: "tonc.h".}
+proc tteInitChr4r*(bgnr: int; bgcnt: uint16; se0: uint16; cattrs: uint32; clrs: uint32; font: Font = addr(vwfDefault); fn: FnDrawg = nil) {.importc: "tte_init_chr4r", header: "tonc.h".}
   ## Initialize text system for 4bpp tiled, column-major surfaces.
   ## `bgnr`   Background number.
   ## `bgcnt`  Background control flags.
@@ -387,12 +393,12 @@ proc tteInitChr4r*(bgnr: int; bgcnt: uint16; se0: uint16; cattrs: uint32; clrs: 
   ## `cattrs` Color attributes; one byte per attr.
   ## `clrs`   ink(/shadow) colors.
   ## `font`   Font to initialize with.
-  ## `proc`   Glyph renderer
+  ## `fn`     Glyph renderer
 
-proc chr4rErase*(left, top, right, bottom: int) {.importc: "chr4r_erase", header: "tonc.h".}
+proc chr4rErase*(left, top, right, bottom: int) {.importc: "chr4r_erase", header: "tonc.h", noconv.}
   ## Erase part of the 4bpp text canvas.
 
-proc chr4rDrawgB1CTS*(gid: uint) {.importc: "chr4r_drawg_b1cts_fast", header: "tonc.h".}
+proc chr4rDrawgB1CTS*(gid: uint) {.importc: "chr4r_drawg_b1cts_fast", header: "tonc.h", noconv.}
   ## Render 1bpp fonts to 4bpp tiles, row-major
 
 
@@ -402,52 +408,52 @@ proc chr4rDrawgB1CTS*(gid: uint) {.importc: "chr4r_drawg_b1cts_fast", header: "t
 # Note that TTE does not update the pointer of the surface for
 #  page-flipping. You'll have to do that yourself.
 
-proc tteInitBmp*(vmode: int; font: Font; fn: FnDrawg) {.importc: "tte_init_bmp", header: "tonc.h".}
+proc tteInitBmp*(vmode: int; font: Font = addr(vwfDefault); fn: FnDrawg = nil) {.importc: "tte_init_bmp", header: "tonc.h".}
   ## Initialize text system for bitmap fonts.
   ## `vmode` Video mode (3,4 or 5).
   ## `font`  Font to initialize with.
-  ## `proc`  Glyph renderer.
+  ## `fn`    Glyph renderer.
 
 # 8bpp bitmaps
-proc bmp8Erase*(left, top, right, bottom: int) {.importc: "bmp8_erase", header: "tonc.h".}
-proc bmp8Drawg*(gid: uint) {.importc: "bmp8_drawg", header: "tonc.h".}
+proc bmp8Erase*(left, top, right, bottom: int) {.importc: "bmp8_erase", header: "tonc.h", noconv.}
+proc bmp8Drawg*(gid: uint) {.importc: "bmp8_drawg", header: "tonc.h", noconv.}
   ## Linear 8bpp bitmap glyph renderer, opaque.
   ## `gid`  Character to plot.
   ## Font params: bitmapped, 8bpp.
   ## Untested
-proc bmp8DrawgT*(gid: uint) {.importc: "bmp8_drawg_t", header: "tonc.h".}
+proc bmp8DrawgT*(gid: uint) {.importc: "bmp8_drawg_t", header: "tonc.h", noconv.}
   ## Linear 8bpp bitmap glyph renderer, transparent.
   ## `gid` Character to plot.
   ## Font params: bitmapped, 8bpp. special cattr is transparent.
   ## Untested
-proc bmp8DrawgB1CTS*(gid: uint) {.importc: "bmp8_drawg_b1cts_fast", header: "tonc.h".}
+proc bmp8DrawgB1CTS*(gid: uint) {.importc: "bmp8_drawg_b1cts_fast", header: "tonc.h", noconv.}
   ## 8bpp bitmap glyph renderer. 1->8bpp recolored, any size, transparent
-proc bmp8DrawgB1COS*(gid: uint) {.importc: "bmp8_drawg_b1cos", header: "tonc.h".}
+proc bmp8DrawgB1COS*(gid: uint) {.importc: "bmp8_drawg_b1cos", header: "tonc.h", noconv.}
   ## 8bpp bitmap glyph renderer. 1->8bpp recolored, any size, opaque
 
 # 16bpp bitmaps
-proc bmp16Erase*(left, top, right, bottom: int) {.importc: "bmp16_erase", header: "tonc.h".}
+proc bmp16Erase*(left, top, right, bottom: int) {.importc: "bmp16_erase", header: "tonc.h", noconv.}
   ## Erase part of the 16bpp text canvas.
   
-proc bmp16Drawg*(gid: uint) {.importc: "bmp16_drawg", header: "tonc.h".}
+proc bmp16Drawg*(gid: uint) {.importc: "bmp16_drawg", header: "tonc.h", noconv.}
   ## Linear 16bpp bitmap glyph renderer, opaque.
   ## Works on a 16 bpp bitmap.
   ## `gid` Character to plot.
   ## Font params: bitmapped, 16bpp.
   
-proc bmp16DrawgT*(gid: uint) {.importc: "bmp16_drawg_t", header: "tonc.h".}
+proc bmp16DrawgT*(gid: uint) {.importc: "bmp16_drawg_t", header: "tonc.h", noconv.}
   ## Linear 16bpp bitmap glyph renderer, transparent.
   ## Works on a 16 bpp bitmap
   ## `gid` Character to plot.
   ## Font params: bitmapped, 16bpp. special cattr is transparent.
   
-proc bmp16DrawgB1CTS*(gid: uint) {.importc: "bmp16_drawg_b1cts", header: "tonc.h".}
+proc bmp16DrawgB1CTS*(gid: uint) {.importc: "bmp16_drawg_b1cts", header: "tonc.h", noconv.}
   ## Linear bitmap, 16bpp transparent character plotter.
   ## Works on a 16 bpp bitmap (mode 3 or 5).
   ## `gid` Character to plot.
   ## Font req: Any width/height. 1bpp font, 8px strips.
   
-proc bmp16DrawgB1COS*(gid: uint) {.importc: "bmp16_drawg_b1cos", header: "tonc.h".}
+proc bmp16DrawgB1COS*(gid: uint) {.importc: "bmp16_drawg_b1cos", header: "tonc.h", noconv.}
   ## Linear bitmap, 16bpp opaque character plotter.
   ## Works on a 16 bpp bitmap (mode 3 or 5).
   ## `gid` Character to plot.
@@ -457,7 +463,7 @@ proc bmp16DrawgB1COS*(gid: uint) {.importc: "bmp16_drawg_b1cos", header: "tonc.h
 # -------
 # Text using object (1 glyph per object)
 
-proc tteInitObj*(dst: ObjAttrPtr; attr0, attr1, attr2: uint32; clrs: uint32, bupofs: uint32; font: Font; fn: FnDrawg) {.importc: "tte_init_obj", header: "tonc.h".}
+proc tteInitObj*(dst: ObjAttrPtr; attr0, attr1, attr2: uint32; clrs: uint32, bupofs: uint32; font: Font = addr(fwfDefault); fn: FnDrawg = nil) {.importc: "tte_init_obj", header: "tonc.h".}
   ## `obj`    Destination object.
   ## `attr0`  Base obj.attr0. 
   ## `attr1`  Base obj.attr1.
@@ -465,10 +471,25 @@ proc tteInitObj*(dst: ObjAttrPtr; attr0, attr1, attr2: uint32; clrs: uint32, bup
   ## `clrs`   Colors to use for the text. The palette entries used depends on `attr2` and `bupofs`.
   ## `bupofs` Flags for font bit-unpacking. Basically indicates pixel values (and hence palette use).
   ## `font`   Font to initialize with.
-  ## `proc`   Character plotting procedure.
+  ## `fn`     Character plotting procedure.
   ## Note: The TTE-obj system uses the surface differently than then rest. Be careful when modifying the surface data.
 
-proc objErase*(left, top, right, bottom: int) {.importc: "obj_erase", header: "tonc.h".}
+proc objErase*(left, top, right, bottom: int) {.importc: "obj_erase", header: "tonc.h", noconv.}
   ## Unwind the object text-buffer
-proc objDrawg*(gid: uint) {.importc: "obj_drawg", header: "tonc.h".}
+proc objDrawg*(gid: uint) {.importc: "obj_drawg", header: "tonc.h", noconv.}
   ## Character-plot for objects. 
+
+
+
+# Extras
+# ------
+
+proc ink*(tc: TextContext): uint16 =  tc.cattr[TTE_INK]
+proc shadow*(tc: TextContext): uint16 =  tc.cattr[TTE_SHADOW]
+proc paper*(tc: TextContext): uint16 =  tc.cattr[TTE_PAPER]
+proc special*(tc: TextContext): uint16 =  tc.cattr[TTE_SPECIAL]
+
+proc `ink=`*(tc: TextContext, v: uint16) =  tc.cattr[TTE_INK] = v
+proc `shadow=`*(tc: TextContext, v: uint16) =  tc.cattr[TTE_SHADOW] = v
+proc `paper=`*(tc: TextContext, v: uint16) =  tc.cattr[TTE_PAPER] = v
+proc `special=`*(tc: TextContext, v: uint16) =  tc.cattr[TTE_SPECIAL] = v

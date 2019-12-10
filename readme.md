@@ -41,4 +41,3 @@ The examples in the repo already do this, so you can just copy those :)
 
 - More examples?
 - Generate documentation?
-- Clean up `surface.nim`
