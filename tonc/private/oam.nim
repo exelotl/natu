@@ -12,28 +12,28 @@ proc oamClear*() {.importc: "OAM_CLEAR", header: "tonc.h".}
 
 # Obj attr only
 
-proc setAttr*(obj: ObjAttrPtr; a0, a1, a2: uint16) =
+proc setAttr*(obj: ObjAttrPtr; a0, a1, a2: uint16) {.inline.} =
   ## Set the attributes of an object
   obj.attr0 = a0
   obj.attr1 = a1
   obj.attr2 = a2
 
-proc setAttr*(obj: var ObjAttr; a0, a1, a2: uint16) =
+proc setAttr*(obj: var ObjAttr; a0, a1, a2: uint16) {.inline.} =
   ## Set the attributes of an object
   setAttr(addr obj, a0, a1, a2)
 
 proc setPos*(obj: ObjAttrPtr; x, y: int) {.importc: "obj_set_pos", header: "tonc.h".}
   ## Set the position of an object
   
-proc setPos*(obj: var ObjAttr; x, y: int) =
+proc setPos*(obj: var ObjAttr; x, y: int) {.inline.} =
   ## Set the position of an object
   setPos(addr obj, x, y)
 
-proc setPos*(obj: ObjAttrPtr; pos: Vec2i) =
+proc setPos*(obj: ObjAttrPtr; pos: Vec2i) {.inline.} =
   ## Set the position of an object using a vector
   setPos(obj, pos.x, pos.y)
   
-proc setPos*(obj: var ObjAttr; pos: Vec2i) =
+proc setPos*(obj: var ObjAttr; pos: Vec2i) {.inline.} =
   ## Set the position of an object using a vector
   setPos(addr obj, pos.x, pos.y)
 
@@ -49,7 +49,7 @@ proc setPos*(obj: var ObjAttr; pos: Vec2i) =
 proc hide*(oatr: ObjAttrPtr) {.importc: "obj_hide", header: "tonc.h".}
   ## Hide an object
 
-proc hide*(oatr: var ObjAttr) =
+proc hide*(oatr: var ObjAttr) {.inline.} =
   hide(addr oatr)
 
 proc unhide*(obj: ObjAttrPtr; mode: uint16) {.importc: "obj_unhide", header: "tonc.h".}
@@ -57,15 +57,15 @@ proc unhide*(obj: ObjAttrPtr; mode: uint16) {.importc: "obj_unhide", header: "to
   ## `obj`  Object to unhide.
   ## `mode` Object mode to unhide to. Necessary because this affects the affine-ness of the object.
 
-proc unhide*(oatr: var ObjAttr) =
+proc unhide*(oatr: var ObjAttr)  {.inline.} =
   hide(addr oatr)
 
 func getSizeImpl(obj: ObjAttrPtr): ptr array[2, uint8] {.importc: "obj_get_size", header: "tonc.h".}
 
-func getSize*(obj: ObjAttrPtr): tuple[w,h:int] =
+func getSize*(obj: ObjAttrPtr): tuple[w,h:int] {.inline.} =
   ## Get the width and height of an object in pixels
   let arr = getSizeImpl(obj)
-  return (arr[0].int, arr[1].int)
+  (arr[0].int, arr[1].int)
 
 template getSize*(obj: ObjAttr): tuple[w,h:int] =
   ## Get the width and height of an object in pixels
@@ -147,11 +147,16 @@ proc affRotscale*(oaff: var ObjAffine; affSrc: ptr AffSrc) {.importc: "obj_aff_r
 # proc affRotscale*(oaff: var ObjAffine; sx, sy: Fixed; alpha: uint16) = affRotscale(addr oaff, sx, sy, alpha)
 # proc affRotscale*(oaff: var ObjAffine; affSrc: ptr AffSrc) = affRotscale(addr oaff, affSrc)
 
-# [not sure what these do?]
+
 proc affPreMul*(dst: var ObjAffine, src: ObjAffinePtr) {.importc: "obj_aff_premul", header: "tonc.h".}
-  ## Pre-multiply `dst` by `src: D = S*D
+  ## Pre-multiply the matrix `dst` by `src`
+  ## i.e. ::
+  ##   dst = src * dst
+
 proc affPostMul*(dst: var ObjAffine, src: ObjAffinePtr) {.importc: "obj_aff_postmul", header: "tonc.h".}
-  ## Post-multiply `dst` by `src`: D = D*S
+  ## Post-multiply the matrix `dst` by `src`
+  ## i.e. ::
+  ##   dst = dst * src
 
 template affPreMul*(dst: var ObjAffine, src: ObjAffine) = affPreMul(dst, unsafeAddr src)
 template affPostMul*(dst: var ObjAffine, src: ObjAffine) = affPostMul(dst, unsafeAddr src)
