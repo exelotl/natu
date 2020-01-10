@@ -155,21 +155,21 @@ type
     speed* {.importc: "speed".}: uint8                 ## speed of module (ticks/row)
     active* {.importc: "active".}: uint8               ## module is active
     bpm* {.importc: "bpm".}: uint8                     ## tempo of module
-
+  
   MmVoice* {.importc: "mm_voice", header:"mm_types.h", bycopy.} = object
     # data source information
     source* {.importc: "source".}: pointer        ## address to sample data
     length* {.importc: "length".}: uint32         ## length of sample data OR loop length (expressed in WORDS)
     loopStart* {.importc: "loop_start".}: uint16  ## loop start position (expressed in WORDS)
-
+    
     timer* {.importc: "timer".}: uint16   ## frequency divider
     flags* {.importc: "flags".}: uint8    ## update flags
     format* {.importc: "format".}: uint8  ## source format (0: 8-bit, 1: 16-bit, 2: adpcm)
     repeat* {.importc: "repeat".}: uint8  ## repeat mode (0: manual, 1: forward loop, 2: one shot)
-                                       
+    
     volume* {.importc: "volume".}: uint8   ## volume setting (0->127)
     divider* {.importc: "divider".}: uint8 ## divider setting (0->3 = /1, /2, /4, /16)
-                                         
+    
     panning* {.importc: "panning".}: uint8 ## panning setting (0->127)
     index* {.importc: "index".}: uint8     ## index of voice (0->15)
 
@@ -201,20 +201,36 @@ const
 
 proc init*(soundbank: pointer; channels: uint) {.importc:"mmInitDefault", header:"maxmod.h".}
   ## Initialize Maxmod with default settings.
+  ## `soundbank` : Memory address of soundbank (in ROM).
+  ##               A soundbank file can be created with the Maxmod Utility.
+  ## `channels` : Number of module/mixing channels to allocate.
+  ##              Must be greater or equal to the channel count in your modules.
+  ## For GBA, this function uses these default settings (and allocates memory):
+  ##  16KHz mixing rate, channel buffers in EWRAM, wave buffer in EWRAM, and
+  ##  mixing buffer in IWRAM.
 
 proc init*(setup: ptr MmGbaSystem) {.importc:"mmInit", header:"maxmod.h".}
   ## Initialize system. Call once at startup.
-    
+
 proc vblank*() {.importc:"mmVBlank", header:"maxmod.h", noconv.}
   ## Must be linked to the VBlank IRQ.
-  
+  ## This function must be linked directly to the VBlank IRQ.
+  ## During this function, the sound DMA is reset. The timing is extremely critical, so
+  ##  make sure that it is not interrupted, otherwise garbage may be heard in the output.
+  ## If you need another function to execute after this process is finished, use
+  ##  `setVBlankHandler` to install a your handler. 
+
 proc setVBlankHandler*(function: MmFnPtr) {.importc:"mmSetVBlankHandler", header:"maxmod.h".}
   ## Install user vblank handler
-  ## function : Pointer to your VBlank handler.
+  ## `function` : Pointer to your VBlank handler.
 
 proc setEventHandler*(handler: MmCallback) {.importc:"mmSetEventHandler", header:"maxmod.h".}
   ## Install handler to receive song events.
-  
+  ## Use this function to receive song events. Song events occur in two situations.
+  ## One is by special pattern data in a module (which is triggered by SFx/EFx commands).
+  ## The other occurs when a module finishes playback (in MM_PLAY_ONCE mode).
+  ## Note for GBA projects: During the song event, Maxmod is in the middle of module processing. Avoid using any Maxmod related functions during your song event handler since they may cause problems in this situation. 
+
 proc frame*() {.importc:"mmFrame", header:"maxmod.h".}
   ## Work routine. _Must_ be called every frame.
 
@@ -335,7 +351,7 @@ const MMCB_SONGFINISHED* = 0x0000002B
 
 import macros, strutils
 
-proc toCamelCase(name:string): string {.compileTime.} =
+proc toCamelCase(name:string): string =
   var upper = false
   for c in name:
     if c == '_': upper = true
@@ -344,6 +360,41 @@ proc toCamelCase(name:string): string {.compileTime.} =
       upper = false
     else:
       result.add(c.toLowerAscii())
+
+proc getSoundName*(name: string, camelCase = false): string =
+  ## Convert a sound filepath to a variable name
+  ##
+  ## By default, the mmutil naming convention is used.
+  ## e.g. "songs/foo.xm" -> "MOD_FOO"
+  ## 
+  ## Pass `camelCase=true` for a more friendly name.
+  ## e.g. "songs/foo.xm" -> "modFoo"
+  ##
+  ## Note: this procedure is meant for your macros and project tools,
+  ##       not for use at runtime on the GBA.
+  
+  var prefix = ""
+  if name.endsWith(".mod") or
+  name.endsWith(".xm") or
+  name.endsWith(".s3m") or
+  name.endsWith(".it"):
+    prefix = "MOD_"
+  elif name.endsWith(".wav"):
+    prefix = "SFX_"
+  else:
+    return ""
+  
+  var name = name.split("/")[^1]   # remove directory
+  name = name.split(".")[0]        # remove full extension
+  name = prefix & name.toUpperAscii()
+  
+  # replace non-alphanumeric chars with '_'
+  for i in 0..<name.len:
+    if name[i] notin 'A'..'Z' and name[i] notin '0'..'9':
+      name[i] = '_'
+  
+  return (if camelCase: name.toCamelCase() else: name)
+
 
 macro importSoundbank*(dir: static[string] = "audio", camelCase: static[bool] = true) =
   ## Generate declarations for the soundbank and music/effect IDs.
@@ -358,22 +409,9 @@ macro importSoundbank*(dir: static[string] = "audio", camelCase: static[bool] = 
     if name == "" or name.startsWith("ls: cannot access"):
       continue
     
-    var prefix = ""
-    if name.endsWith(".mod") or name.endsWith(".xm") or name.endsWith(".s3m") or name.endsWith(".it"):
-      prefix = "MOD_"
-    elif name.endsWith(".wav"):
-      prefix = "SFX_"
-    else:
+    var name = getSoundName(name)
+    if name == "":
       continue
-    
-    var name = name.split("/")[^1]   # remove directory
-    name = name.split(".")[0]        # remove full extension
-    name = prefix & name.toUpperAscii()
-    
-    # replace non-alphanumeric chars with '_'
-    for i in 0..<name.len:
-      if name[i] notin 'A'..'Z' and name[i] notin '0'..'9':
-        name[i] = '_'
     
     let soundIdent = ident(if camelCase: (name.toCamelCase()) else: (name))
     let soundStrLit = newStrLitNode(name)
