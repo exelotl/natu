@@ -18,8 +18,8 @@ Note:
 type
   SurfaceBmp16* = distinct Surface  ## 16bpp linear (bitmap/tilemap).
   SurfaceBmp8* = distinct Surface   ## 8bpp linear (bitmap/tilemap).
-  SurfaceChr4c* = distinct Surface  ## 4bpp tiles, row-major.
-  SurfaceChr4r* = distinct Surface  ## 4bpp tiles, column-major.
+  SurfaceChr4r* = distinct Surface  ## 4bpp tiles, row-major.
+  SurfaceChr4c* = distinct Surface  ## 4bpp tiles, column-major.
   
   Surface* {.importc: "TSurface", header: "tonc.h", bycopy.} = object
     data* {.importc: "data".}: ptr uint8     ## Surface data pointer.
@@ -42,7 +42,7 @@ type
   
   SomeSurface* = Surface | SurfaceBmp16 | SurfaceBmp8 | SurfaceChr4c | SurfaceChr4r
   
-  SurfacePtr = ptr Surface
+  SurfacePtr* = ptr Surface
   SurfaceBmp16Ptr* = ptr SurfaceBmp16
   SurfaceBmp8Ptr* = ptr SurfaceBmp8
   SurfaceChr4cPtr* = ptr SurfaceChr4c
@@ -75,6 +75,41 @@ type
     blit* {.importc: "blit".}: FnBlit
     flood* {.importc: "flood".}: FnFlood
 
+# uh well this sucks...
+template borrowFields(name:untyped) =
+  template data*(s:`name ptr`): ptr uint8 =     s.SurfacePtr.data
+  template pitch*(s:`name ptr`): uint32 =       s.SurfacePtr.pitch
+  template width*(s:`name ptr`): uint16 =       s.SurfacePtr.width
+  template height*(s:`name ptr`): uint16 =      s.SurfacePtr.height
+  template bpp*(s:`name ptr`): uint8 =          s.SurfacePtr.bpp
+  template palSize*(s:`name ptr`): uint16 =     s.SurfacePtr.palSize
+  template palData*(s:`name ptr`): ptr Color =  s.SurfacePtr.palData
+  template `data=`*(s:`name ptr`, v: ptr uint8) =    s.SurfacePtr.data = v
+  template `pitch=`*(s:`name ptr`, v: uint32) =      s.SurfacePtr.pitch = v
+  template `width=`*(s:`name ptr`, v: uint16) =      s.SurfacePtr.width = v
+  template `height=`*(s:`name ptr`, v: uint16) =     s.SurfacePtr.height = v
+  template `bpp=`*(s:`name ptr`, v: uint8) =         s.SurfacePtr.bpp = v
+  template `palSize=`*(s:`name ptr`, v: uint16) =    s.SurfacePtr.palSize = v
+  template `palData=`*(s:`name ptr`, v: ptr Color) = s.SurfacePtr.palData = v
+  template data*(s:`name`): ptr uint8 =     s.Surface.data
+  template pitch*(s:`name`): uint32 =       s.Surface.pitch
+  template width*(s:`name`): uint16 =       s.Surface.width
+  template height*(s:`name`): uint16 =      s.Surface.height
+  template bpp*(s:`name`): uint8 =          s.Surface.bpp
+  template palSize*(s:`name`): uint16 =     s.Surface.palSize
+  template palData*(s:`name`): ptr Color =  s.Surface.palData
+  template `data=`*(s:`name`, v: ptr uint8) =    s.Surface.data = v
+  template `pitch=`*(s:`name`, v: uint32) =      s.Surface.pitch = v
+  template `width=`*(s:`name`, v: uint16) =      s.Surface.width = v
+  template `height=`*(s:`name`, v: uint16) =     s.Surface.height = v
+  template `bpp=`*(s:`name`, v: uint8) =         s.Surface.bpp = v
+  template `palSize=`*(s:`name`, v: uint16) =    s.Surface.palSize = v
+  template `palData=`*(s:`name`, v: ptr Color) = s.Surface.palData = v
+
+borrowFields SurfaceBmp16
+borrowFields SurfaceBmp8
+borrowFields SurfaceChr4r
+borrowFields SurfaceChr4c
 
 # Global Surfaces
 # ---------------
