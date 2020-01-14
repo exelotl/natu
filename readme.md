@@ -1,29 +1,23 @@
-nim-tonc
-========
+<p align="center"><img width="98" height="76" src="https://user-images.githubusercontent.com/569607/72299597-32c54600-3659-11ea-807f-0b1b0b3ad7c6.png" alt="Natu GBA Logo"></p>
 
-This repo contains Nim bindings for the awesome libtonc by J. Vijn (cearn).
+Natu is a package for making Game Boy Advance games in [Nim](https://nim-lang.org/).
 
-Libtonc provides everything you need to program the Game Boy Advance, and is the accompanying material to [Tonc](https://www.coranac.com/tonc/text/toc.htm) which is the de-facto tutorial for GBA development.
+Primarily a wrapper for [libtonc](https://www.coranac.com/tonc/text/), we are now growing in our own direction: ditching some old conventions to be more Nim-friendly, and adding more libraries.
 
 ### Features
 
 - Full GBA memory map + flag definitions
 - BIOS routines
 - Interrupt manager
-- A very powerful text system
+- A powerful text system (TTE)
 - Surfaces (draw to tiles like a canvas)
 - Efficient copy routines
-- Random number generator
 - Sin/Cos/Div LUTs + other math functions
+- Fixed-point numbers, 2D vector types
+- Random number generator
 - Hardware sprites, affine matrix helpers
 - Color/palette utilities
 - Button states (hit, down, released)
-
-### Goodies
-
-Some things that differ from the original libtonc:
-
-- Pleasant fixed-point and 2D vector types (taking advantage of Nim features)
 - mGBA logging functions
 - Maxmod bindings for music/sfx
 
@@ -37,7 +31,13 @@ For developing with Nim you can use the standard devkitARM makefiles / project s
 
 The examples in the repo already do this, so you can just copy those :)
 
-### Todo
+### Thanks
 
-- More examples?
-- Generate documentation?
+[tonc](https://www.coranac.com/tonc/text/) + libtonc by cearn  
+[devkitARM](https://devkitpro.org/) toolchain maintained by wintermute  
+[maxmod](https://maxmod.devkitpro.org/) sound system by mukunda johnson  
+[mGBA](https://mgba.io/) by endrift  
+natu gba logo by [iamrifki](https://iamrifki.github.io/)  
+logo font: [gelatin mono](https://lorenschmidt.itch.io/gelatin-mono) by loren schmidt  
+
+<img src="https://img.pokemondb.net/sprites/ruby-sapphire/normal/natu.png" alt="Natu" title="noot noot!">

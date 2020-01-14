@@ -58,8 +58,8 @@ void mgba_printf_default(const char* str, ...) {
 
 
 var REG_DEBUG_ENABLE {.importc:"REG_DEBUG_ENABLE", nodecl.}: uint16
-var REG_DEBUG_FLAGS {.importc:"REG_DEBUG_FLAGS", nodecl.}: uint16
-var REG_DEBUG_STRING {.importc:"REG_DEBUG_STRING", nodecl.}: cstring
+# var REG_DEBUG_FLAGS {.importc:"REG_DEBUG_FLAGS", nodecl.}: uint16
+# var REG_DEBUG_STRING {.importc:"REG_DEBUG_STRING", nodecl.}: cstring
 
 type LogLevel* {.size: sizeof(cint).} = enum
   LOG_FATAL = 0

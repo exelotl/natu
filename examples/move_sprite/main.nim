@@ -16,7 +16,7 @@
 ## This produces two binary files "ship.img.bin" and "ship.pal.bin".
 ## We can use staticRead() to embed these into our program at compile-time.
 
-import tonc
+import natu
 
 const shipImg: cstring = staticRead("ship.img.bin")
 const shipPal: cstring = staticRead("ship.pal.bin")

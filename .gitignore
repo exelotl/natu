@@ -1,6 +1,9 @@
 .vscode/
 examples/*/build/
 examples/*/source/
+examples/*/nimcache/
 *.elf
+*.elf.map
 *.gba
 *.sav
+*.DS_Store

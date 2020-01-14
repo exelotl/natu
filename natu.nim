@@ -1,0 +1,12 @@
+include natu/private/types
+include natu/private/memmap
+include natu/private/memdef
+include natu/private/bios
+include natu/private/core
+include natu/private/input
+include natu/private/irq
+include natu/private/math 
+include natu/private/oam
+include natu/private/surface
+include natu/private/tte
+include natu/private/video

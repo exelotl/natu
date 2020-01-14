@@ -1,5 +1,5 @@
-import tonc
-import tonc/maxmod
+import natu
+import natu/maxmod
 
 importSoundbank()
 # Creates the following definitions:

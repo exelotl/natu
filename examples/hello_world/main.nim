@@ -1,4 +1,4 @@
-import tonc
+import natu
 
 proc main() =
   
