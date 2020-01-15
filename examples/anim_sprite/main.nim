@@ -7,6 +7,9 @@
 ## - In VRAM, we allocate enough space for 1 frame of animation.
 ## - Each VBlank, we copy the current frame into this space, replacing the previous contents.
 ## 
+## This is ideal for sprites like the player character, who may have hundreds of frames of animation,
+##  which would not all fit into VRAM at once.
+##
 ## For a more thorough breakdown of this approach, see:
 ## https://pineight.com/gba/managing-sprite-vram.txt
 ##
@@ -39,21 +42,23 @@ type
 
 # Use emit to produce C code.
 {.emit:"""
-static const AnimData animIdle = {
+static const AnimData animIdleData = {
   .frames = (int[]){1,3,4,5},
   .len = 4,
   .speed = 7,
 };
-static const AnimData animWalk = {
+static const AnimData animWalkData = {
   .frames = (int[]){13,14,15,16,17,18},
   .len = 6,
   .speed = 4,
 };
+static const AnimData *animIdle = &animIdleData;
+static const AnimData *animWalk = &animWalkData;
 """.}
 
 # Bring the variables from C back into Nim
-var animIdle {.importc, nodecl.}: AnimData
-var animWalk {.importc, nodecl.}: AnimData
+var animIdle {.importc, nodecl.}: AnimDataPtr
+var animWalk {.importc, nodecl.}: AnimDataPtr
 
 
 # Animation state
@@ -65,16 +70,16 @@ type Anim {.bycopy.} = object
   pos: int
   timer: int
 
-proc initAnim*(data: AnimDataPtr): Anim {.noinit.} =
+proc initAnim(data: AnimDataPtr): Anim {.noinit.} =
   result.data = data
   result.timer = data.speed + 1
   result.pos = 0
 
-template frame*(a: Anim): int =
+template frame(a: Anim): int =
   ## Get the current frame number within the sprite sheet.
   a.data.frames[a.pos]
 
-proc update*(a: var Anim) =
+proc update(a: var Anim) =
   ## Progress anim timer, advance to the next frame if necessary.
   if a.timer > 0:
     dec a.timer
@@ -86,17 +91,17 @@ proc update*(a: var Anim) =
 
 
 # Current animation state of the player:
-var anim = initAnim(addr animWalk)
+var anim = initAnim(animWalk)
 var cooldown = 180
 
 proc updatePlayerAnim() =
   # Toggle between walking and idling every 3 seconds
   dec cooldown
   if cooldown <= 0:
-    if anim.data == addr animIdle:
-      anim = initAnim(addr animWalk)
+    if anim.data == animIdle:
+      anim = initAnim(animWalk)
     else:
-      anim = initAnim(addr animIdle)
+      anim = initAnim(animIdle)
     cooldown = 180
   # Progress the animation
   anim.update()
