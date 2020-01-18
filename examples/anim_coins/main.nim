@@ -70,11 +70,13 @@ proc update(c: var Coin) =
 proc draw(c: var Coin, oid: var int) =
   # apply attributes to sprite in OAM
   # note that we point to a different tile in VRAM depending on which anim frame we are on.
-  objMem[oid].setAttr(
-    ATTR0_Y(c.pos.y.toInt().uint16 and ATTR0_Y_MASK) or ATTR0_4BPP or ATTR0_SQUARE,
-    ATTR1_X(c.pos.x.toInt().uint16 and ATTR1_X_MASK) or ATTR1_SIZE_16,
-    ATTR2_ID(tid.uint16 + c.animFrame.uint16 * coinNumTiles) or ATTR2_PALBANK(pal)
-  )
+  let obj = addr objMem[oid]
+  obj.clear()
+  obj.pos = vec2i(c.pos)
+  obj.size = s16x16
+  obj.tid = tid + c.animFrame * coinNumTiles
+  obj.pal = pal
+  
   inc oid
 
 

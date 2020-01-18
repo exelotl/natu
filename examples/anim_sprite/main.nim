@@ -131,23 +131,24 @@ proc main() =
   memcpy16(addr palObjBank[pal], addr twiggyPal, twiggyPal.len)
   
   # copy an initial frame into Object VRAM
-  memcpy32(addr tileMemObj[tid], addr twiggyTiles[0], frameWords)
+  memcpy32(addr tileMemObj[0][tid], addr twiggyTiles[0], frameWords)
   
   # hide all sprites
   for obj in mitems(oamMem):
     obj.hide()
   
   # set up sprite
-  oamMem[oid].setAttr(
-    ATTR0_Y(60) or ATTR0_4BPP or ATTR0_SQUARE,
-    ATTR1_X(100) or ATTR1_SIZE_32,
-    ATTR2_ID(tid) or ATTR2_PALBANK(pal)
-  )
+  let s = addr oamMem[oid]
+  s.clear()
+  s.pos = vec2i(100, 60)
+  s.size = s32x64
+  s.tid = tid
+  s.pal = pal
   
   while true:
     updatePlayerAnim()
     VBlankIntrWait()
     # Copy current frame of animation into Object VRAM (replacing the old frame)
-    memcpy32(addr tileMemObj[tid], addr twiggyTiles[anim.frame * frameWords], frameWords)
+    memcpy32(addr tileMemObj[0][tid], addr twiggyTiles[anim.frame * frameWords], frameWords)
 
 main()
