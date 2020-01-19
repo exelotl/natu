@@ -125,7 +125,9 @@ proc main() =
   irqEnable(II_VBLANK)
   
   # enable sprites with 1d mapping
-  REG_DISPCNT = DCNT_OBJ or DCNT_OBJ_1D
+  dispcnt.init:
+    obj = true
+    obj1d = true
   
   # copy palette into Object PAL RAM
   memcpy16(addr palObjBank[pal], addr twiggyPal, twiggyPal.len)
