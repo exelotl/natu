@@ -10,3 +10,4 @@ include natu/private/oam
 include natu/private/surface
 include natu/private/tte
 include natu/private/video
+include natu/private/reg

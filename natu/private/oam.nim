@@ -190,8 +190,8 @@ type
     omAffDbl = ATTR0_AFF_DBL
   
   ObjBpp* {.size:2.} = enum
-    bpp4 = ATTR0_4BPP
-    bpp8 = ATTR0_8BPP
+    obj4bpp = ATTR0_4BPP
+    obj8bpp = ATTR0_8BPP
   
   ObjSize* {.size:1.} = enum
     s8x8
