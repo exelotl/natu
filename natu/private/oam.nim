@@ -42,8 +42,8 @@ proc setPos*(obj: var ObjAttr; pos: Vec2i) {.inline.} =
 #  does explicitly using uint16 have a negative impact?
 # proc setPos*(obj: ObjAttrPtr; x, y: uint16) =
 #   ## Set the position of an object
-#   obj.attr0 = (obj.attr0 and (not ATTR0_Y_MASK)) or ((y shl ATTR0_Y_SHIFT) and ATTR0_Y_MASK)
-#   obj.attr1 = (obj.attr1 and (not ATTR1_X_MASK)) or ((x shl ATTR1_X_SHIFT) and ATTR1_X_MASK)
+#   obj.attr0 = (obj.attr0 and not ATTR0_Y_MASK) or ((y shl ATTR0_Y_SHIFT) and ATTR0_Y_MASK)
+#   obj.attr1 = (obj.attr1 and not ATTR1_X_MASK) or ((x shl ATTR1_X_SHIFT) and ATTR1_X_MASK)
 
 
 proc hide*(oatr: ObjAttrPtr) {.importc: "obj_hide", header: "tonc.h".}
@@ -189,11 +189,14 @@ type
     omHide = ATTR0_HIDE
     omAffDbl = ATTR0_AFF_DBL
   
-  ObjBpp* {.size:2.} = enum
-    obj4bpp = ATTR0_4BPP
-    obj8bpp = ATTR0_8BPP
+  ObjFxMode* {.size:2.} = enum
+    fxNormal = 0
+    fxBlend = ATTR0_BLEND
+    fxWin = ATTR0_WINDOW
   
   ObjSize* {.size:1.} = enum
+    ## Sprite size constants, high-level interface.
+    ## Each corresponds to a pair of fields (`size` in attr0, `shape` in attr1)
     s8x8
     s8x16
     s8x32
@@ -239,48 +242,52 @@ proc clear*(obj: var ObjAttr) {.inline.} = clear(addr obj)
 proc x*(obj: ObjAttr): int {.inline.} = (obj.attr1 and ATTR1_X_MASK).int
 proc y*(obj: ObjAttr): int {.inline.} = (obj.attr0 and ATTR0_Y_MASK).int
 proc pos*(obj: ObjAttr): Vec2i {.inline.} = vec2i(obj.x, obj.y)
-proc tid*(obj: ObjAttr): int {.inline.} = ((obj.attr2 and ATTR2_ID_MASK) shr ATTR2_ID_SHIFT).int
-proc pal*(obj: ObjAttr): int {.inline.} = ((obj.attr2 and ATTR2_PALBANK_MASK) shr ATTR2_PALBANK_SHIFT).int
-proc hflip*(obj: ObjAttr): bool {.inline.} = (obj.attr1 and ATTR1_HFLIP) != 0
-proc vflip*(obj: ObjAttr): bool {.inline.} = (obj.attr1 and ATTR1_VFLIP) != 0
 proc mode*(obj: ObjAttr): ObjMode {.inline.} = (obj.attr0 and ATTR0_MODE_MASK).ObjMode
-proc bpp*(obj: ObjAttr): ObjBpp {.inline.} = (obj.attr0 and ATTR0_8BPP).ObjBpp
+proc fx*(obj: ObjAttr): ObjFxMode {.inline.} = (obj.attr0 and (ATTR0_BLEND or ATTR0_WINDOW)).ObjFxMode
+proc is8bpp*(obj: ObjAttr): bool {.inline.} = (obj.attr0 and ATTR0_8BPP) != 0
 proc aff*(obj: ObjAttr): int {.inline.} = ((obj.attr1 and ATTR1_AFF_ID_MASK) shr ATTR1_AFF_ID_SHIFT).int
 proc size*(obj: ObjAttr): ObjSize {.inline.} = flagsToSize[obj.attr0 shr 14][obj.attr1 shr 14].ObjSize
+proc hflip*(obj: ObjAttr): bool {.inline.} = (obj.attr1 and ATTR1_HFLIP) != 0
+proc vflip*(obj: ObjAttr): bool {.inline.} = (obj.attr1 and ATTR1_VFLIP) != 0
+proc tid*(obj: ObjAttr): int {.inline.} = ((obj.attr2 and ATTR2_ID_MASK) shr ATTR2_ID_SHIFT).int
+proc pal*(obj: ObjAttr): int {.inline.} = ((obj.attr2 and ATTR2_PALBANK_MASK) shr ATTR2_PALBANK_SHIFT).int
 proc prio*(obj: ObjAttr): int {.inline.} = ((obj.attr2 and ATTR2_PRIO_MASK) shr ATTR2_PRIO_SHIFT).int
 
 # ptr setters
 
 proc `x=`*(obj: ObjAttrPtr, x: int) {.inline.} =
-  obj.attr1 = (x.uint16 and ATTR1_X_MASK) or (obj.attr1 and (not ATTR1_X_MASK))
+  obj.attr1 = (x.uint16 and ATTR1_X_MASK) or (obj.attr1 and not ATTR1_X_MASK)
 
 proc `y=`*(obj: ObjAttrPtr, y: int) {.inline.} =
-  obj.attr0 = (y.uint16 and ATTR0_Y_MASK) or (obj.attr0 and (not ATTR0_Y_MASK))
+  obj.attr0 = (y.uint16 and ATTR0_Y_MASK) or (obj.attr0 and not ATTR0_Y_MASK)
 
 proc `pos=`*(obj: ObjAttrPtr, v: Vec2i) {.inline.} =
   obj.x = v.x
   obj.y = v.y
 
 proc `tid=`*(obj: ObjAttrPtr, tid: int) {.inline.} =
-  obj.attr2 = ((tid.uint16 shl ATTR2_ID_SHIFT) and ATTR2_ID_MASK) or (obj.attr2 and (not ATTR2_ID_MASK))
+  obj.attr2 = ((tid.uint16 shl ATTR2_ID_SHIFT) and ATTR2_ID_MASK) or (obj.attr2 and not ATTR2_ID_MASK)
 
 proc `pal=`*(obj: ObjAttrPtr, pal: int) {.inline.} =
-  obj.attr2 = ((pal.uint16 shl ATTR2_PALBANK_SHIFT) and ATTR2_PALBANK_MASK) or (obj.attr2 and (not ATTR2_PALBANK_MASK))
+  obj.attr2 = ((pal.uint16 shl ATTR2_PALBANK_SHIFT) and ATTR2_PALBANK_MASK) or (obj.attr2 and not ATTR2_PALBANK_MASK)
 
 proc `hflip=`*(obj: ObjAttrPtr, v:bool) {.inline.} =
-  obj.attr1 = (v.uint16 shl 12) or (obj.attr1 and (not ATTR1_HFLIP))
+  obj.attr1 = (v.uint16 shl 12) or (obj.attr1 and not ATTR1_HFLIP)
   
 proc `vflip=`*(obj: ObjAttrPtr, v:bool) {.inline.} =
-  obj.attr1 = (v.uint16 shl 13) or (obj.attr1 and (not ATTR1_VFLIP))
+  obj.attr1 = (v.uint16 shl 13) or (obj.attr1 and not ATTR1_VFLIP)
 
-proc `mode=`*(obj: ObjAttrPtr, v:ObjMode) {.inline.} =
-  obj.attr0 = (v.uint16) or (obj.attr0 and (not ATTR0_MODE_MASK))
+proc `mode=`*(obj: ObjAttrPtr, v: ObjMode) {.inline.} =
+  obj.attr0 = (v.uint16) or (obj.attr0 and not ATTR0_MODE_MASK)
 
-proc `bpp=`*(obj: ObjAttrPtr, v:ObjBpp) {.inline.} =
-  obj.attr0 = (v.uint16) or (obj.attr0 and (not ATTR0_8BPP))
+proc `fx=`*(obj: ObjAttrPtr, v: ObjFxMode) {.inline.} =
+  obj.attr0 = (v.uint16) or (obj.attr0 and not (ATTR0_BLEND or ATTR0_WINDOW))
+
+proc `is8bpp=`*(obj: ObjAttrPtr, v: bool) {.inline.} =
+  obj.attr0 = (v.uint16 shl 13) or (obj.attr0 and not ATTR0_8BPP)
 
 proc `aff=`*(obj: ObjAttrPtr, aff: int) {.inline.} =
-  obj.attr1 = ((aff.uint16 shl ATTR1_AFF_ID_SHIFT) and ATTR1_AFF_ID_MASK) or (obj.attr1 and (not ATTR1_AFF_ID_MASK))
+  obj.attr1 = ((aff.uint16 shl ATTR1_AFF_ID_SHIFT) and ATTR1_AFF_ID_MASK) or (obj.attr1 and not ATTR1_AFF_ID_MASK)
 
 proc `size=`*(obj: ObjAttrPtr, v: ObjSize) {.inline.} =
   let (shape, size) = sizeToFlags[v]
@@ -288,7 +295,7 @@ proc `size=`*(obj: ObjAttrPtr, v: ObjSize) {.inline.} =
   obj.attr1 = size.uint16 or (obj.attr1 and not ATTR1_SIZE_MASK)
   
 proc `prio=`*(obj: ObjAttrPtr, prio: int) {.inline.} =
-  obj.attr2 = ((prio.uint16 shl ATTR2_PRIO_SHIFT) and ATTR2_PRIO_MASK) or (obj.attr2 and (not ATTR2_PRIO_MASK))
+  obj.attr2 = ((prio.uint16 shl ATTR2_PRIO_SHIFT) and ATTR2_PRIO_MASK) or (obj.attr2 and not ATTR2_PRIO_MASK)
 
 
 # var setters
@@ -301,7 +308,8 @@ proc `pal=`*(obj: var ObjAttr, pal: int) {.inline.} = (addr obj).pal = pal
 proc `hflip=`*(obj: var ObjAttr, hflip: bool) {.inline.} = (addr obj).hflip = hflip
 proc `vflip=`*(obj: var ObjAttr, vflip: bool) {.inline.} = (addr obj).vflip = vflip
 proc `mode=`*(obj: var ObjAttr, mode: ObjMode) {.inline.} = (addr obj).mode = mode
-proc `bpp=`*(obj: var ObjAttr, bpp: ObjBpp) {.inline.} = (addr obj).bpp = bpp
+proc `fx=`*(obj: var ObjAttr, fx: ObjFxMode) {.inline.} = (addr obj).fx = fx
+proc `is8bpp=`*(obj: var ObjAttr, is8bpp: bool) {.inline.} = (addr obj).is8bpp = is8bpp
 proc `size=`*(obj: var ObjAttr, size: ObjSize) {.inline.} = (addr obj).size = size
 proc `aff=`*(obj: var ObjAttr, aff: int) {.inline.} = (addr obj).aff = aff
 proc `prio=`*(obj: var ObjAttr, prio: int) {.inline.} = (addr obj).prio = prio

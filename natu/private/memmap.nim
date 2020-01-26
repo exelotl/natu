@@ -213,7 +213,7 @@ var REG_BG3HOFS* {.importc:"REG_BG3HOFS", header:"tonc.h".}: uint16       ## Bg3
 var REG_BG3VOFS* {.importc:"REG_BG3VOFS", header:"tonc.h".}: uint16       ## Bg3 vertical scroll (REG_BASE + 0x0000001E)
 
 # Affine background parameters. (write only!)
-var REG_BG_AFFINE* {.importc:"REG_BG_AFFINE", header:"tonc.h".}: array[2, BgAffine] ## Bg affine array (REG_BASE + 0x00000000)
+var REG_BG_AFFINE* {.importc:"REG_BG_AFFINE", header:"tonc.h".}: array[2, BgAffine] ## Bg affine array (REG_BASE + 0x00000020)
 var REG_BG2PA* {.importc:"REG_BG2PA", header:"tonc.h".}: int16  ## Bg2 matrix.pa (REG_BASE + 0x00000020)
 var REG_BG2PB* {.importc:"REG_BG2PB", header:"tonc.h".}: int16  ## Bg2 matrix.pb (REG_BASE + 0x00000022)
 var REG_BG2PC* {.importc:"REG_BG2PC", header:"tonc.h".}: int16  ## Bg2 matrix.pc (REG_BASE + 0x00000024)

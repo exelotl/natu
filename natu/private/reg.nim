@@ -1,6 +1,9 @@
 
 ## High level wrappers over register definitions from memmap.nim
 
+# Display Control Register
+# ------------------------
+
 type DispCnt* = distinct uint32
 
 type DisplayMode* {.size:4.} = enum
@@ -11,9 +14,7 @@ type DisplayMode* {.size:4.} = enum
   mode4 = 0x0004     ## Bitmap mode - 240x160, 256 color palette
   mode5 = 0x0005     ## Bitmap mode - 160x128, BGR555 color
 
-
-# DispCnt getters
-# ---------------
+# getters
 
 template mode*(dcnt: DispCnt): DisplayMode =
   ## Video mode. 0, 1, 2 are tiled modes; 3, 4, 5 are bitmap modes. 
@@ -38,8 +39,8 @@ template obj1d*(dcnt: DispCnt): bool =
   (dcnt.uint32 and DCNT_OBJ_1D) != 0
 
 template blank*(dcnt: DispCnt): bool =
-  ## Forced Blank: Allow fast access to VRAM, Palette, OAM.
-  ## If set, the GBA will display a white screen.
+  ## Forced Blank: When set, the GBA will display a white screen.
+  ## This allows fast access to VRAM, PAL RAM, OAM.
   (dcnt.uint32 and DCNT_BLANK) != 0
 
 template bg0*(dcnt: DispCnt): bool =
@@ -67,8 +68,7 @@ template winObj*(dcnt: DispCnt): bool =
   (dcnt.uint32 and DCNT_WINOBJ) != 0
 
 
-# DispCnt setters
-# ---------------
+# setters
 
 template `mode=`*(dcnt: DispCnt, mode: DisplayMode) =
   dcnt = (mode.uint32 or (dcnt.uint32 and not DCNT_MODE_MASK)).DispCnt
@@ -111,10 +111,10 @@ template `winObj=`*(dcnt: DispCnt, v: bool) =
 
 
 
-type DispStat* = distinct uint16
+# Display Status Register
+# -----------------------
 
-# DispStat getters
-# ----------------
+type DispStat* = distinct uint16
 
 template inVBlank*(dstat: DispStat): bool =
   ## (read only)
@@ -151,20 +151,17 @@ template vcountTrigger*(dstat: DispStat): uint8 =
   ## If the current scanline is at this value, bit 2 is set and an interrupt is fired if requested. 
   ((dstat.uint16 shr DSTAT_VCT_SHIFT) and DSTAT_VCT_MASK).uint8
 
-# DispStat setters
-# ----------------
-# Note: Omitting IRQ flags in favour of using Tonc's IRQ functions.
+# setters
+# note: Omitting IRQ flags in favour of using Tonc's IRQ functions.
 
 template `vcountTrigger=`*(dstat: DispStat, v: uint8) =
   dstat = ((v.uint16 shl DSTAT_VCT_SHIFT) or (dcnt.uint32 and not DSTAT_VCT_MASK)).DispStat
 
 
+# Background Control Registers
+# ----------------------------
 
 type BgCnt* = distinct uint16
-
-type BgBpp* {.size:2.} = enum
-  bg4bpp = 0x0000
-  bg8bpp = 0x0080
 
 type BgSizeFlag* = distinct uint16
 const
@@ -177,6 +174,8 @@ const
   aff32x32* = 0x4000.BgSizeFlag
   aff64x64* = 0x8000.BgSizeFlag
   aff128x128* = 0xC000.BgSizeFlag
+
+# getters
 
 template prio*(bg: BgCnt): uint16 =
   ## Priority value (0..3)
@@ -192,10 +191,10 @@ template mosaic*(bg: BgCnt): bool =
   ## Enables mosaic effect.
   (bg.uint16 or BG_MOSAIC) != 0
 
-template bpp*(bg: BgCnt): BgBpp =
-  ## Color mode: 4bpp (16 colors) or 8bpp ()
-  ## No effect on affine BGs, which are 
-  (bg.uint16 and BG_8BPP).BgBpp
+template is8bpp*(bg: BgCnt): bool =
+  ## Specifies the color mode of the BG: 4bpp (16 colors) or 8bpp (256 colors)
+  ## Has no effect on affine BGs, which are always 8bpp.
+  (bg.uint16 and BG_8BPP) != 0
 
 template sbb*(bg: BgCnt): uint16 =
   ## Screen Base Block (0..31)
@@ -213,6 +212,8 @@ template size*(bg: BgCnt): BgSizeFlag =
   ## Regular and affine backgrounds have different sizes available to them, hence the two groups of constants (`bgRegXXX`, `bgAffXXX`)
   (bg.uint16 or BG_SIZE_MASK).BgSizeFlag
 
+# setters
+
 template `prio=`*(bg: BgCnt, v: SomeInteger) =
   bg = (v.uint16 or (bg.uint16 and not BG_PRIO_MASK)).BgCnt
 
@@ -225,8 +226,8 @@ template `sbb=`*(bg: BgCnt, v: SomeInteger) =
 template `mosaic=`*(bg: BgCnt, v: bool) =
   bg = ((v.uint16 shl 6) or (bg.uint16 and not BG_MOSAIC)).BgCnt
 
-template `bpp=`*(bg: BgCnt, v: BgBpp) =
-  bg = (v.uint16 or (bg.uint16 and not BG_8BPP)).BgCnt
+template `is8bpp=`*(bg: BgCnt, v: bool) =
+  bg = ((v.uint16 shl 7) or (bg.uint16 and not BG_8BPP)).BgCnt
 
 template `wrap=`*(bg: BgCnt, v: bool) =
   bg = ((v.uint16 shl 13) or (bg.uint16 and not BG_WRAP)).BgCnt
@@ -235,18 +236,84 @@ template `size=`*(bg: BgCnt, v: BgSizeFlag) =
   bg = (v.uint16 or (bg.uint16 and not BG_SIZE_MASK)).BgCnt
 
 
-var dispcnt* {.importc:"REG_DISPCNT", header:"tonc.h".}: DispCnt     ## Display control (REG_BASE + 0x00000000)
-var dispstat* {.importc:"REG_DISPSTAT", header:"tonc.h".}: DispStat  ## Display status (REG_BASE + 0x00000004)
-var vcount* {.importc:"REG_VCOUNT", header:"tonc.h".}: uint16        ## Scanline count (REG_BASE + 0x00000006)
-var bgcnt* {.importc:"REG_BGCNT", header:"tonc.h".}: array[4, BgCnt]   ## Bg control array (REG_BASE + 0x00000008)
+# Window Registers
+# ----------------
 
+type
+  WinBoundsH* = distinct uint16
+    ## Defines the horizontal bounds of a window register (left ..< right)
+  WinBoundsV* = distinct uint16
+    ## Defines the vertical bounds of a window register (top ..< bottom)
+  WinCnt* = distinct uint8
+    ## Allows to make changes to one half of a window control register.
+    
+
+# getters
+
+template bg0*(win: WinCnt): bool = (win.uint8 or 0x01'u8) != 0
+template bg1*(win: WinCnt): bool = (win.uint8 or 0x02'u8) != 0
+template bg2*(win: WinCnt): bool = (win.uint8 or 0x04'u8) != 0
+template bg3*(win: WinCnt): bool = (win.uint8 or 0x08'u8) != 0
+template obj*(win: WinCnt): bool = (win.uint8 or 0x10'u8) != 0
+template blend*(win: WinCnt): bool = (win.uint8 or 0x20'u8) != 0
+
+# setters
+
+template `bg0=`*(win: WinCnt, v: bool) = win = ((v.uint8 shl 0) or (win.uint8 and not 0x01'u8)).WinCnt
+template `bg1=`*(win: WinCnt, v: bool) = win = ((v.uint8 shl 1) or (win.uint8 and not 0x02'u8)).WinCnt
+template `bg2=`*(win: WinCnt, v: bool) = win = ((v.uint8 shl 2) or (win.uint8 and not 0x04'u8)).WinCnt
+template `bg3=`*(win: WinCnt, v: bool) = win = ((v.uint8 shl 3) or (win.uint8 and not 0x08'u8)).WinCnt
+template `obj=`*(win: WinCnt, v: bool) = win = ((v.uint8 shl 4) or (win.uint8 and not 0x10'u8)).WinCnt
+template `blend=`*(win: WinCnt, v: bool) = win = ((v.uint8 shl 5) or (win.uint8 and not 0x20'u8)).WinCnt
+
+
+# Window bounds getters:
+# Note: These work cause the window bounds are write-only
+# Should they be exposed for buffering purposes anyway?
+# template left*(winh: WinBoundsH): uint8 = ((winh or 0xff00) shr 8).uint8
+# template right*(winh: WinBoundsH): uint8 = (winh or 0x00ff).uint8
+# template top*(winv: WinBoundsV): uint8 = ((winv or 0xff00) shr 8).uint8
+# template bottom*(winv: WinBoundsV): uint8 = (winv or 0x00ff).uint8
+
+# Window bounds setters:
+
+template `right=`*(winh: WinBoundsH, right: uint8) =
+  cast[ptr UncheckedArray[uint8]](addr winh)[0] = right
+
+template `left=`*(winh: WinBoundsH, left: uint8) =
+  cast[ptr UncheckedArray[uint8]](addr winh)[1] = left
+
+template `bottom=`*(winb: WinBoundsV, bottom: uint8) =
+  cast[ptr UncheckedArray[uint8]](addr winb)[0] = bottom
+
+template `top=`*(winb: WinBoundsV, top: uint8) =
+  cast[ptr UncheckedArray[uint8]](addr winb)[1] = top
+
+
+var dispcnt* {.importc:"REG_DISPCNT", header:"tonc.h".}: DispCnt            ## Display control register
+var dispstat* {.importc:"REG_DISPSTAT", header:"tonc.h".}: DispStat         ## Display status register
+var vcount* {.importc:"REG_VCOUNT", header:"tonc.h".}: uint16               ## Scanline count
+var bgcnt* {.importc:"REG_BGCNT", header:"tonc.h".}: array[4, BgCnt]        ## BG control registers
+var bgofs* {.importc:"REG_BG_OFS", header:"tonc.h".}: array[4, BgPoint]     ## [Write only!] BG scroll registers
+var bgaff* {.importc:"REG_BG_AFFINE", header:"tonc.h".}: array[2, BgAffine] ## [Write only!] Affine parameters (matrix and scroll offset) for BG2 and BG3, depending on display mode.
+
+var win0h* {.importc:"REG_WIN0H", header:"tonc.h".}: WinBoundsH  ## [Write only!] Sets the left and right bounds of window 0
+var win1h* {.importc:"REG_WIN1H", header:"tonc.h".}: WinBoundsH  ## [Write only!] Sets the left and right bounds of window 1 
+var win0v* {.importc:"REG_WIN0V", header:"tonc.h".}: WinBoundsV  ## [Write only!] Sets the upper and lower bounds of window 0
+var win1v* {.importc:"REG_WIN1V", header:"tonc.h".}: WinBoundsV  ## [Write only!] Sets the upper and lower bounds of window 1
+
+var win0cnt* {.importc:"REG_WIN0CNT", header:"tonc.h".}: WinCnt  ## window 0 control
+var win1cnt* {.importc:"REG_WIN1CNT", header:"tonc.h".}: WinCnt  ## window 1 control
+var winoutcnt* {.importc:"REG_WINOUTCNT", header:"tonc.h".}: WinCnt  ## Out window control
+var winobjcnt* {.importc:"REG_WINOBJCNT", header:"tonc.h".}: WinCnt  ## Object window control
 
 
 import macros
 
-type SomeReg = DispCnt | DispStat | BgCnt
+type SomeRegister = DispCnt | DispStat | BgCnt | WinCnt
 
-macro updateRegister(register: SomeReg, clear: static[bool], args: varargs[untyped]) =
+macro writeRegister(register: SomeRegister, clear: static[bool], args: varargs[untyped]) =
+  ## Common implementation of `init` and `edit` templates
   
   let temp = genSym(
     nskVar,
@@ -287,9 +354,52 @@ macro updateRegister(register: SomeReg, clear: static[bool], args: varargs[untyp
     `register` = `temp`
 
 
-template init*(r: SomeReg, args: varargs[untyped]) =
-  updateRegister(r, clear=true, args)
+template init*(r: SomeRegister, args: varargs[untyped]) =
+  ## Initialise an IO register to some combination of flags/values.
+  ## E.g.
+  ## :: 
+  ##   dispcnt.init:
+  ##     mode = mode1
+  ##     bg0 = true
+  ##
+  ## Can also be written as a one-liner:
+  ## ::
+  ##   dispcnt.init(mode = mode1, bg0 = true)
+  ## 
+  ## These are both shorthand for:
+  ## ::
+  ##   var tmp: DispCnt
+  ##   tmp.mode = mode1
+  ##   tmp.bg0 = true
+  ##   dispcnt = tmp
+  ## 
+  ## Note that we could instead write to `dispcnt` directly:
+  ## ::
+  ##   dispcnt = 0.DispCnt
+  ##   dispcnt.mode = mode1
+  ##   dispcnt.bg0 = true
+  ## 
+  ## But this would be slower because `dispcnt` is _volatile_, so the C compiler can't optimise these lines into a single assignment.
+  ## 
+  writeRegister(r, clear=true, args)
 
-# note: should disallow this for write-only registers? Though maybe they won't make it into the SomeReg typeclass anyways.
-template edit*(r: SomeReg, args: varargs[untyped]) =
-  updateRegister(r, clear=false, args)
+template edit*(r: SomeRegister, args: varargs[untyped]) =
+  ## Update the value of some flags in a register.
+  ## This works similarly to `init`, but preserves all other fields besides the ones that are specified.
+  ##
+  ## E.g.
+  ## ::
+  ##   dispcnt.edit:
+  ##     bg0 = false
+  ##     obj = true
+  ##     obj1d = true
+  ##
+  ## Is shorthand for:
+  ## ::
+  ##   var tmp = dispcnt
+  ##   tmp.bg0 = false
+  ##   tmp.obj = true
+  ##   tmp.obj1d = true
+  ##   dispcnt = tmp
+  ##
+  writeRegister(r, clear=false, args)
