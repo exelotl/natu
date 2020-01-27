@@ -140,12 +140,11 @@ proc main() =
     obj.hide()
   
   # set up sprite
-  let s = addr oamMem[oid]
-  s.clear()
-  s.pos = vec2i(100, 60)
-  s.size = s32x64
-  s.tid = tid
-  s.pal = pal
+  oamMem[oid].init:
+    pos = vec2i(100, 60)
+    size = s32x32
+    tid = tid
+    pal = pal
   
   while true:
     updatePlayerAnim()

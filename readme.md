@@ -27,9 +27,9 @@ You will need [devkitARM](https://devkitpro.org/wiki/Getting_Started) with GBA t
 
 Before diving into Nim, try building some of the Tonc 'advanced' demos to make sure your environment is good.
 
-For developing with Nim you can use the standard devkitARM makefiles / project structure, but modified to use libtonc instead of libgba. In your project's `nim.cfg` you should set `--cpu:arm --os:standalone --gc:none`, disable runtime checks, and set it to output C code into the 'source' directory.
+The examples in this repo each use a _nimscript_ configuration which should make a good starting point for any project. From within an example you can run `nim build` in the terminal to produce a GBA rom.
 
-The examples in the repo already do this, so you can just copy those :)
+Happy coding! And if you need any help you can reach me (@exelotl) on the [gbdev discord](https://discord.gg/gpBxq85).
 
 ### Thanks
 
@@ -37,7 +37,7 @@ The examples in the repo already do this, so you can just copy those :)
 [devkitARM](https://devkitpro.org/) toolchain maintained by wintermute  
 [maxmod](https://maxmod.devkitpro.org/) sound system by mukunda johnson  
 [mGBA](https://mgba.io/) by endrift  
-natu gba logo by [iamrifki](https://iamrifki.github.io/)  
-logo font: [gelatin mono](https://lorenschmidt.itch.io/gelatin-mono) by loren schmidt  
+gba logo by [iamrifki](https://iamrifki.github.io/)  
+font: [gelatin mono](https://lorenschmidt.itch.io/gelatin-mono) by loren schmidt  
 
 <img src="https://img.pokemondb.net/sprites/ruby-sapphire/normal/natu.png" alt="Natu" title="noot noot!">

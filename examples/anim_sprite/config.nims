@@ -15,6 +15,7 @@ let libgba = devkitPro & "/libgba"
 doAssert(existsDir(libtonc), libtonc & " does not exist")
 
 proc gbaCfg() =
+  
   let libs = "-ltonc -lmm"
   let arch = "-mthumb -mthumb-interwork"
   let specs = "-specs={devkitArm}/arm-none-eabi/lib/gba.specs".fmt
@@ -22,6 +23,12 @@ proc gbaCfg() =
   let maxErrors = "-fmax-errors=1"
   let cflags = "-g -Wall -O3 -mcpu=arm7tdmi -mtune=arm7tdmi -fomit-frame-pointer -ffast-math {arch} {omitWarnings} {maxErrors}".fmt
   let ldflags = "{libs} {specs} -g {arch} -Wl,-Map,{name}.elf.map".fmt
+  
+  put "arm.standalone.gcc.path", devkitArm/"bin"
+  put "arm.standalone.gcc.exe", "arm-none-eabi-gcc"
+  put "arm.standalone.gcc.linkerexe", "arm-none-eabi-gcc"
+  put "arm.standalone.gcc.options.linker", ldflags
+  put "arm.standalone.gcc.options.always", cflags
   
   switch "cpu", "arm"
   switch "os", "standalone"
@@ -41,12 +48,6 @@ proc gbaCfg() =
   switch "cincludes", devkitArm/"arm-none-eabi/include"
   switch "clibdir", libtonc/"lib"
   switch "clibdir", libgba/"lib"
-  
-  put "arm.standalone.gcc.path", devkitArm/"bin"
-  put "arm.standalone.gcc.exe", "arm-none-eabi-gcc"
-  put "arm.standalone.gcc.linkerexe", "arm-none-eabi-gcc"
-  put "arm.standalone.gcc.options.linker", ldflags
-  put "arm.standalone.gcc.options.always", cflags
 
 if projectName() == lastPathPart(main):
   gbaCfg()

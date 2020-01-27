@@ -1,7 +1,7 @@
 import os except existsDir
 import strformat
 
-const name = "anim_coins"
+const name = "hello_world"
 const main = "main"
 
 doAssert(existsEnv("DEVKITARM"), "Please set DEVKITARM in your environment.")

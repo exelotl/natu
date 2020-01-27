@@ -314,3 +314,44 @@ proc `size=`*(obj: var ObjAttr, size: ObjSize) {.inline.} = (addr obj).size = si
 proc `aff=`*(obj: var ObjAttr, aff: int) {.inline.} = (addr obj).aff = aff
 proc `prio=`*(obj: var ObjAttr, prio: int) {.inline.} = (addr obj).prio = prio
 
+import macros
+
+macro writeObj(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
+  result = newStmtList()
+  if args.len == 1 and args[0].kind == nnkStmtList:
+    for i, node in args[0]:
+      if node.kind != nnkAsgn:
+        error("Expected assignment, got " & repr(node))
+      let (key, val) = (node[0], node[1])
+      result.add quote do:
+        `obj`.`key` = `val`
+  else:
+    for i, node in args:
+      if node.kind != nnkExprEqExpr:
+        error("Expected assignment, got " & repr(node))
+      let (key, val) = (node[0], node[1])
+      result.add quote do:
+        `obj`.`key` = `val`
+
+template initObj*(args: varargs[untyped]): ObjAttr =
+  var obj: ObjAttr
+  writeObj(obj, args)
+  obj
+
+template init*(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
+  ## Initialise an object.
+  ## Omitted fields will default to zero.
+  ## e.g.
+  ## ::
+  ##   oamMem[0].init:
+  ##     pos = vec2i(100, 100)
+  ##     size = s32x32
+  ##     tid = 0
+  ##     pal = 3
+  obj.clear()
+  writeObj(obj, args)
+
+template edit*(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
+  ## Update some fields of an object.
+  ## Like `init`, but omitted fields will be left unchanged.
+  writeObj(obj, args)

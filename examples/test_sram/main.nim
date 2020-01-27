@@ -68,10 +68,25 @@ proc main() =
   irqEnable(II_VBLANK)
   
   # Show background 0 and sprites
-  REG_DISPCNT = DCNT_BG0 or DCNT_OBJ or DCNT_OBJ_1D
+  dispcnt.init:
+    bg0 = true
+    obj = true
+    obj1d = true
+  
+  # Initialise text
+  tteInitChr4cDefault(bgnr = 0, initBgCnt(cbb = 0, sbb = 31))
+  tteWrite("""
+  Natu Save Example
+  ---------------------
+  Arrows to move.
+  Press START to save
+  Press SELECT to load
+  Saved data should persist after power off.
+  """)
   
   # Hide all sprites
-  oamInit(addr oamMem[0], OAM_SIZE div sizeof_ObjAttr)
+  for obj in mitems(oamMem):
+    obj.hide()
   
   # Fill a tile with white
   palObjBank[0][1] = rgb15(31,31,31)
@@ -79,11 +94,11 @@ proc main() =
   memset32(addr tileMemObj[0][0], octup(1), numBytes div sizeof(uint32))
   
   # Initialise a sprite to display our white tile
-  oamMem[0].setAttr(
-    ATTR0_Y(pos.y.uint16) or ATTR0_4BPP or ATTR0_SQUARE,
-    ATTR1_X(pos.x.uint16) or ATTR1_SIZE_8,
-    ATTR2_ID(0) or ATTR2_PALBANK(0)
-  )
+  oamMem[0].init:
+    pos = pos
+    size = s8x8
+    tid = 0
+    pal = 0
   
   while true:
     # Update key states
@@ -94,15 +109,15 @@ proc main() =
     if keyIsDown(KEY_RIGHT): pos.x += 1
     if keyIsDown(KEY_UP): pos.y -= 1
     if keyIsDown(KEY_DOWN): pos.y += 1
-      
-    # Update sprite position
-    oamMem[0].setPos(pos)
     
-    # Save on button press
-    if keyHit(KEY_START):
-      writeSave()
+    # Save/load on button press
+    if keyHit(KEY_START): writeSave()
+    if keyHit(KEY_SELECT): readSave()
     
     # Wait for next frame
     VBlankIntrWait()
+    
+    # Update sprite position
+    oamMem[0].pos = pos
 
 main()

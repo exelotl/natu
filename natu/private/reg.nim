@@ -312,49 +312,29 @@ import macros
 
 type SomeRegister = DispCnt | DispStat | BgCnt | WinCnt
 
-macro writeRegister(register: SomeRegister, clear: static[bool], args: varargs[untyped]) =
-  ## Common implementation of `init` and `edit` templates
-  
-  let temp = genSym(
-    nskVar,
-    if register.kind in {nnkSym, nnkIdent}:
-      register.strVal
-    else:
-      "temp"
-  )
-  
-  let regType = getTypeInst(register)
-  expectKind(regType, nnkSym)
-  doAssert(regType.symKind == nskType)
-  
+macro writeRegister(register: SomeRegister, args: varargs[untyped]) =
+  ## Common implementation of `init` and `edit` templates below
   result = newStmtList()
-  if clear:
-    result.add quote do:
-      var `temp`: `regType`
-  else:
-    result.add quote do:
-      var `temp`: `regType` = `register`
-  
   if args.len == 1 and args[0].kind == nnkStmtList:
     for i, node in args[0]:
       if node.kind != nnkAsgn:
         error("Expected assignment, got " & repr(node))
       let (key, val) = (node[0], node[1])
       result.add quote do:
-        `temp`.`key` = `val`
+        `register`.`key` = `val`
   else:
     for i, node in args:
       if node.kind != nnkExprEqExpr:
         error("Expected assignment, got " & repr(node))
       let (key, val) = (node[0], node[1])
       result.add quote do:
-        `temp`.`key` = `val`
-  
-  result.add quote do:
-    `register` = `temp`
+        `register`.`key` = `val`
 
+template clear*[T:SomeRegister](r: T) =
+  ## Set all bits in a register to zero.
+  r = 0.T
 
-template init*(r: SomeRegister, args: varargs[untyped]) =
+template init*[T:SomeRegister](r: T, args: varargs[untyped]) =
   ## Initialise an IO register to some combination of flags/values.
   ## E.g.
   ## :: 
@@ -373,18 +353,20 @@ template init*(r: SomeRegister, args: varargs[untyped]) =
   ##   tmp.bg0 = true
   ##   dispcnt = tmp
   ## 
-  ## Note that we could instead write to `dispcnt` directly:
+  ## Note that we could instead set each field on `dispcnt` directly:
   ## ::
-  ##   dispcnt = 0.DispCnt
+  ##   dispcnt.clear()
   ##   dispcnt.mode = mode1
   ##   dispcnt.bg0 = true
   ## 
   ## But this would be slower because `dispcnt` is _volatile_, so the C compiler can't optimise these lines into a single assignment.
   ## 
-  writeRegister(r, clear=true, args)
+  var tmp: T
+  writeRegister(tmp, args)
+  r = tmp
 
-template edit*(r: SomeRegister, args: varargs[untyped]) =
-  ## Update the value of some flags in a register.
+template edit*[T:SomeRegister](r: T, args: varargs[untyped]) =
+  ## Update the value of some fields in a register.
   ## This works similarly to `init`, but preserves all other fields besides the ones that are specified.
   ##
   ## E.g.
@@ -402,4 +384,28 @@ template edit*(r: SomeRegister, args: varargs[untyped]) =
   ##   tmp.obj1d = true
   ##   dispcnt = tmp
   ##
-  writeRegister(r, clear=false, args)
+  var tmp = r
+  writeRegister(r, args)
+  r = tmp
+
+
+template initDispCnt*(args: varargs[untyped]): DispCnt =
+  ## Create a new display control register value.
+  ## Omitted fields default to zero.
+  var dcnt: DispCnt
+  writeRegister(dcnt, args)
+  dcnt
+
+template initBgCnt*(args: varargs[untyped]): BgCnt =
+  ## Create a new background control register value.
+  ## Omitted fields default to zero.
+  var bg: BgCnt
+  writeRegister(bg, args)
+  bg
+
+template initWinCnt*(args: varargs[untyped]): WinCnt =
+  ## Create a new window control register byte value.
+  ## Omitted fields default to zero.
+  var win: WinCnt
+  writeRegister(win, args)
+  win
