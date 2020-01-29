@@ -244,6 +244,7 @@ proc y*(obj: ObjAttr): int {.inline.} = (obj.attr0 and ATTR0_Y_MASK).int
 proc pos*(obj: ObjAttr): Vec2i {.inline.} = vec2i(obj.x, obj.y)
 proc mode*(obj: ObjAttr): ObjMode {.inline.} = (obj.attr0 and ATTR0_MODE_MASK).ObjMode
 proc fx*(obj: ObjAttr): ObjFxMode {.inline.} = (obj.attr0 and (ATTR0_BLEND or ATTR0_WINDOW)).ObjFxMode
+proc mos*(obj: ObjAttr): bool {.inline.} = (obj.attr0 and ATTR0_MOSAIC) != 0
 proc is8bpp*(obj: ObjAttr): bool {.inline.} = (obj.attr0 and ATTR0_8BPP) != 0
 proc aff*(obj: ObjAttr): int {.inline.} = ((obj.attr1 and ATTR1_AFF_ID_MASK) shr ATTR1_AFF_ID_SHIFT).int
 proc size*(obj: ObjAttr): ObjSize {.inline.} = flagsToSize[obj.attr0 shr 14][obj.attr1 shr 14].ObjSize
@@ -283,6 +284,9 @@ proc `mode=`*(obj: ObjAttrPtr, v: ObjMode) {.inline.} =
 proc `fx=`*(obj: ObjAttrPtr, v: ObjFxMode) {.inline.} =
   obj.attr0 = (v.uint16) or (obj.attr0 and not (ATTR0_BLEND or ATTR0_WINDOW))
 
+proc `mos=`*(obj: ObjAttrPtr, v: bool) {.inline.} =
+  obj.attr0 = (v.uint16 shl 12) or (obj.attr0 and not ATTR0_MOSAIC)
+
 proc `is8bpp=`*(obj: ObjAttrPtr, v: bool) {.inline.} =
   obj.attr0 = (v.uint16 shl 13) or (obj.attr0 and not ATTR0_8BPP)
 
@@ -309,6 +313,7 @@ proc `hflip=`*(obj: var ObjAttr, hflip: bool) {.inline.} = (addr obj).hflip = hf
 proc `vflip=`*(obj: var ObjAttr, vflip: bool) {.inline.} = (addr obj).vflip = vflip
 proc `mode=`*(obj: var ObjAttr, mode: ObjMode) {.inline.} = (addr obj).mode = mode
 proc `fx=`*(obj: var ObjAttr, fx: ObjFxMode) {.inline.} = (addr obj).fx = fx
+proc `mos=`*(obj: var ObjAttr, mos: bool) {.inline.} = (addr obj).mos = mos
 proc `is8bpp=`*(obj: var ObjAttr, is8bpp: bool) {.inline.} = (addr obj).is8bpp = is8bpp
 proc `size=`*(obj: var ObjAttr, size: ObjSize) {.inline.} = (addr obj).size = size
 proc `aff=`*(obj: var ObjAttr, aff: int) {.inline.} = (addr obj).aff = aff

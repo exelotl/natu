@@ -180,16 +180,16 @@ const
 template prio*(bg: BgCnt): uint16 =
   ## Priority value (0..3)
   ## Lower priority BGs will be drawn on top of higher priority BGs.
-  (bg.uint16 or BG_PRIO_MASK)
+  (bg.uint16 and BG_PRIO_MASK)
 
 template cbb*(bg: BgCnt): uint16 =
   ## Character Base Block (0..3)
   ## Determines the base block for tile pixel data
-  (bg.uint16 or BG_CBB_MASK) shr BG_CBB_SHIFT
+  (bg.uint16 and BG_CBB_MASK) shr BG_CBB_SHIFT
 
-template mosaic*(bg: BgCnt): bool =
+template mos*(bg: BgCnt): bool =
   ## Enables mosaic effect.
-  (bg.uint16 or BG_MOSAIC) != 0
+  (bg.uint16 and BG_MOSAIC) != 0
 
 template is8bpp*(bg: BgCnt): bool =
   ## Specifies the color mode of the BG: 4bpp (16 colors) or 8bpp (256 colors)
@@ -199,18 +199,18 @@ template is8bpp*(bg: BgCnt): bool =
 template sbb*(bg: BgCnt): uint16 =
   ## Screen Base Block (0..31)
   ## Determines the base block for the tilemap
-  (bg.uint16 or BG_SBB_MASK) shr BG_SBB_SHIFT
+  (bg.uint16 and BG_SBB_MASK) shr BG_SBB_SHIFT
 
 template wrap*(bg: BgCnt): bool =
   ## Affine Wrapping flag.
   ## If set, affine background wrap around at their edges.
   ## Has no effect on regular backgrounds as they wrap around by default. 
-  (bg.uint16 or BG_WRAP) != 0
+  (bg.uint16 and BG_WRAP) != 0
 
 template size*(bg: BgCnt): BgSizeFlag =
   ## Value representing the size of the background in tiles.
   ## Regular and affine backgrounds have different sizes available to them, hence the two groups of constants (`bgRegXXX`, `bgAffXXX`)
-  (bg.uint16 or BG_SIZE_MASK).BgSizeFlag
+  (bg.uint16 and BG_SIZE_MASK).BgSizeFlag
 
 # setters
 
@@ -223,7 +223,7 @@ template `cbb=`*(bg: BgCnt, v: SomeInteger) =
 template `sbb=`*(bg: BgCnt, v: SomeInteger) =
   bg = ((v.uint16 shl BG_SBB_SHIFT) or (bg.uint16 and not BG_SBB_MASK)).BgCnt
 
-template `mosaic=`*(bg: BgCnt, v: bool) =
+template `mos=`*(bg: BgCnt, v: bool) =
   bg = ((v.uint16 shl 6) or (bg.uint16 and not BG_MOSAIC)).BgCnt
 
 template `is8bpp=`*(bg: BgCnt, v: bool) =
@@ -250,12 +250,12 @@ type
 
 # getters
 
-template bg0*(win: WinCnt): bool = (win.uint8 or 0x01'u8) != 0
-template bg1*(win: WinCnt): bool = (win.uint8 or 0x02'u8) != 0
-template bg2*(win: WinCnt): bool = (win.uint8 or 0x04'u8) != 0
-template bg3*(win: WinCnt): bool = (win.uint8 or 0x08'u8) != 0
-template obj*(win: WinCnt): bool = (win.uint8 or 0x10'u8) != 0
-template blend*(win: WinCnt): bool = (win.uint8 or 0x20'u8) != 0
+template bg0*(win: WinCnt): bool = (win.uint8 and 0x01'u8) != 0
+template bg1*(win: WinCnt): bool = (win.uint8 and 0x02'u8) != 0
+template bg2*(win: WinCnt): bool = (win.uint8 and 0x04'u8) != 0
+template bg3*(win: WinCnt): bool = (win.uint8 and 0x08'u8) != 0
+template obj*(win: WinCnt): bool = (win.uint8 and 0x10'u8) != 0
+template blend*(win: WinCnt): bool = (win.uint8 and 0x20'u8) != 0
 
 # setters
 
@@ -290,6 +290,20 @@ template `top=`*(winb: WinBoundsV, top: uint8) =
   cast[ptr UncheckedArray[uint8]](addr winb)[1] = top
 
 
+type Mosaic* = distinct uint32
+
+# Once again, hiding these since the register is write-only.
+# template bgh*(mos: Mosaic): uint32 = (mos.uint32 and MOS_BH_MASK) shr MOS_BH_SHIFT
+# template bgv*(mos: Mosaic): uint32 = (mos.uint32 and MOS_BV_MASK) shr MOS_BV_SHIFT
+# template objh*(mos: Mosaic): uint32 = (mos.uint32 and MOS_OH_MASK) shr MOS_OH_SHIFT
+# template objv*(mos: Mosaic): uint32 = (mos.uint32 and MOS_OV_MASK) shr MOS_OV_SHIFT
+
+template `bgh=`*(mos: Mosaic, v: SomeInteger) = mos = (((v.uint32 and 0x000f) shl MOS_BH_SHIFT) or (mos.uint32 and not MOS_BH_MASK)).Mosaic
+template `bgv=`*(mos: Mosaic, v: SomeInteger) = mos = (((v.uint32 and 0x000f) shl MOS_BV_SHIFT) or (mos.uint32 and not MOS_BV_MASK)).Mosaic
+template `objh=`*(mos: Mosaic, v: SomeInteger) = mos = (((v.uint32 and 0x000f) shl MOS_OH_SHIFT) or (mos.uint32 and not MOS_OH_MASK)).Mosaic
+template `objv=`*(mos: Mosaic, v: SomeInteger) = mos = (((v.uint32 and 0x000f) shl MOS_OV_SHIFT) or (mos.uint32 and not MOS_OV_MASK)).Mosaic
+
+
 var dispcnt* {.importc:"REG_DISPCNT", header:"tonc.h".}: DispCnt            ## Display control register
 var dispstat* {.importc:"REG_DISPSTAT", header:"tonc.h".}: DispStat         ## Display status register
 var vcount* {.importc:"REG_VCOUNT", header:"tonc.h".}: uint16               ## Scanline count
@@ -306,6 +320,8 @@ var win0cnt* {.importc:"REG_WIN0CNT", header:"tonc.h".}: WinCnt  ## window 0 con
 var win1cnt* {.importc:"REG_WIN1CNT", header:"tonc.h".}: WinCnt  ## window 1 control
 var winoutcnt* {.importc:"REG_WINOUTCNT", header:"tonc.h".}: WinCnt  ## Out window control
 var winobjcnt* {.importc:"REG_WINOBJCNT", header:"tonc.h".}: WinCnt  ## Object window control
+
+var mosaic* {.importc:"REG_MOSAIC", header:"tonc.h".}: Mosaic   ## [Write only!] Mosaic size register
 
 
 import macros
