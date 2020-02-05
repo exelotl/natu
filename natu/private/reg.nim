@@ -244,31 +244,15 @@ type
     ## Defines the horizontal bounds of a window register (left ..< right)
   WinBoundsV* = distinct uint16
     ## Defines the vertical bounds of a window register (top ..< bottom)
-  WinCnt* = distinct uint8
+  
+  WinCntLayer* {.size:1.} = enum
+    wlBg0, wlBg1, wlBg2, wlBg3, wlObj, wlBlend
+  
+  WinCnt* = set[WinCntLayer]
     ## Allows to make changes to one half of a window control register.
-    
-
-# getters
-
-template bg0*(win: WinCnt): bool = (win.uint8 and 0x01'u8) != 0
-template bg1*(win: WinCnt): bool = (win.uint8 and 0x02'u8) != 0
-template bg2*(win: WinCnt): bool = (win.uint8 and 0x04'u8) != 0
-template bg3*(win: WinCnt): bool = (win.uint8 and 0x08'u8) != 0
-template obj*(win: WinCnt): bool = (win.uint8 and 0x10'u8) != 0
-template blend*(win: WinCnt): bool = (win.uint8 and 0x20'u8) != 0
-
-# setters
-
-template `bg0=`*(win: WinCnt, v: bool) = win = ((v.uint8 shl 0) or (win.uint8 and not 0x01'u8)).WinCnt
-template `bg1=`*(win: WinCnt, v: bool) = win = ((v.uint8 shl 1) or (win.uint8 and not 0x02'u8)).WinCnt
-template `bg2=`*(win: WinCnt, v: bool) = win = ((v.uint8 shl 2) or (win.uint8 and not 0x04'u8)).WinCnt
-template `bg3=`*(win: WinCnt, v: bool) = win = ((v.uint8 shl 3) or (win.uint8 and not 0x08'u8)).WinCnt
-template `obj=`*(win: WinCnt, v: bool) = win = ((v.uint8 shl 4) or (win.uint8 and not 0x10'u8)).WinCnt
-template `blend=`*(win: WinCnt, v: bool) = win = ((v.uint8 shl 5) or (win.uint8 and not 0x20'u8)).WinCnt
-
 
 # Window bounds getters:
-# Note: These work cause the window bounds are write-only
+# Note: These won't work cause the window bounds are write-only
 # Should they be exposed for buffering purposes anyway?
 # template left*(winh: WinBoundsH): uint8 = ((winh or 0xff00) shr 8).uint8
 # template right*(winh: WinBoundsH): uint8 = (winh or 0x00ff).uint8
@@ -303,6 +287,52 @@ template `bgv=`*(mos: Mosaic, v: SomeInteger) = mos = (((v.uint32 and 0x000f) sh
 template `objh=`*(mos: Mosaic, v: SomeInteger) = mos = (((v.uint32 and 0x000f) shl MOS_OH_SHIFT) or (mos.uint32 and not MOS_OH_MASK)).Mosaic
 template `objv=`*(mos: Mosaic, v: SomeInteger) = mos = (((v.uint32 and 0x000f) shl MOS_OV_SHIFT) or (mos.uint32 and not MOS_OV_MASK)).Mosaic
 
+type
+  BldCnt* = distinct uint16
+    ## Blend control register
+  
+  BlendMode* {.size:2.} = enum
+    bmOff = BLD_OFF       ## Blending disabled
+    bmStd = BLD_STD       ## Alpha blend both A and B (using the weights from `bldalpha`)
+    bmWhite = BLD_WHITE   ## Blend A with white using the weight from `bldy`
+    bmBlack = BLD_BLACK   ## Blend A with black using the weight from `bldy`
+  
+  BldLayer* {.size:2.} = enum
+    blBg0, blBg1, blBg2, blBg3, blObj, blBd
+
+const blAll* = { blBg0, blBg1, blBg2, blBg3, blObj, blBd }
+
+# idea: shorthand to reinterpret some var as an array of some type
+#  template rei[T](a:untyped): ptr UncheckedArray[T] =
+#    cast[ptr UncheckedArray[T]](addr a)
+
+proc top*(bld: BldCnt): set[BldLayer] {.inline.} =
+  cast[set[BldLayer]](bld.uint16 and BLD_TOP_MASK)
+
+proc bottom*(bld: BldCnt): set[BldLayer] {.inline.} =
+  cast[set[BldLayer]]((bld.uint16 and BLD_BOT_MASK) shr BLD_BOT_SHIFT)
+
+template `top=`*(bld: BldCnt, layers: set[BldLayer]) =
+  bld = ((bld.uint16 and not BLD_TOP_MASK) or (cast[uint16](layers))).BldCnt
+
+template `bottom=`*(bld: BldCnt, layers: set[BldLayer]) =
+  bld = ((bld.uint16 and not BLD_BOT_MASK) or (cast[uint16](layers) shl BLD_BOT_SHIFT)).BldCnt
+
+
+# can't do this because `top` has 'mode' bits that aren't part of the set...
+# which could lead to subtly broken behaviour
+#  template top*(bld: BldCnt): set[BldLayer] =
+#    set[BldLayer](cast[ptr UncheckedArray[set[uint8]]](addr bld)[0])
+#  template bottom*(bld: BldCnt): set[BldLayer] =
+#    set[BldLayer](cast[ptr UncheckedArray[set[uint8]]](addr bld)[1])
+
+
+template mode*(bld: BldCnt): BlendMode =
+  (bld.uint16 and BLD_MODE_MASK).BlendMode
+
+template `mode=`*(bld: BldCnt, v: BlendMode) =
+  bld = (v.uint16 or (bld.uint16 and not BLD_MODE_MASK)).BldCnt
+
 
 var dispcnt* {.importc:"REG_DISPCNT", header:"tonc.h".}: DispCnt            ## Display control register
 var dispstat* {.importc:"REG_DISPSTAT", header:"tonc.h".}: DispStat         ## Display status register
@@ -316,17 +346,22 @@ var win1h* {.importc:"REG_WIN1H", header:"tonc.h".}: WinBoundsH  ## [Write only!
 var win0v* {.importc:"REG_WIN0V", header:"tonc.h".}: WinBoundsV  ## [Write only!] Sets the upper and lower bounds of window 0
 var win1v* {.importc:"REG_WIN1V", header:"tonc.h".}: WinBoundsV  ## [Write only!] Sets the upper and lower bounds of window 1
 
-var win0cnt* {.importc:"REG_WIN0CNT", header:"tonc.h".}: WinCnt  ## window 0 control
-var win1cnt* {.importc:"REG_WIN1CNT", header:"tonc.h".}: WinCnt  ## window 1 control
+var win0cnt* {.importc:"REG_WIN0CNT", header:"tonc.h".}: WinCnt  ## Window 0 control
+var win1cnt* {.importc:"REG_WIN1CNT", header:"tonc.h".}: WinCnt  ## Window 1 control
 var winoutcnt* {.importc:"REG_WINOUTCNT", header:"tonc.h".}: WinCnt  ## Out window control
 var winobjcnt* {.importc:"REG_WINOBJCNT", header:"tonc.h".}: WinCnt  ## Object window control
 
 var mosaic* {.importc:"REG_MOSAIC", header:"tonc.h".}: Mosaic   ## [Write only!] Mosaic size register
 
+var bldcnt* {.importc:"REG_BLDCNT", header:"tonc.h".}: BldCnt
+  ## Blend control register
+# var bldalpha* {.importc:"REG_BLDALPHA", header:"tonc.h".}: uint16  ## Fade level
+var bldy* {.importc:"REG_BLDY", header:"tonc.h".}: uint16          ## [Write only!] Brightness (fade in/out) coefficient
+
 
 import macros
 
-type SomeRegister = DispCnt | DispStat | BgCnt | WinCnt
+type SomeRegister = DispCnt | DispStat | BgCnt
 
 macro writeRegister(register: SomeRegister, args: varargs[untyped]) =
   ## Common implementation of `init` and `edit` templates below
@@ -418,10 +453,3 @@ template initBgCnt*(args: varargs[untyped]): BgCnt =
   var bg: BgCnt
   writeRegister(bg, args)
   bg
-
-template initWinCnt*(args: varargs[untyped]): WinCnt =
-  ## Create a new window control register byte value.
-  ## Omitted fields default to zero.
-  var win: WinCnt
-  writeRegister(win, args)
-  win
