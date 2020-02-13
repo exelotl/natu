@@ -360,3 +360,17 @@ template edit*(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
   ## Update some fields of an object.
   ## Like `init`, but omitted fields will be left unchanged.
   writeObj(obj, args)
+
+
+proc `=`*(dst: var ObjAttr, src: ObjAttr) {.inline.} =
+  ## Custom assignment for ObjAttr so that it doesn't clobber the affine data in the `fill` field.
+  dst.attr0 = src.attr0
+  dst.attr1 = src.attr1
+  dst.attr2 = src.attr2
+
+proc `=`*(dst: var ObjAffine, src: ObjAffine) {.inline.} =
+  ## Custom assignment for ObjAffine so that it doesn't clobber the attribute data in the `fill` fields.
+  dst.pa = src.pa
+  dst.pb = src.pb
+  dst.pc = src.pc
+  dst.pd = src.pd

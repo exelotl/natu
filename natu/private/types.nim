@@ -155,23 +155,23 @@ type
 type
   ObjAttr* {.importc: "OBJ_ATTR", header: "tonc.h", bycopy.} = object
     ## Object attributes.
-    ## Note: attribute 3 is padding for the interlace with OBJ_AFFINE.
-    ##  If not using affine objects, it can be used as a free field
+    ## Note:
+    ##  The `fill` field is padding for the interlace with ObjAffine.
+    ##  It will not be copied when assigning one ObjAttr to another.
     attr0* {.importc: "attr0".}: uint16
     attr1* {.importc: "attr1".}: uint16
     attr2* {.importc: "attr2".}: uint16
-    fill* {.importc: "fill".}: int16
+    # fill {.importc: "fill".}: int16
   
   ObjAffine* {.importc: "OBJ_AFFINE", header: "tonc.h", bycopy.} = object
     ## Object affine parameters.
-    ## [Padding fields are ommitted, it's OK as long as they exist on the C side]
-    # fill0* {.importc: "fill0".}: array[3, uint16]
+    # fill0 {.importc: "fill0".}: array[3, uint16]
     pa* {.importc: "pa".}: int16
-    # fill1* {.importc: "fill1".}: array[3, uint16]
+    # fill1 {.importc: "fill1".}: array[3, uint16]
     pb* {.importc: "pb".}: int16
-    # fill2* {.importc: "fill2".}: array[3, uint16]
+    # fill2 {.importc: "fill2".}: array[3, uint16]
     pc* {.importc: "pc".}: int16
-    # fill3* {.importc: "fill3".}: array[3, uint16]
+    # fill3 {.importc: "fill3".}: array[3, uint16]
     pd* {.importc: "pd".}: int16
   
   ObjAttrPtr* = ptr ObjAttr
