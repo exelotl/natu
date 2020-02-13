@@ -4,15 +4,20 @@
 # Display Control Register
 # ------------------------
 
-type DispCnt* = distinct uint32
-
-type DisplayMode* {.size:4.} = enum
-  mode0 = 0x0000     ## Tile mode - BG0:text, BG1:text, BG2:text,   BG3:text
-  mode1 = 0x0001     ## Tile mode - BG0:text, BG1:text, BG2:affine, BG3:off
-  mode2 = 0x0002     ## Tile mode - BG0:off,  BG1:off,  BG2:affine, BG3:affine
-  mode3 = 0x0003     ## Bitmap mode - 240x160, BGR555 color
-  mode4 = 0x0004     ## Bitmap mode - 240x160, 256 color palette
-  mode5 = 0x0005     ## Bitmap mode - 160x128, BGR555 color
+type
+  DispCnt* = distinct uint32
+  
+  DisplayMode* {.size:4.} = enum
+    ## Example usage:
+    dm0 = 0x0000     ## Tile mode - BG0:text, BG1:text, BG2:text,   BG3:text
+    dm1 = 0x0001     ## Tile mode - BG0:text, BG1:text, BG2:affine, BG3:off
+    dm2 = 0x0002     ## Tile mode - BG0:off,  BG1:off,  BG2:affine, BG3:affine
+    dm3 = 0x0003     ## Bitmap mode - 240x160, BGR555 color
+    dm4 = 0x0004     ## Bitmap mode - 240x160, 256 color palette
+    dm5 = 0x0005     ## Bitmap mode - 160x128, BGR555 color
+  
+  DisplayLayer* {.size:4.} = enum
+    lBg0, lBg1, lBg2, lBg3, lObj
 
 # getters
 
@@ -42,6 +47,9 @@ template blank*(dcnt: DispCnt): bool =
   ## Forced Blank: When set, the GBA will display a white screen.
   ## This allows fast access to VRAM, PAL RAM, OAM.
   (dcnt.uint32 and DCNT_BLANK) != 0
+
+proc layers*(bld: DispCnt): set[DisplayLayer] {.inline.} =
+  cast[set[DisplayLayer]]((bld.uint32 and DCNT_LAYER_MASK) shr DCNT_LAYER_SHIFT)
 
 template bg0*(dcnt: DispCnt): bool =
   (dcnt.uint32 and DCNT_BG0) != 0
@@ -81,6 +89,9 @@ template `oamHbl=`*(dcnt: DispCnt, v: bool) =
 
 template `obj1d=`*(dcnt: DispCnt, v: bool) =
   dcnt = ((v.uint32 shl 6) or (dcnt.uint32 and not DCNT_OBJ_1D)).DispCnt
+
+template `layers=`*(bld: DispCnt, layers: set[DisplayLayer]) =
+  bld = ((bld.uint32 and not DCNT_LAYER_MASK) or (cast[uint32](layers) shl DCNT_LAYER_SHIFT)).DispCnt
 
 template `blank=`*(dcnt: DispCnt, v: bool) =
   dcnt = ((v.uint32 shl 7) or (dcnt.uint32 and not DCNT_BLANK)).DispCnt
@@ -297,7 +308,7 @@ type
     bmWhite = BLD_WHITE   ## Blend A with white using the weight from `bldy`
     bmBlack = BLD_BLACK   ## Blend A with black using the weight from `bldy`
   
-  BldLayer* {.size:2.} = enum
+  BlendLayer* {.size:2.} = enum
     blBg0, blBg1, blBg2, blBg3, blObj, blBd
 
 const blAll* = { blBg0, blBg1, blBg2, blBg3, blObj, blBd }
@@ -306,25 +317,25 @@ const blAll* = { blBg0, blBg1, blBg2, blBg3, blObj, blBd }
 #  template rei[T](a:untyped): ptr UncheckedArray[T] =
 #    cast[ptr UncheckedArray[T]](addr a)
 
-proc top*(bld: BldCnt): set[BldLayer] {.inline.} =
-  cast[set[BldLayer]](bld.uint16 and BLD_TOP_MASK)
+proc top*(bld: BldCnt): set[BlendLayer] {.inline.} =
+  cast[set[BlendLayer]](bld.uint16 and BLD_TOP_MASK)
 
-proc bottom*(bld: BldCnt): set[BldLayer] {.inline.} =
-  cast[set[BldLayer]]((bld.uint16 and BLD_BOT_MASK) shr BLD_BOT_SHIFT)
+proc bottom*(bld: BldCnt): set[BlendLayer] {.inline.} =
+  cast[set[BlendLayer]]((bld.uint16 and BLD_BOT_MASK) shr BLD_BOT_SHIFT)
 
-template `top=`*(bld: BldCnt, layers: set[BldLayer]) =
+template `top=`*(bld: BldCnt, layers: set[BlendLayer]) =
   bld = ((bld.uint16 and not BLD_TOP_MASK) or (cast[uint16](layers))).BldCnt
 
-template `bottom=`*(bld: BldCnt, layers: set[BldLayer]) =
+template `bottom=`*(bld: BldCnt, layers: set[BlendLayer]) =
   bld = ((bld.uint16 and not BLD_BOT_MASK) or (cast[uint16](layers) shl BLD_BOT_SHIFT)).BldCnt
 
 
 # can't do this because `top` has 'mode' bits that aren't part of the set...
 # which could lead to subtly broken behaviour
-#  template top*(bld: BldCnt): set[BldLayer] =
-#    set[BldLayer](cast[ptr UncheckedArray[set[uint8]]](addr bld)[0])
-#  template bottom*(bld: BldCnt): set[BldLayer] =
-#    set[BldLayer](cast[ptr UncheckedArray[set[uint8]]](addr bld)[1])
+#  template top*(bld: BldCnt): set[BlendLayer] =
+#    set[BlendLayer](cast[ptr UncheckedArray[set[uint8]]](addr bld)[0])
+#  template bottom*(bld: BldCnt): set[BlendLayer] =
+#    set[BlendLayer](cast[ptr UncheckedArray[set[uint8]]](addr bld)[1])
 
 
 template mode*(bld: BldCnt): BlendMode =
@@ -453,3 +464,33 @@ template initBgCnt*(args: varargs[untyped]): BgCnt =
   var bg: BgCnt
   writeRegister(bg, args)
   bg
+
+
+# Set operation fixes
+
+type LayerEnum = DisplayLayer | BlendLayer | WinCntLayer
+
+macro incl*[T:LayerEnum](x: set[T], y: T) =
+  expectKind(x, nnkCall)
+  let (field, reg) = (x[0], x[1])
+  quote do:
+    `reg`.`field` = `reg`.`field` + {y}
+
+macro incl*[T:LayerEnum](x: set[T], y: set[T]) =
+  expectKind(x, nnkCall)
+  let (field, reg) = (x[0], x[1])
+  quote do:
+    `reg`.`field` = `reg`.`field` + y
+
+macro excl*[T:LayerEnum](x: set[T], y: T) =
+  expectKind(x, nnkCall)
+  let (field, reg) = (x[0], x[1])
+  quote do:
+    `reg`.`field` = `reg`.`field` - {y}
+
+macro excl*[T:LayerEnum](x: set[T], y: set[T]) =
+  expectKind(x, nnkCall)
+  let (field, reg) = (x[0], x[1])
+  quote do:
+    `reg`.`field` = `reg`.`field` - y
+
