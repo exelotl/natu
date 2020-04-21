@@ -4,15 +4,14 @@ import strformat
 const name = "anim_coins"
 const main = "main"
 
-doAssert(existsEnv("DEVKITARM"), "Please set DEVKITARM in your environment.")
-doAssert(existsEnv("DEVKITPRO"), "Please set DEVKITPRO in your environment.")
+when not defined(nimsuggest):
+  doAssert(existsEnv("DEVKITARM"), "Please set DEVKITARM in your environment.")
+  doAssert(existsEnv("DEVKITPRO"), "Please set DEVKITPRO in your environment.")
 
 let devkitPro = getEnv("DEVKITPRO")
 let devkitArm = getEnv("DEVKITARM")
 let libtonc = devkitPro & "/libtonc"
 let libgba = devkitPro & "/libgba"
-
-doAssert(existsDir(libtonc), libtonc & " does not exist")
 
 proc gbaCfg() =
   
@@ -42,6 +41,7 @@ proc gbaCfg() =
   switch "stackTrace", "off"
   switch "checks", "off"
   switch "define", "release"
+  switch "define", "gba"
   switch "cincludes", projectDir()/"../nimcache"
   switch "cincludes", libtonc/"include"
   switch "cincludes", libgba/"include"
