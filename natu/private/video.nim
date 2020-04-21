@@ -161,19 +161,19 @@ proc clrFadeFast*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: uint; alpha
 ## ------
 
 template rgb15*(red, green, blue: int): Color =
-  ## Create a 15bit BGR color.
+  ## Create a 15-bit BGR color.
   (red + (green shl 5) + (blue shl 10)).Color
 
 template rgb15safe*(red, green, blue: int): Color =
-  ## Create a 15bit BGR color, with proper masking of R,G,B components.
+  ## Create a 15-bit BGR color, with proper masking of R,G,B components.
   ((red and 31) + ((green and 31) shl 5) + ((blue and 31) shl 10)).Color
 
 template rgb8*(red, green, blue: uint8): Color =
-  ## Create a 15bit BGR color, using 8bit components
+  ## Create a 15-bit BGR color, using 8-bit components
   ((red.uint shr 3) + ((green.uint shr 3) shl 5) + ((blue.uint shr 3) shl 10)).Color
 
 template rgb8*(rgb: int): Color =
-  ## Create a 15 bit BGR color from a 24-bit RGB color of the form 0xRRGGBB
+  ## Create a 15-bit BGR color from a 24-bit RGB color of the form 0xRRGGBB
   (((rgb and 0xff0000) shr 19) + (((rgb and 0x00ff00) shr 11) shl 5) + (((rgb and 0x0000ff) shr 3) shl 10)).Color
 
 
@@ -190,13 +190,14 @@ proc bgIsAffine*(n:int):bool {.importc: "BG_IS_AFFINE", header: "tonc.h".}
 proc bgIsAvail*(n:int):bool {.importc: "BG_IS_AVAIL", header: "tonc.h".}
 
 proc seFill*(sbb: ptr ScrEntry; se: ScrEntry) {.importc: "se_fill", header: "tonc.h".}
-## Fill screenblock `sbb` with `se`
+  ## Fill screenblock `sbb` with `se`
 proc sePlot*(sbb: ptr ScrEntry; x, y: int; se: ScrEntry) {.importc: "se_plot", header: "tonc.h".}
-## Plot a screen entry at (`x`,`y`) of screenblock `sbb`.
+  ## Plot a screen entry at (`x`,`y`) of screenblock `sbb`.
 proc seRect*(sbb: ptr ScrEntry; left, top, right, bottom: int; se: ScrEntry) {.importc: "se_rect", header: "tonc.h".}
-## Fill a rectangle on `sbb` with `se`.
+  ## Fill a rectangle on `sbb` with `se`.
 proc seFrame*(sbb: ptr ScrEntry; left, top, right, bottom: int; se: ScrEntry) {.importc: "se_frame", header: "tonc.h".}
-## Create a border on `sbb` with `se`.
+  ## Create a border on `sbb` with `se`.
+
 proc seWindow*(sbb: ptr ScrEntry; left, top, right, bottom: int; se0: ScrEntry) {.importc: "se_window", header: "tonc.h".}
 proc seHline*(sbb: ptr ScrEntry; x0, x1, y: int; se: ScrEntry) {.importc: "se_hline", header: "tonc.h".}
 proc seVline*(sbb: ptr ScrEntry; x, y0, y1: int; se: ScrEntry) {.importc: "se_vline", header: "tonc.h".}

@@ -3,6 +3,6 @@ author        = "exelotl"
 description   = "Nim bindings for tonclib (GBA framework)"
 license       = "zlib"
 
-requires "nim >= 0.19.0"
+requires "nim >= 1.0.2"
 
 skipDirs = @["examples"]
