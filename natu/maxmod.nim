@@ -290,11 +290,11 @@ proc playModule*(address: uint; mode: uint; layer: uint) {.importc:"mmPlayModule
 # Sound Effects
 # -------------
 
-proc effect*(sampleID: uint): MmSfxHandle {.importc:"mmEffect", header:"maxmod.h", discardable.}
+proc effect*(sampleID: uint): MmSfxHandle {.importc:"mmEffect", header:"maxmod.h".}
   ## Play a sound effect at its default frequency with full volume and centered panning.
   ## `sampleID` : Sound effect ID. (defined in soundbank header)
 
-proc effectEx*(sound: ptr MmSoundEffect): MmSfxHandle {.importc:"mmEffectEx", header:"maxmod.h", discardable.}
+proc effectEx*(sound: ptr MmSoundEffect): MmSfxHandle {.importc:"mmEffectEx", header:"maxmod.h".}
   ## Play a sound effect with all parameters.
   ## `sound` : Sound effect attributes.
 

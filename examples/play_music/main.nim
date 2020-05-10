@@ -11,8 +11,8 @@ importSoundbank()
 proc main() =
   
   # show text on background 0
-  REG_DISPCNT = DCNT_BG0
-  tteInitChr4cDefault(0, BG_CBB(0) or BG_SBB(31))
+  dispcnt.init(bg0 = true)
+  tteInitChr4cDefault(bgnr = 0, initBgCnt(cbb = 0, sbb = 31))
   
   tteWrite """
 
@@ -37,7 +37,10 @@ proc main() =
     
     if keyHit(KEY_A):
       # play sound effect
-      maxmod.effect(sfxShoot)
+      let handle = maxmod.effect(sfxShoot)
+      
+      # invalidate handle (allow effect to be interrupted)
+      maxmod.effectRelease(handle)
     
     # update maxmod
     maxmod.frame()
