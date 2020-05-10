@@ -88,9 +88,9 @@ template `<=`*(a, b: Fixed): bool = (a.int <= b.int)
 template `-`*(a: Fixed): Fixed = (-a.int).Fixed
 template abs*(a: Fixed): Fixed = abs(a.int).Fixed
 
-proc mul64*(a, b: Fixed): Fixed = (((cast[int64](a)) * b.int) div FIX_SCALE).Fixed
+template mul64*(a, b: Fixed): Fixed = (((cast[int64](a)) * b.int) div FIX_SCALE).Fixed
   ## Multiply two fixed point values using 64bit math (to help avoid overflows)
-proc div64*(a, b: Fixed): Fixed = (((cast[int64](a)) shl FIX_SHIFT) div b.int).Fixed
+template div64*(a, b: Fixed): Fixed = (((cast[int64](a)) shl FIX_SHIFT) div b.int).Fixed
   ## Divide two fixed point values using 64bit math (to help avoid overflows)
 
 # Note:
