@@ -379,18 +379,29 @@ macro writeRegister(register: SomeRegister, args: varargs[untyped]) =
   result = newStmtList()
   if args.len == 1 and args[0].kind == nnkStmtList:
     for i, node in args[0]:
-      if node.kind != nnkAsgn:
+      case node.kind
+      of nnkCall, nnkCommand:
+        node.insert(1, register)
+        result.add(node)
+      of nnkAsgn:
+        let (key, val) = (node[0], node[1])
+        result.add quote do:
+          `register`.`key` = `val`
+      else:
         error("Expected assignment, got " & repr(node))
-      let (key, val) = (node[0], node[1])
-      result.add quote do:
-        `register`.`key` = `val`
   else:
     for i, node in args:
-      if node.kind != nnkExprEqExpr:
+      case node.kind
+      of nnkCall, nnkCommand:
+        node.insert(1, register)
+        result.add(node)
+      of nnkExprEqExpr:
+        let (key, val) = (node[0], node[1])
+        result.add quote do:
+          `register`.`key` = `val`
+      else:
         error("Expected assignment, got " & repr(node))
-      let (key, val) = (node[0], node[1])
-      result.add quote do:
-        `register`.`key` = `val`
+        
 
 template clear*[T:SomeRegister](r: T) =
   ## Set all bits in a register to zero.
