@@ -321,17 +321,24 @@ proc `/=`*(a: var Vec2f, n:Fixed|int) {.inline.} =
 # Additional conversions
 # ----------------------
 
+proc initBgPoint*(x = 0'i16, y = 0'i16): BgPoint {.noinit, inline.} =
+  ## Create a new pair of values used by the BG scroll registers
+  ## e.g. ::
+  ##  bgofs[0] = initBgPoint(10, 20)
+  result.x = x
+  result.y = y
+
 proc toBgPoint*(a: Vec2i): BgPoint {.noinit, inline.} =
   ## Convert a vector to a pair of values used by the BG scroll registers
   ## e.g. ::
-  ##   REG_BG_OFS[0] = pos.toBgPoint()
+  ##   bgofs[0] = pos.toBgPoint()
   result.x = a.x.int16
   result.y = a.y.int16
 
 proc toBgPoint*(a: Vec2f): BgPoint {.noinit, inline.} =
   ## Convert a fixed point vector to a pair of values used by the BG scroll registers
   ## e.g. ::
-  ##   REG_BG_OFS[0] = pos.toBgPoint()
+  ##   bgofs[0] = pos.toBgPoint()
   result.x = a.x.toInt().int16
   result.y = a.y.toInt().int16
 
