@@ -32,29 +32,29 @@ const
   LAYER_BD* = 0x0020
 
 const
-  CLR_BLACK*:Color = 0x0000
-  CLR_RED*:Color = 0x001F
-  CLR_LIME*:Color = 0x03E0
-  CLR_YELLOW*:Color = 0x03FF
-  CLR_BLUE*:Color = 0x7C00
-  CLR_MAG*:Color = 0x7C1F
-  CLR_CYAN*:Color = 0x7FE0
-  CLR_WHITE*:Color = 0x7FFF
-  CLR_DEAD*:Color = 0xDEAD
-  CLR_MAROON*:Color = 0x0010
-  CLR_GREEN*:Color = 0x0200
-  CLR_OLIVE*:Color = 0x0210
-  CLR_ORANGE*:Color = 0x021F
-  CLR_NAVY*:Color = 0x4000
-  CLR_PURPLE*:Color = 0x4010
-  CLR_TEAL*:Color = 0x4200
-  CLR_GRAY*:Color = 0x4210
-  CLR_MEDGRAY*:Color = 0x5294
-  CLR_SILVER*:Color = 0x6318
-  CLR_MONEYGREEN*:Color = 0x6378
-  CLR_FUCHSIA*:Color = 0x7C1F
-  CLR_SKYBLUE*:Color = 0x7B34
-  CLR_CREAM*:Color = 0x7BFF
+  CLR_BLACK* = 0x0000.Color
+  CLR_RED* = 0x001F.Color
+  CLR_LIME* = 0x03E0.Color
+  CLR_YELLOW* = 0x03FF.Color
+  CLR_BLUE* = 0x7C00.Color
+  CLR_MAG* = 0x7C1F.Color
+  CLR_CYAN* = 0x7FE0.Color
+  CLR_WHITE* = 0x7FFF.Color
+  CLR_DEAD* = 0xDEAD.Color
+  CLR_MAROON* = 0x0010.Color
+  CLR_GREEN* = 0x0200.Color
+  CLR_OLIVE* = 0x0210.Color
+  CLR_ORANGE* = 0x021F.Color
+  CLR_NAVY* = 0x4000.Color
+  CLR_PURPLE* = 0x4010.Color
+  CLR_TEAL* = 0x4200.Color
+  CLR_GRAY* = 0x4210.Color
+  CLR_MEDGRAY* = 0x5294.Color
+  CLR_SILVER* = 0x6318.Color
+  CLR_MONEYGREEN* = 0x6378.Color
+  CLR_FUCHSIA* = 0x7C1F.Color
+  CLR_SKYBLUE* = 0x7B34.Color
+  CLR_CREAM* = 0x7BFF.Color
 
 const
   CLR_MASK*:uint32 = 0x001F

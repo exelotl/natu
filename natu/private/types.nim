@@ -40,7 +40,7 @@ type
   Fixed* = distinct int32   ## Fixed point type, "24.8"
 
 type
-  Color* = uint16         ## Type for colors
+  Color* = distinct uint16  ## Type for colors
 
 type
   ScrEntry* = uint16    ## Type for screen entries
