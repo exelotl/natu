@@ -345,11 +345,30 @@ template `mode=`*(bld: BldCnt, v: BlendMode) =
   bld = (v.uint16 or (bld.uint16 and not BLD_MODE_MASK)).BldCnt
 
 
+type BgOfs = distinct BgPoint
+  ## Like BgPoint but write-only
+
+template `x=`*(ofs: BgOfs, v: int16) =
+  cast[ptr BgPoint](addr ofs).x = v
+
+template `y=`*(ofs: BgOfs, v: int16) =
+  cast[ptr BgPoint](addr ofs).y = v
+
+template x*(ofs: BgOfs): int16 =
+  {.error: "BG scroll registers are write-only!".}
+
+template y*(ofs: BgOfs): int16 =
+  {.error: "BG scroll registers are write-only!".}
+
+converter toBgOfs*(p: BgPoint): BgOfs {.inline.} =
+  p.BgOfs
+
+
 var dispcnt* {.importc:"REG_DISPCNT", header:"tonc.h".}: DispCnt            ## Display control register
 var dispstat* {.importc:"REG_DISPSTAT", header:"tonc.h".}: DispStat         ## Display status register
 var vcount* {.importc:"REG_VCOUNT", header:"tonc.h".}: uint16               ## Scanline count
 var bgcnt* {.importc:"REG_BGCNT", header:"tonc.h".}: array[4, BgCnt]        ## BG control registers
-var bgofs* {.importc:"REG_BG_OFS", header:"tonc.h".}: array[4, BgPoint]     ## [Write only!] BG scroll registers
+var bgofs* {.importc:"REG_BG_OFS", header:"tonc.h".}: array[4, BgOfs]       ## [Write only!] BG scroll registers
 var bgaff* {.importc:"REG_BG_AFFINE", header:"tonc.h".}: array[2, BgAffine] ## [Write only!] Affine parameters (matrix and scroll offset) for BG2 and BG3, depending on display mode.
 
 var win0h* {.importc:"REG_WIN0H", header:"tonc.h".}: WinBoundsH  ## [Write only!] Sets the left and right bounds of window 0

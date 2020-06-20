@@ -116,8 +116,7 @@ type
 type
   BgPoint* = Point16
   Point16* {.importc: "POINT16", header: "tonc.h", bycopy.} = object
-    x* {.importc: "x".}: int16
-    y* {.importc: "y".}: int16
+    x*, y*: int16
 
 type BgAffine* = AffDstEx
   ## Affine parameters for backgrounds; range : 0400:0020 - 0400:003F
