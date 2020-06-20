@@ -1,4 +1,4 @@
-<p align="center"><img width="98" height="76" src="https://user-images.githubusercontent.com/569607/72299597-32c54600-3659-11ea-807f-0b1b0b3ad7c6.png" alt="Natu GBA Logo"></p>
+<p align="center"><img width="200" src="https://user-images.githubusercontent.com/569607/85204175-8293f180-b30a-11ea-9fb0-66a502f740ba.png" alt="Natu GBA Logo"></p>
 
 Natu is a package for making Game Boy Advance games in [Nim](https://nim-lang.org/).
 
@@ -37,7 +37,7 @@ Happy coding! And if you need any help you can reach me (@exelotl) on the [gbdev
 [devkitARM](https://devkitpro.org/) toolchain maintained by wintermute  
 [maxmod](https://maxmod.devkitpro.org/) sound system by mukunda johnson  
 [mGBA](https://mgba.io/) by endrift  
-gba logo by [iamrifki](https://iamrifki.github.io/)  
-font: [gelatin mono](https://lorenschmidt.itch.io/gelatin-mono) by loren schmidt  
+[posprintf](http://www.danposluns.com/gbadev/posprintf/index.html) by dan posluns  
+natu logo by [hot_pengu](https://twitter.com/hot_pengu), based on pixel art by [iamrifki](https://iamrifki.github.io/)  
 
 <img src="https://img.pokemondb.net/sprites/ruby-sapphire/normal/natu.png" alt="Natu" title="noot noot!">
