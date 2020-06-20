@@ -148,13 +148,13 @@ template tteInitAseDefault*(bgnr:int, bgcnt: BgCnt) =
   tteInitAse(bgnr, bgcnt, 0x0000, CLR_YELLOW.uint32, 0, addr(fwfDefault), nil)
 
 template tteInitChr4cDefault*(bgnr:int, bgcnt: BgCnt) =
-  tteInitChr4c(bgnr, bgcnt, 0xF000, 0x0201, (CLR_ORANGE shl 16 or CLR_YELLOW).uint32, addr(vwfDefault), nil)
+  tteInitChr4c(bgnr, bgcnt, 0xF000, 0x0201, (CLR_ORANGE.uint32 shl 16) or (CLR_YELLOW.uint32), addr(vwfDefault), nil)
 
 template tteInitChr4rDefault*(bgnr:int, bgcnt: BgCnt) =
-  tteInitChr4r(bgnr, bgcnt, 0xF000, 0x0201, (CLR_ORANGE shl 16 or CLR_YELLOW).uint32, addr(vwfDefault), nil)
+  tteInitChr4r(bgnr, bgcnt, 0xF000, 0x0201, (CLR_ORANGE.uint32 shl 16) or (CLR_YELLOW.uint32), addr(vwfDefault), nil)
 
 template tteInitChr4cb4Default*(bgnr:int, bgcnt: BgCnt) =
-  tteInitChr4c(bgnr, bgcnt, 0xF000, 0x0201, (CLR_ORANGE shl 16 or CLR_YELLOW).uint32, addr(verdana9_b4Font), chr4cDrawg_b4cts)
+  tteInitChr4c(bgnr, bgcnt, 0xF000, 0x0201, (CLR_ORANGE.uint32 shl 16) or (CLR_YELLOW.uint32), addr(verdana9_b4Font), chr4cDrawg_b4cts)
 
 template tteInitBmpDefault*(mode: int) =
   tteInitBmp(mode, addr(vwfDefault), nil)
