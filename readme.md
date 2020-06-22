@@ -40,4 +40,5 @@ Happy coding! And if you need any help you can reach me (@exelotl) on the [gbdev
 [posprintf](http://www.danposluns.com/gbadev/posprintf/index.html) by dan posluns  
 natu logo by [hot_pengu](https://twitter.com/hot_pengu), based on pixel art by [iamrifki](https://iamrifki.github.io/)  
 
-<img src="https://img.pokemondb.net/sprites/ruby-sapphire/normal/natu.png" alt="Natu" title="noot noot!">
+<br>
+<p align="right"><img width="40" src="https://user-images.githubusercontent.com/569607/85335282-a440d480-b4d4-11ea-9f7f-a48ae4726525.png" alt="Natu" title="noot noot!">&nbsp;</p>
