@@ -63,6 +63,11 @@ const
   FIX_SCALE*:int = (1 shl FIX_SHIFT)
   FIX_MASK*:int = (FIX_SCALE - 1)
 
+template fp*(n: int): Fixed = (n shl FIX_SHIFT).Fixed
+  ## Convert an integer to fixed-point (shorthand)
+template fp*(n: float32): Fixed = (n * FIX_SCALE.float32).Fixed
+  ## Convert a float to fixed-point (shorthand)
+
 template fixed*(n: int): Fixed = (n shl FIX_SHIFT).Fixed
   ## Convert an integer to fixed-point
 template fixed*(n: float32): Fixed = (n * FIX_SCALE.float32).Fixed
