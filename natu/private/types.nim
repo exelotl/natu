@@ -9,27 +9,9 @@ const
   IWRAM_DATA* = "__attribute__((section(\".iwram\"))) $# $#"    ## Put variable in IWRAM (default).
   EWRAM_DATA* = "__attribute__((section(\".ewram\"))) $# $#"    ## Put variable in EWRAM.
   EWRAM_BSS* = "__attribute__((section(\".sbss\"))) $# $#"      ## Put non-initialized variable in EWRAM.
-  IWRAM_CODE* = "__attribute__((section(\".iwram\"), long_call)) $# $#$#"  ## Put procedure in IWRAM.
+  IWRAM_CODE* = "__attribute__((section(\".iwram\"), target(\"arm\"), long_call)) $# $#$#"  ## Put procedure in IWRAM.
   EWRAM_CODE* = "__attribute__((section(\".ewram\"), long_call)) $# $#$#"  ## Put procedure in EWRAM.
 
-# Note: in the latest Nim release we might be able to use macros as pragmas for var/let symbols
-# see https://github.com/nim-lang/Nim/commit/044cef152f6006927a905d69dc527cada8206b0f
-# Which would allow us to do
-#   var foo {.ewram.}: int
-# but codegenDecl is good enough for now
-
-# Unfortunately these can't be exported
-# {.pragma:iwramData, codegenDecl: "IWRAM_DATA $# $#".}    ## Put variable in IWRAM (default).
-# {.pragma:ewramData, codegenDecl: "EWRAM_DATA $# $#".}    ## Put variable in EWRAM.
-# {.pragma:ewramBss, codegenDecl: "EWRAM_BSS $# $#".}      ## Put non-initialized variable in EWRAM.
-# {.pragma:iwramCode, codegenDecl: "IWRAM_CODE $# $#$#".}  ## Put procedure in IWRAM.
-# {.pragma:ewramCode, codegenDecl: "EWRAM_CODE $# $#$#".}  ## Put procedure in EWRAM.
-# TODO: Figure out how to do {.align4.} {.align:N.} pragmas, if I need them
-# e.g. {.pragma: align4, codegenDecl: "$# $# ALIGN4".}
-# but that only seems to work for variables, not types??
-# update:
-#   {.align:N.} pragma should be a thing in the next Nim release
-#   see https://github.com/nim-lang/Nim/pull/12643 and https://github.com/nim-lang/Nim/pull/12666
 
 type
   Block* {.importc: "BLOCK", header: "tonc.h", bycopy.} = object
