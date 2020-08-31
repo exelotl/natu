@@ -391,9 +391,12 @@ var bldy* {.importc:"REG_BLDY", header:"tonc.h".}: uint16          ## [Write onl
 
 import macros
 
-type SomeRegister = DispCnt | DispStat | BgCnt
+type
+  ReadWriteRegister = DispCnt | DispStat | BgCnt | WinCnt | BldCnt
+  WriteOnlyRegister = BgOfs | BgAffine | WinBoundsH | WinBoundsV
+  WritableRegister = ReadWriteRegister | WriteOnlyRegister
 
-macro writeRegister(register: SomeRegister, args: varargs[untyped]) =
+macro writeRegister(register: WritableRegister, args: varargs[untyped]) =
   ## Common implementation of `init` and `edit` templates below
   result = newStmtList()
   if args.len == 1 and args[0].kind == nnkStmtList:
@@ -422,11 +425,11 @@ macro writeRegister(register: SomeRegister, args: varargs[untyped]) =
         error("Expected assignment, got " & repr(node))
         
 
-template clear*[T:SomeRegister](r: T) =
+template clear*[T:WritableRegister](r: T) =
   ## Set all bits in a register to zero.
   r = 0.T
 
-template init*[T:SomeRegister](r: T, args: varargs[untyped]) =
+template init*[T:WritableRegister](r: T, args: varargs[untyped]) =
   ## Initialise an IO register to some combination of flags/values.
   ## E.g.
   ## :: 
@@ -457,7 +460,7 @@ template init*[T:SomeRegister](r: T, args: varargs[untyped]) =
   writeRegister(tmp, args)
   r = tmp
 
-template edit*[T:SomeRegister](r: T, args: varargs[untyped]) =
+template edit*[T:ReadWriteRegister](r: T, args: varargs[untyped]) =
   ## Update the value of some fields in a register.
   ## This works similarly to `init`, but preserves all other fields besides the ones that are specified.
   ##
