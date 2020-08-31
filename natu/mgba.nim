@@ -52,7 +52,7 @@ template printf*(str: cstring, args: varargs[untyped]) =
   ## 
   ## .. code-block:: nim
   ## 
-  ##   printf("Spawned item at $d, $d", pos.x, pos.y)
+  ##   printf("Spawned item at %d, %d", pos.x, pos.y)
   ## 
   printfAux(str, args)
   poke(REG_DEBUG_FLAGS, (logWarn.uint16) or 0x100)

@@ -36,8 +36,8 @@ template sgn3*(x: Fixed): int =
 
 template reflect*[T](x, min, max: T): T =
   ## Reflects `x` at boundaries `min` and `max`
-  ## If `x` is outside the range [`min`, `max`>, it'll be placed inside again with the same distance
-  ##  to the 'wall', but on the other side. Example for lower border: `y` = `min - (x - min)` = `2 * min + x`.
+  ## If `x` is outside the range ``min ..< max``, it'll be placed inside again with the same distance
+  ##  to the 'wall', but on the other side. Example for lower border: `y` = ``min - (x - min)`` = ``2 * min + x``.
   ## Returns: Reflected value of `x`.
   ## Note: `max` is exclusive!
   if x >= max: 2 * (max - 1) - x
@@ -45,7 +45,7 @@ template reflect*[T](x, min, max: T): T =
   else: x
 
 template wrap*[T](x, min, max: T): T =
-  ## Wraps `x` to stay in range [`min`, `max`>
+  ## Wraps `x` to stay in range ``min ..< max``
   if x >= max: x + min - max
   elif x < min: x + max - min
   else: x
@@ -242,7 +242,7 @@ proc `/`*(a: Vec2i, n:int): Vec2i {.noinit, inline.} =
   result.x = a.x div n
   result.y = a.y div n
 
-proc `*`*(a, b: Vec2i):int {.inline.} =
+proc `*`*(a, b: Vec2i): int {.inline.} =
   ## Dot product of two vectors
   (a.x * b.x) + (a.y * b.y)
 
@@ -260,12 +260,12 @@ proc `-=`*(a: var Vec2i, b: Vec2i) {.inline.} =
   a.x -= b.x
   a.y -= b.y
 
-proc `*=`*(a: var Vec2i, n:int) {.inline.} =
+proc `*=`*(a: var Vec2i, n: int) {.inline.} =
   ## Compound scale a vector by n
   a.x *= n
   a.y *= n
 
-proc `/=`*(a: var Vec2i, n:int) {.inline.} =
+proc `/=`*(a: var Vec2i, n: int) {.inline.} =
   ## Compound scale a vector by 1/n
   a.x = a.x div n
   a.y = a.y div n
@@ -284,17 +284,17 @@ proc `-`*(a, b: Vec2f): Vec2f {.noinit, inline.} =
   result.x = a.x - b.x
   result.y = a.y - b.y
 
-proc `*`*(a: Vec2f, n:Fixed|int): Vec2f {.noinit, inline.} =
+proc `*`*(a: Vec2f, n: Fixed|int): Vec2f {.noinit, inline.} =
   ## Scale a fixed point vector by n
   result.x = a.x * n
   result.y = a.y * n
 
-proc `/`*(a: Vec2f, n:Fixed|int): Vec2f {.noinit, inline.} =
+proc `/`*(a: Vec2f, n: Fixed|int): Vec2f {.noinit, inline.} =
   ## Scale a fixed point vector by 1/n
   result.x = a.x / n
   result.y = a.y / n
 
-proc `*`*(a, b: Vec2f):Fixed {.inline.} =
+proc `*`*(a, b: Vec2f): Fixed {.inline.} =
   ## Dot product of two fixed point vectors
   (a.x * b.x) + (a.y * b.y)
 
@@ -312,12 +312,12 @@ proc `-=`*(a: var Vec2f, b: Vec2f) {.inline.} =
   a.x -= b.x
   a.y -= b.y
 
-proc `*=`*(a: var Vec2f, n:Fixed|int) {.inline.} =
+proc `*=`*(a: var Vec2f, n: Fixed|int) {.inline.} =
   ## Compound scale a vector by n
   a.x *= n
   a.y *= n
 
-proc `/=`*(a: var Vec2f, n:Fixed|int) {.inline.} =
+proc `/=`*(a: var Vec2f, n: Fixed|int) {.inline.} =
   ## Compound scale a vector by 1/n
   a.x = a.x / n
   a.y = a.y / n
