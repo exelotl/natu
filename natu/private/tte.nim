@@ -484,12 +484,12 @@ proc objDrawg*(gid: uint) {.importc: "obj_drawg", header: "tonc.h", noconv.}
 # Extras
 # ------
 
-proc ink*(tc: TextContext): uint16 =  tc.cattr[TTE_INK]
-proc shadow*(tc: TextContext): uint16 =  tc.cattr[TTE_SHADOW]
-proc paper*(tc: TextContext): uint16 =  tc.cattr[TTE_PAPER]
-proc special*(tc: TextContext): uint16 =  tc.cattr[TTE_SPECIAL]
+template ink*(tc: TextContext | TextContextObj): uint16 =  tc.cattr[TTE_INK]
+template shadow*(tc: TextContext | TextContextObj): uint16 =  tc.cattr[TTE_SHADOW]
+template paper*(tc: TextContext | TextContextObj): uint16 =  tc.cattr[TTE_PAPER]
+template special*(tc: TextContext | TextContextObj): uint16 =  tc.cattr[TTE_SPECIAL]
 
-proc `ink=`*(tc: TextContext, v: uint16) =  tc.cattr[TTE_INK] = v
-proc `shadow=`*(tc: TextContext, v: uint16) =  tc.cattr[TTE_SHADOW] = v
-proc `paper=`*(tc: TextContext, v: uint16) =  tc.cattr[TTE_PAPER] = v
-proc `special=`*(tc: TextContext, v: uint16) =  tc.cattr[TTE_SPECIAL] = v
+template `ink=`*(tc: TextContext | var TextContextObj, v: uint16) =  tc.cattr[TTE_INK] = v
+template `shadow=`*(tc: TextContext | var TextContextObj, v: uint16) =  tc.cattr[TTE_SHADOW] = v
+template `paper=`*(tc: TextContext | var TextContextObj, v: uint16) =  tc.cattr[TTE_PAPER] = v
+template `special=`*(tc: TextContext | var TextContextObj, v: uint16) =  tc.cattr[TTE_SPECIAL] = v
