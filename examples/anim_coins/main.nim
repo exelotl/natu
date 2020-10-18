@@ -67,7 +67,7 @@ proc update(c: var Coin) =
     c.pos.x = fixed(qranRange(0, 224))
 
 
-proc draw(c: var Coin, oid: var int) =
+proc draw(c: var Coin, oid: int) =
   # apply attributes to sprite in OAM
   # note that we point to a different tile in VRAM depending on which anim frame we are on.
   let obj = addr objMem[oid]
@@ -76,8 +76,6 @@ proc draw(c: var Coin, oid: var int) =
   obj.size = s16x16
   obj.tid = tid + c.animFrame * coinNumTiles
   obj.pal = pal
-  
-  inc oid
 
 
 var coins {.noinit.}: array[40, Coin]
@@ -88,13 +86,16 @@ proc main() =
   irqInit()
   irqEnable(II_VBLANK)
   
-  REG_DISPCNT = DCNT_OBJ or DCNT_OBJ_1D
+  # enable sprites with 1d mapping
+  dispcnt.init:
+    obj = true
+    obj1d = true
   
   # copy palette into object PAL RAM
   memcpy16(addr palObjBank[pal], addr coinPal, coinPal.len)
   
   # copy all frames into object VRAM
-  memcpy32(addr tileMemObj[tid], addr coinTiles, coinTiles.len)
+  memcpy32(addr tileMemObj[0][tid], addr coinTiles, coinTiles.len)
   
   # initialize coins
   for coin in mitems(coins):
@@ -108,12 +109,13 @@ proc main() =
     
     VBlankIntrWait()
     
-    # sprite counter
+    # sprite counter (object id)
     var oid = 0
     
     # draw all coins, each call to draw also increments the sprite counter
     for coin in mitems(coins):
       coin.draw(oid)
+      inc oid
     
     # hide remaining sprites
     while oid < oamMem.len:

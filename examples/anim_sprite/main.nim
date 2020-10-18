@@ -64,7 +64,7 @@ var animWalk {.importc, nodecl.}: AnimDataPtr
 # Animation state
 # ---------------
 
-type Anim {.bycopy.} = object
+type Anim = object
   ## Holds the current state of an animation.
   data: AnimDataPtr
   pos: int
@@ -75,7 +75,7 @@ proc initAnim(data: AnimDataPtr): Anim {.noinit.} =
   result.timer = data.speed + 1
   result.pos = 0
 
-template frame(a: Anim): int =
+proc frame(a: Anim): int {.inline.} =
   ## Get the current frame number within the sprite sheet.
   a.data.frames[a.pos]
 
@@ -133,7 +133,7 @@ proc main() =
   memcpy16(addr palObjBank[pal], addr twiggyPal, twiggyPal.len)
   
   # copy an initial frame into Object VRAM
-  memcpy32(addr tileMemObj[0][tid], addr twiggyTiles[0], frameWords)
+  memcpy32(addr tileMemObj[0][tid], addr twiggyTiles, frameWords)
   
   # hide all sprites
   for obj in mitems(oamMem):
