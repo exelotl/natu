@@ -20,6 +20,7 @@ Primarily a wrapper for [libtonc](https://www.coranac.com/tonc/text/), we are no
 - Button states (hit, down, released)
 - mGBA logging functions
 - Maxmod bindings for music/sfx
+- Posprintf wrapper for string formatting
 
 ### Usage
 
@@ -29,7 +30,7 @@ Before diving into Nim, try building some of the Tonc 'advanced' demos to make s
 
 The examples in this repo each use a _nimscript_ configuration which should make a good starting point for any project. From within an example you can run `nim build` in the terminal to produce a GBA rom.
 
-Happy coding! And if you need any help you can reach me (@exelotl) on the [gbdev discord](https://discord.gg/gpBxq85).
+Happy coding! And if you need any help you can reach me (exelotl) on the [gbdev](https://gbdev.io/) discord or the [#gbadev](http://chat.efnet.org:9090/?channels=%23gbadev) IRC channel on EFnet (which is usually bridged to the discord channel too).
 
 ### Thanks
 
