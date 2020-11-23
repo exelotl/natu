@@ -344,7 +344,9 @@ template mode*(bld: BldCnt): BlendMode =
 template `mode=`*(bld: BldCnt, v: BlendMode) =
   bld = (v.uint16 or (bld.uint16 and not BLD_MODE_MASK)).BldCnt
 
+type BgOfs = BgPoint
 
+#[
 type BgOfs = distinct BgPoint
   ## Like BgPoint but write-only
 
@@ -362,7 +364,7 @@ template y*(ofs: BgOfs): int16 =
 
 converter toBgOfs*(p: BgPoint): BgOfs {.inline.} =
   p.BgOfs
-
+]#
 
 var dispcnt* {.importc:"REG_DISPCNT", header:"tonc.h".}: DispCnt            ## Display control register
 var dispstat* {.importc:"REG_DISPSTAT", header:"tonc.h".}: DispStat         ## Display status register
