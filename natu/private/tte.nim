@@ -219,7 +219,7 @@ proc tteCmdDefault*(str: cstring): cstring {.importc: "tte_cmd_default", header:
   ## Returns: pointer to after the parsed command.
   ## Note: Routine does text wrapping. Make sure margins are set.
 
-proc ttePutc*(ch: int): int {.importc: "tte_putc", header: "tonc.h", discardable.}
+proc ttePutc*(ch: int|char): int {.importc: "tte_putc", header: "tonc.h", discardable.}
   ## Plot a single character; does wrapping too.
   ## `ch` Character to plot (not glyph-id).
   ## Returns: Character width.
