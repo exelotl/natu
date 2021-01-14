@@ -4,6 +4,8 @@
 ## 
 ## For details, see http://www.coranac.com/tonc/text/interrupts.htm
 
+import types
+
 type
   IrqIndex* {.size: sizeof(cint).} = enum
     ## IRQ indices, to be used in most functions.

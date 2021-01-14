@@ -1,6 +1,8 @@
 ## Mathematical functions
 ## ======================
 
+import types
+
 # The following utilities are omitted because they're already in the standard library
 #  ABS
 #  MAX

@@ -1,11 +1,3 @@
-
-#[
-Note:
-  While Tonc has one Surface type, here we create several `distinct` copies of it.
-  This way, we can use overloading to get rid of all the prefixes.
-  And it becomes harder to call the wrong procedure on the wrong kind of surface.
-]#
-
 ## Graphics surfaces
 ## =================
 ## Tonclib's Surface system provides the basic functionality for
@@ -14,6 +6,14 @@ Note:
 ## - *bmp8*: 8bpp bitmap surfaces.
 ## - *chr4*(c/r): 4bpp tiled surfaces.
 ## This covers almost all of the GBA graphic modes.
+## 
+## [Note]
+## While Tonc has one Surface type, here we create several `distinct` copies of it.
+## This way, we can use overloading to get rid of all the prefixes.
+## And it becomes harder to call the wrong procedure on the wrong kind of surface.
+## 
+
+import types
 
 type
   SurfaceBmp16* {.borrow:`.`.} = distinct Surface  ## 16bpp linear (bitmap/tilemap).

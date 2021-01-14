@@ -1,6 +1,8 @@
 
 ## High level wrappers over register definitions from memmap.nim
 
+import types, memdef
+
 # Display Control Register
 # ------------------------
 

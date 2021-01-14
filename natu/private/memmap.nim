@@ -1,6 +1,8 @@
 # GBA Memory map
 # ==============
 
+import types
+
 # Main sections
 const
   MEM_EWRAM*:uint32 = 0x02000000  ## External work RAM

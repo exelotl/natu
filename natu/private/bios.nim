@@ -32,6 +32,8 @@
 ## 	`gbatek:bios <http://nocash.emubase.de/gbatek.htm#biosfunctions>`_.
 ##
 
+import types
+
 # SoftReset flags ?
 const
   ROM_RESTART*:uint32 = 0x00   ## Restart from ROM entry point.

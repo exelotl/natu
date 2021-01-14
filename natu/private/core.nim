@@ -1,6 +1,8 @@
 # Tonc core functionality
 # =======================
 
+import types
+
 # Data
 # ----
 

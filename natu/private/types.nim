@@ -162,6 +162,20 @@ type
     ## Pointer to object affine parameters.
 
 
+proc `=`*(dst: var ObjAttr, src: ObjAttr) {.inline.} =
+  ## Custom assignment for ObjAttr so that it doesn't clobber the affine data in the `fill` field.
+  dst.attr0 = src.attr0
+  dst.attr1 = src.attr1
+  dst.attr2 = src.attr2
+
+proc `=`*(dst: var ObjAffine, src: ObjAffine) {.inline.} =
+  ## Custom assignment for ObjAffine so that it doesn't clobber the attribute data in the `fill` fields.
+  dst.pa = src.pa
+  dst.pb = src.pb
+  dst.pc = src.pc
+  dst.pd = src.pd
+
+
 # sizeof doesn't work with imported object types at compile time
 # and the {.size:X.} pragma is only intended for enums, so we can't reliably specify the size ourselves
 # so we'll have to make do with these constants for now...

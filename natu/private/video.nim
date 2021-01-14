@@ -2,6 +2,8 @@
 ## ===============
 ## Basic video-IO, color, background and object functionality
 
+import types, core, memmap, memdef
+
 # Constants
 # ---------
 # Sizes in pixels

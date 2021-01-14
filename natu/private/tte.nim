@@ -40,6 +40,8 @@
 ##  margins and erases. See tte_cmd_default() and con_cmd_parse() for
 ##  details.
 
+import types, surface, reg, math
+
 # Constants
 # ---------
 
