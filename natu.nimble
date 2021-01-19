@@ -3,4 +3,4 @@ author        = "exelotl"
 description   = "Game Boy Advance development library"
 license       = "zlib"
 
-requires "nim >= 1.2.0"
+requires "nim >= 1.4.2"

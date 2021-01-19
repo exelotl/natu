@@ -13,7 +13,15 @@
 ## And it becomes harder to call the wrong procedure on the wrong kind of surface.
 ## 
 
-import types
+{.warning[UnusedImport]: off.}
+
+import types, video
+
+{.compile: "../../vendor/libtonc/src/tonc_surface.c".}
+{.compile: "../../vendor/libtonc/src/tonc_sbmp16.c".}
+{.compile: "../../vendor/libtonc/src/tonc_sbmp8.c".}
+{.compile: "../../vendor/libtonc/src/tonc_schr4c.c".}
+{.compile: "../../vendor/libtonc/src/tonc_schr4r.c".}
 
 type
   SurfaceBmp16* {.borrow:`.`.} = distinct Surface  ## 16bpp linear (bitmap/tilemap).

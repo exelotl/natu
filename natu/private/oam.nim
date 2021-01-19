@@ -1,7 +1,12 @@
 ## Object Attribute Memory functions
 ## =================================
 
-import types, math, memdef
+{.warning[UnusedImport]: off.}
+
+import types, memdef, bios, math
+
+{.compile: "../../vendor/libtonc/src/tonc_oam.c".}
+{.compile: "../../vendor/libtonc/src/tonc_obj_affine.c".}
 
 proc oamInit*(obj: ObjAttrPtr; count: uint) {.importc: "oam_init", header: "tonc.h".}
   ## Initialize an array of `count` ObjAttrs with with safe values.

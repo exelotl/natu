@@ -3,6 +3,12 @@
 ## Routines for synchronous and asynchronous button states.
 ## For details, see http://www.coranac.com/tonc/text/keys.htm
 
+{.warning[UnusedImport]: off.}
+
+import bios
+
+{.compile: "../../vendor/libtonc/src/tonc_input.c".}
+
 # [Note: the C functions actually deal with 32-bit values but the underlying 
 # registers and associated KEY_XXX constants are all 16-bit. So I've made
 # the bindings use 16-bit values. Hopefully this won't cause problems.]

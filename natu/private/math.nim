@@ -1,7 +1,13 @@
 ## Mathematical functions
 ## ======================
 
-import types
+{.warning[UnusedImport]: off.}
+
+import types, core
+
+{.compile: "../../vendor/libtonc/src/tonc_math.c".}
+{.compile("../../vendor/libtonc/asm/div_lut.s", "-x assembler-with-cpp").}
+{.compile("../../vendor/libtonc/asm/sin_lut.s", "-x assembler-with-cpp").}
 
 # The following utilities are omitted because they're already in the standard library
 #  ABS

@@ -2,7 +2,18 @@
 ## ===============
 ## Basic video-IO, color, background and object functionality
 
-import types, core, memmap, memdef
+{.warning[UnusedImport]: off.}
+
+import types, core, math, bios, memmap, memdef
+
+{.compile: "../../vendor/libtonc/src/tonc_video.c".}
+{.compile: "../../vendor/libtonc/src/tonc_bg_affine.c".}
+{.compile: "../../vendor/libtonc/src/tonc_bg.c".}
+{.compile: "../../vendor/libtonc/src/tonc_bmp8.c".}
+{.compile: "../../vendor/libtonc/src/tonc_bmp16.c".}
+{.compile: "../../vendor/libtonc/src/tonc_color.c".}
+{.compile("../../vendor/libtonc/asm/clr_blend_fast.s", "-x assembler-with-cpp").}
+{.compile("../../vendor/libtonc/asm/clr_fade_fast.s", "-x assembler-with-cpp").}
 
 # Constants
 # ---------

@@ -4,7 +4,13 @@
 ## 
 ## For details, see http://www.coranac.com/tonc/text/interrupts.htm
 
-import types
+{.warning[UnusedImport]: off.}
+
+import types, core
+
+{.compile: "../../vendor/libtonc/src/tonc_irq.c".}
+{.compile("../../vendor/libtonc/asm/tonc_isr_master.s", "-x assembler-with-cpp").}
+{.compile("../../vendor/libtonc/asm/tonc_isr_nest.s", "-x assembler-with-cpp").}
 
 type
   IrqIndex* {.size: sizeof(cint).} = enum

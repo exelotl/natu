@@ -34,6 +34,9 @@
 
 import types
 
+{.compile("../../vendor/libtonc/asm/tonc_bios_ex.s", "-x assembler-with-cpp").}
+{.compile("../../vendor/libtonc/asm/tonc_bios.s", "-x assembler-with-cpp").}
+
 # SoftReset flags ?
 const
   ROM_RESTART*:uint32 = 0x00   ## Restart from ROM entry point.
