@@ -2,6 +2,8 @@
 
 ## [0.1.3] - Unreleased
 
+- Nim version >= 1.4.2 is now required.
+
 ## [0.1.2] - 2021-01-14
 
 - `fp` is now available as a shorthand for constructing a 24:8 fixed point number.
