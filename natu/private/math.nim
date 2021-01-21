@@ -3,11 +3,12 @@
 
 {.warning[UnusedImport]: off.}
 
+import common
 import types, core
 
-{.compile: "../../vendor/libtonc/src/tonc_math.c".}
-{.compile("../../vendor/libtonc/asm/div_lut.s", "-x assembler-with-cpp").}
-{.compile("../../vendor/libtonc/asm/sin_lut.s", "-x assembler-with-cpp").}
+{.compile(toncPath & "/src/tonc_math.c", toncCFlags).}
+{.compile(toncPath & "/asm/div_lut.s", toncAsmFlags).}
+{.compile(toncPath & "/asm/sin_lut.s", toncAsmFlags).}
 
 # The following utilities are omitted because they're already in the standard library
 #  ABS

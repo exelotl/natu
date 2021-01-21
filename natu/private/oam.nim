@@ -3,10 +3,11 @@
 
 {.warning[UnusedImport]: off.}
 
+import common
 import types, memdef, bios, math
 
-{.compile: "../../vendor/libtonc/src/tonc_oam.c".}
-{.compile: "../../vendor/libtonc/src/tonc_obj_affine.c".}
+{.compile(toncPath & "/src/tonc_oam.c", toncCFlags).}
+{.compile(toncPath & "/src/tonc_obj_affine.c", toncCFlags).}
 
 proc oamInit*(obj: ObjAttrPtr; count: uint) {.importc: "oam_init", header: "tonc.h".}
   ## Initialize an array of `count` ObjAttrs with with safe values.

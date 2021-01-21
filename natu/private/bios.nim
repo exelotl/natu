@@ -32,10 +32,11 @@
 ## 	`gbatek:bios <http://nocash.emubase.de/gbatek.htm#biosfunctions>`_.
 ##
 
+import common
 import types
 
-{.compile("../../vendor/libtonc/asm/tonc_bios_ex.s", "-x assembler-with-cpp").}
-{.compile("../../vendor/libtonc/asm/tonc_bios.s", "-x assembler-with-cpp").}
+{.compile(toncPath & "/asm/tonc_bios_ex.s", toncAsmFlags).}
+{.compile(toncPath & "/asm/tonc_bios.s", toncAsmFlags).}
 
 # SoftReset flags ?
 const

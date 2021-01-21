@@ -15,13 +15,14 @@
 
 {.warning[UnusedImport]: off.}
 
+import common
 import types, video
 
-{.compile: "../../vendor/libtonc/src/tonc_surface.c".}
-{.compile: "../../vendor/libtonc/src/tonc_sbmp16.c".}
-{.compile: "../../vendor/libtonc/src/tonc_sbmp8.c".}
-{.compile: "../../vendor/libtonc/src/tonc_schr4c.c".}
-{.compile: "../../vendor/libtonc/src/tonc_schr4r.c".}
+{.compile(toncPath & "/src/tonc_surface.c", toncCFlags).}
+{.compile(toncPath & "/src/tonc_sbmp16.c", toncCFlags).}
+{.compile(toncPath & "/src/tonc_sbmp8.c", toncCFlags).}
+{.compile(toncPath & "/src/tonc_schr4c.c", toncCFlags).}
+{.compile(toncPath & "/src/tonc_schr4r.c", toncCFlags).}
 
 type
   SurfaceBmp16* {.borrow:`.`.} = distinct Surface  ## 16bpp linear (bitmap/tilemap).

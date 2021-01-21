@@ -1,12 +1,13 @@
 # Tonc core functionality
 # =======================
 
+import common
 import types
 
-{.compile: "../../vendor/libtonc/src/tonc_core.c".}
-{.compile("../../vendor/libtonc/asm/tonc_memcpy.s", "-x assembler-with-cpp").}
-{.compile("../../vendor/libtonc/asm/tonc_memset.s", "-x assembler-with-cpp").}
-# {.compile("../../vendor/libtonc/asm/tonc_nocash.s", "-x assembler-with-cpp").}  # Natu doesn't do nocash debugging yet.
+{.compile(toncPath & "/src/tonc_core.c", toncCFlags).}
+{.compile(toncPath & "/asm/tonc_memcpy.s", toncAsmFlags).}
+{.compile(toncPath & "/asm/tonc_memset.s", toncAsmFlags).}
+# {.compile(toncPath & "/asm/tonc_nocash.s", toncAsmFlags).}  # Natu doesn't do nocash debugging yet.
 
 # Data
 # ----

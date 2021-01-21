@@ -6,11 +6,12 @@
 
 {.warning[UnusedImport]: off.}
 
+import common
 import types, core
 
-{.compile: "../../vendor/libtonc/src/tonc_irq.c".}
-{.compile("../../vendor/libtonc/asm/tonc_isr_master.s", "-x assembler-with-cpp").}
-{.compile("../../vendor/libtonc/asm/tonc_isr_nest.s", "-x assembler-with-cpp").}
+{.compile(toncPath & "/src/tonc_irq.c", toncCFlags).}
+{.compile(toncPath & "/asm/tonc_isr_master.s", toncAsmFlags).}
+{.compile(toncPath & "/asm/tonc_isr_nest.s", toncAsmFlags).}
 
 type
   IrqIndex* {.size: sizeof(cint).} = enum

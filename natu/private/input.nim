@@ -5,9 +5,10 @@
 
 {.warning[UnusedImport]: off.}
 
+import common
 import bios
 
-{.compile: "../../vendor/libtonc/src/tonc_input.c".}
+{.compile(toncPath & "/src/tonc_input.c", toncCFlags).}
 
 # [Note: the C functions actually deal with 32-bit values but the underlying 
 # registers and associated KEY_XXX constants are all 16-bit. So I've made

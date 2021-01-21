@@ -40,37 +40,38 @@
 ##  margins and erases. See tte_cmd_default() and con_cmd_parse() for
 ##  details.
 
+import common
 import types, surface, reg, math
 
-{.compile: "../../vendor/libtonc/src/font/sys8.s".}
-{.compile: "../../vendor/libtonc/src/font/verdana10.s".}
-{.compile: "../../vendor/libtonc/src/font/verdana9_b4.s".}
-{.compile: "../../vendor/libtonc/src/font/verdana9b.s".}
-{.compile: "../../vendor/libtonc/src/font/verdana9i.s".}
-{.compile: "../../vendor/libtonc/src/font/verdana9.s".}
-{.compile: "../../vendor/libtonc/src/tte/ase_drawg.c".}
-{.compile: "../../vendor/libtonc/src/tte/bmp16_drawg_b1cs.c".}
-{.compile: "../../vendor/libtonc/src/tte/bmp16_drawg.c".}
-{.compile: "../../vendor/libtonc/src/tte/bmp8_drawg_b1cs.c".}
-{.compile("../../vendor/libtonc/src/tte/bmp8_drawg_b1cts_fast.s", "-x assembler-with-cpp").}
-{.compile: "../../vendor/libtonc/src/tte/bmp8_drawg.c".}
-{.compile: "../../vendor/libtonc/src/tte/chr4c_drawg_b1cts.c".}
-{.compile("../../vendor/libtonc/src/tte/chr4c_drawg_b1cts_fast.s", "-x assembler-with-cpp").}
-{.compile: "../../vendor/libtonc/src/tte/chr4c_drawg_b4cts.c".}
-{.compile("../../vendor/libtonc/src/tte/chr4c_drawg_b4cts_fast.s", "-x assembler-with-cpp").}
-{.compile: "../../vendor/libtonc/src/tte/chr4r_drawg_b1cts.c".}
-{.compile("../../vendor/libtonc/src/tte/chr4r_drawg_b1cts_fast.s", "-x assembler-with-cpp").}
-{.compile: "../../vendor/libtonc/src/tte/obj_drawg.c".}
-{.compile: "../../vendor/libtonc/src/tte/se_drawg.c".}
-{.compile: "../../vendor/libtonc/src/tte/tte_init_ase.c".}
-{.compile: "../../vendor/libtonc/src/tte/tte_init_bmp.c".}
-{.compile: "../../vendor/libtonc/src/tte/tte_init_chr4c.c".}
-{.compile: "../../vendor/libtonc/src/tte/tte_init_chr4r.c".}
-{.compile: "../../vendor/libtonc/src/tte/tte_init_obj.c".}
-{.compile: "../../vendor/libtonc/src/tte/tte_init_se.c".}
-# {.compile: "../../vendor/libtonc/src/tte/tte_iohook.c".}  # Natu doesn't support stdio.
-{.compile: "../../vendor/libtonc/src/tte/tte_main.c".}
-{.compile("../../vendor/libtonc/src/tte/tte_types.s", "-x assembler-with-cpp").}
+{.compile(toncPath & "/src/font/sys8.s", toncAsmFlags).}
+{.compile(toncPath & "/src/font/verdana10.s", toncAsmFlags).}
+{.compile(toncPath & "/src/font/verdana9_b4.s", toncAsmFlags).}
+{.compile(toncPath & "/src/font/verdana9b.s", toncAsmFlags).}
+{.compile(toncPath & "/src/font/verdana9i.s", toncAsmFlags).}
+{.compile(toncPath & "/src/font/verdana9.s", toncAsmFlags).}
+{.compile(toncPath & "/src/tte/ase_drawg.c", toncCFlags).}
+{.compile(toncPath & "/src/tte/bmp16_drawg_b1cs.c", toncCFlags).}
+{.compile(toncPath & "/src/tte/bmp16_drawg.c", toncCFlags).}
+{.compile(toncPath & "/src/tte/bmp8_drawg_b1cs.c", toncCFlags).}
+{.compile(toncPath & "/src/tte/bmp8_drawg_b1cts_fast.s", toncAsmFlags).}
+{.compile(toncPath & "/src/tte/bmp8_drawg.c", toncCFlags).}
+{.compile(toncPath & "/src/tte/chr4c_drawg_b1cts.c", toncCFlags).}
+{.compile(toncPath & "/src/tte/chr4c_drawg_b1cts_fast.s", toncAsmFlags).}
+{.compile(toncPath & "/src/tte/chr4c_drawg_b4cts.c", toncCFlags).}
+{.compile(toncPath & "/src/tte/chr4c_drawg_b4cts_fast.s", toncAsmFlags).}
+{.compile(toncPath & "/src/tte/chr4r_drawg_b1cts.c", toncCFlags).}
+{.compile(toncPath & "/src/tte/chr4r_drawg_b1cts_fast.s", toncAsmFlags).}
+{.compile(toncPath & "/src/tte/obj_drawg.c", toncCFlags).}
+{.compile(toncPath & "/src/tte/se_drawg.c", toncCFlags).}
+{.compile(toncPath & "/src/tte/tte_init_ase.c", toncCFlags).}
+{.compile(toncPath & "/src/tte/tte_init_bmp.c", toncCFlags).}
+{.compile(toncPath & "/src/tte/tte_init_chr4c.c", toncCFlags).}
+{.compile(toncPath & "/src/tte/tte_init_chr4r.c", toncCFlags).}
+{.compile(toncPath & "/src/tte/tte_init_obj.c", toncCFlags).}
+{.compile(toncPath & "/src/tte/tte_init_se.c", toncCFlags).}
+# {.compile(toncPath & "/src/tte/tte_iohook.c", toncCFlags).}  # Natu doesn't support stdio.
+{.compile(toncPath & "/src/tte/tte_main.c", toncCFlags).}
+{.compile(toncPath & "/src/tte/tte_types.s", toncAsmFlags).}
 
 
 # Constants
