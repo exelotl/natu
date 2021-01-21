@@ -1,15 +1,19 @@
 import os, strutils
+import std/compilesettings
 
 let natuDir* = currentSourcePath().parentDir.parentDir
+
+# ROM header info, should be overidden
 
 put "natu.gameTitle", "untitled"
 put "natu.gameCode", "0NTP"
 
-# common options
+# C compiler options, may be overidden
 
 put "natu.cflags.target", "-mthumb -mthumb-interwork"
 put "natu.cflags.cpu", "-mcpu=arm7tdmi -mtune=arm7tdmi"
-put "natu.cflags.perf", "-fomit-frame-pointer -ffast-math"
+put "natu.cflags.perf", "-O2 -ffast-math"
+put "natu.cflags.debug", "-g"
 
 # TODO: check how much these two are actually needed nowadays:
 
@@ -21,30 +25,43 @@ put "natu.cflags.noWarn", "-Wno-unused-variable -Wno-unused-but-set-variable -Wn
 # so I'm keeping this around just in case.
 put "natu.cflags.limitErrors", "-fmax-errors=1"
 
-when not defined(nimsuggest):
-  doAssert(existsEnv("DEVKITARM"), "Please set DEVKITARM in your environment.")
-  doAssert(existsEnv("DEVKITPRO"), "Please set DEVKITPRO in your environment.")
+proc devkitPro*(): string =
+  result = getEnv("DEVKITPRO")
+  when not defined(nimsuggest):
+    doAssert(result != "", "Please set DEVKITPRO in your environment.")
+
+proc devkitArm*(): string =
+  result = getEnv("DEVKITARM")
+  when not defined(nimsuggest):
+    doAssert(result != "", "Please set DEVKITARM in your environment.")
 
 proc gbaCfg*() =
   
   doAssert(get("natu.toolchain") == "devkitarm", "Only \"devkitarm\" toolchain is supported for now.")
   
-  let devkitArm = getEnv("DEVKITARM")
-  
-  # set linker flags (these are dependent on other options)
+  # set linker flags
   
   if not exists("natu.ldflags.specs"):
-    put "natu.ldflags.specs", "-specs=" & devkitArm & "/arm-none-eabi/lib/gba.specs"
+    put "natu.ldflags.specs", "-specs=" & devkitArm() & "/arm-none-eabi/lib/gba.specs"
   
   if not exists("natu.ldflags.target"):
     put "natu.ldflags.target", get("natu.cflags.target")
+    
+  if not exists("natu.ldflags.debug"):
+    put "natu.ldflags.debug", get("natu.cflags.debug")
   
   if not exists("natu.ldflags.map"):
-    put "natu.ldflags.map", "-Wl,-Map," & get("natu.gameTitle") & ".elf.map"
+    # get the "--out:xxx" compiler option, if known
+    # otherwise guess based on the name of the 'main' file.
+    var name = querySetting(outFile)
+    if name == "":
+      name = projectName() & ".elf"
+    put "natu.ldflags.map", "-Wl,-Map," & name & ".map"
   
   let cflags = [
     get("natu.cflags.target"),
     get("natu.cflags.cpu"),
+    get("natu.cflags.debug"),
     get("natu.cflags.perf"),
     get("natu.cflags.noWarn"),
     get("natu.cflags.limitErrors"),
@@ -53,12 +70,13 @@ proc gbaCfg*() =
   let ldflags = [
     get("natu.ldflags.specs"),
     get("natu.ldflags.target"),
+    get("natu.ldflags.debug"),
     get("natu.ldflags.map"),
   ].join(" ")
   
   # Work with --gc:arc --os:any
   
-  put "arm.any.gcc.path", devkitArm / "bin"
+  put "arm.any.gcc.path", devkitArm() / "bin"
   put "arm.any.gcc.exe", "arm-none-eabi-gcc"
   put "arm.any.gcc.linkerexe", "arm-none-eabi-gcc"
   put "arm.any.gcc.options.linker", ldflags
@@ -66,26 +84,27 @@ proc gbaCfg*() =
   
   # Work with --gc:none --os:standalone
   
-  put "arm.standalone.gcc.path", devkitArm / "bin"
+  put "arm.standalone.gcc.path", devkitArm() / "bin"
   put "arm.standalone.gcc.exe", "arm-none-eabi-gcc"
   put "arm.standalone.gcc.linkerexe", "arm-none-eabi-gcc"
   put "arm.standalone.gcc.options.linker", ldflags
   put "arm.standalone.gcc.options.always", cflags
   
-  # Don't set switches that influence the Nim compiler's behaviour
-  # only those that a developer will never want to override.
+  # Only set switches that the developer will never need to override.
   switch "define", "gba"
+  switch "lineTrace", "off"
+  switch "stackTrace", "off"
   switch "cincludes", natuDir/"vendor/libtonc/include"
   switch "cincludes", natuDir/"vendor/maxmod/include"
   
 
 proc gbaStrip*(elfFile, gbaFile: string) =
   ## Invoke objcopy to create a raw binary file (all debug symbols removed)
-  exec getEnv("DEVKITARM") / "bin/arm-none-eabi-objcopy -O binary " & elfFile & " " & gbaFile
+  exec devkitArm() / "bin/arm-none-eabi-objcopy -O binary " & elfFile & " " & gbaFile
 
 proc gbaFix*(gbaFile: string) =
   ## Invoke gbafix to set the ROM header
-  exec getEnv("DEVKITPRO") / "tools/bin/gbafix " &
+  exec devkitPro() / "tools/bin/gbafix " &
     gbaFile &
     " -c" & get("natu.gameCode") &
     " -t" & get("natu.gameTitle").toUpperAscii()

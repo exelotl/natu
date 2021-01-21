@@ -1,13 +1,12 @@
 import os, strutils
 import natu/config
 
-const main = "main.nim"
-const title = "hello_world"
-const gameCode = "0NTP"
+const main = "helloworld.nim"
+const name = splitFile(main).name
 
 put "natu.toolchain", "devkitarm"
-put "natu.gameTitle", title
-put "natu.gameCode", gameCode
+put "natu.gameTitle", "HELLO"
+put "natu.gameCode", "0NTP"
 
 if projectPath() == thisDir() / main:
   # This runs only when compiling the main file
@@ -16,25 +15,20 @@ if projectPath() == thisDir() / main:
   switch "cpu", "arm"
   switch "os", "standalone"
   switch "gc", "none"
-  switch "out", title & ".elf"
-  switch "lineTrace", "off"
-  switch "stackTrace", "off"
-  switch "checks", "off"
-  switch "debugInfo", "on"
-  switch "opt", "speed"
-  switch "path", projectDir()    # allow imports relative to the main file
-  switch "header"                # output "main.h", which C files can include
-  switch "nimCache", "nimcache"  # output C sources to local directory
-  switch "cincludes", thisDir() / "nimcache"
+  switch "checks", "off"            # disable assertions, bounds checking, etc.
+  switch "path", projectDir()       # allow imports relative to the main file
+  switch "header"                   # output "{name}.h"
+  switch "nimcache", "nimcache"     # output C sources to local directory
+  switch "cincludes", nimcacheDir() # allow external C files to include "{name}.h"
 
 task build, "builds the GBA rom":
   let args = commandLineParams()[1..^1].join(" ")
-  selfExec "c " & args & " " & thisDir() / main
-  gbaStrip(title & ".elf", title & ".gba")
-  gbaFix(title & ".gba")
+  selfExec "c " & args & " -o:" & name & ".elf " & thisDir() / main
+  gbaStrip name & ".elf", name & ".gba"
+  gbaFix name & ".gba"
 
 task clean, "removes build files":
   rmDir "nimcache"
-  rmFile title & ".gba"
-  rmFile title & ".elf"
-  rmFile title & ".elf.map"
+  rmFile name & ".gba"
+  rmFile name & ".elf"
+  rmFile name & ".elf.map"
