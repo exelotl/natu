@@ -5,7 +5,7 @@ let natuDir* = currentSourcePath().parentDir.parentDir
 
 # ROM header info, should be overidden
 
-put "natu.gameTitle", "untitled"
+put "natu.gameTitle", "UNTITLED"
 put "natu.gameCode", "0NTP"
 
 # C compiler options, may be overidden
@@ -92,6 +92,8 @@ proc gbaCfg*() =
   
   # Only set switches that the developer will never need to override.
   switch "define", "gba"
+  switch "cpu", "arm"
+  switch "cc", "gcc"
   switch "lineTrace", "off"
   switch "stackTrace", "off"
   switch "cincludes", natuDir/"vendor/libtonc/include"

@@ -1,25 +1,23 @@
 import os, strutils
 import natu/config
 
-const main = "helloworld.nim"
-const name = splitFile(main).name
+const main = "helloworld.nim"          # path to project file
+const name = splitFile(main).name      # name of ROM
 
 put "natu.toolchain", "devkitarm"
-put "natu.gameTitle", "HELLO"
-put "natu.gameCode", "0NTP"
+put "natu.gameTitle", "HELLO"          # max 12 chars, uppercase
+put "natu.gameCode", "0NTP"            # 4 chars, see GBATEK for info
 
 if projectPath() == thisDir() / main:
-  # This runs only when compiling the main file
-  gbaCfg()
-  switch "cc", "gcc"
-  switch "cpu", "arm"
+  # This runs only when compiling the project file:
+  gbaCfg()                             # set C compiler + linker options for GBA target
   switch "os", "standalone"
   switch "gc", "none"
-  switch "checks", "off"            # disable assertions, bounds checking, etc.
-  switch "path", projectDir()       # allow imports relative to the main file
-  switch "header"                   # output "{name}.h"
-  switch "nimcache", "nimcache"     # output C sources to local directory
-  switch "cincludes", nimcacheDir() # allow external C files to include "{name}.h"
+  switch "checks", "off"               # toggle assertions, bounds checking, etc.
+  switch "path", projectDir()          # allow imports relative to the main file
+  switch "header"                      # output "{project}.h"
+  switch "nimcache", "nimcache"        # output C sources to local directory
+  switch "cincludes", nimcacheDir()    # allow external C files to include "{project}.h"
 
 task build, "builds the GBA rom":
   let args = commandLineParams()[1..^1].join(" ")
