@@ -1,12 +1,6 @@
 import natu
 import natu/maxmod
-
-importSoundbank()
-# Creates the following definitions:
-#[
-  var soundbankBin* {.importc:"soundbank_bin", header:"soundbank_bin.h".}: pointer
-  var modSpacecat* {.importc:"MOD_SPACECAT", header:"soundbank.h".}: uint
-]#
+import ./soundbank
 
 proc main() =
   

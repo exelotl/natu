@@ -22,6 +22,17 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           #
 ############################################################################
 
+const thisDir = currentSourcePath()[0..^11]
+const mmPath = thisDir & "../vendor/maxmod"
+const mmAsmFlags = "-g -x assembler-with-cpp -DSYS_GBA -DUSE_IWRAM -I" & mmPath & "/asm_include"
+
+{.compile(mmPath & "/source/mm_effect.s", mmAsmFlags).}
+{.compile(mmPath & "/source/mm_main.s", mmAsmFlags).}
+{.compile(mmPath & "/source/mm_mas.s", mmAsmFlags).}
+{.compile(mmPath & "/source/mm_mas_arm.s", mmAsmFlags).}
+{.compile(mmPath & "/source_gba/mm_init_default.s", mmAsmFlags).}
+{.compile(mmPath & "/source_gba/mm_mixer_gba.s", mmAsmFlags).}
+
 # Types
 # -----
 
@@ -361,7 +372,7 @@ proc toCamelCase(name:string): string =
     else:
       result.add(c.toLowerAscii())
 
-proc getSoundName*(name: string, camelCase = false): string =
+proc getSoundName*(name: string, camelCase = false): string {.deprecated.} =
   ## Convert a sound filepath to a variable name
   ##
   ## By default, the mmutil naming convention is used.
@@ -396,7 +407,7 @@ proc getSoundName*(name: string, camelCase = false): string =
   return (if camelCase: name.toCamelCase() else: name)
 
 
-macro importSoundbank*(dir: static[string] = "audio", camelCase: static[bool] = true) =
+macro importSoundbank*(dir: static[string] = "audio", camelCase: static[bool] = true) {.deprecated.} =
   ## Generate declarations for the soundbank and music/effect IDs.
   ## Loops over the given directory and attempts to mimic the naming convention of mmutil
   

@@ -110,3 +110,37 @@ proc gbaFix*(gbaFile: string) =
     gbaFile &
     " -c" & get("natu.gameCode") &
     " -t" & get("natu.gameTitle").toUpperAscii()
+
+
+func toCamelCase(name: string): string =
+  var upper = false
+  for c in name:
+    if c == '_': upper = true
+    elif upper:
+      result.add(c.toUpperAscii())
+      upper = false
+    else:
+      result.add(c.toLowerAscii())
+
+proc createMaxmodSoundbank*(files: seq[string], binFile = "soundbank.bin", nimFile = "soundbank.nim") =
+  ## Invoke `mmutil` to create a soundbank file.
+  ## Also output a Nim file equivalent to the header file that
+  ## mmutil would usually produce when given the -h option.
+  
+  exec devkitPro() / "tools/bin/mmutil -o" & binFile & " " & files.join(" ")
+  
+  let pathToBin = relativePath(binFile, nimFile.parentDir).replace('\\', '/')
+  var nimSrc =
+    "let soundbankBin* = static staticRead(\"" & pathToBin & "\").cstring\n"
+
+  var modCount, sfxCount: int
+  for f in files:
+    let (_, name, ext) = splitFile(f)
+    if ext == ".wav":
+      nimSrc.add "const " & toCamelCase("sfx_" & name) & "* = " & $sfxCount & "\n"
+      inc sfxCount
+    elif ext in [".mod", ".xm", ".s3m", ".it"]:
+      nimSrc.add "const " & toCamelCase("mod_" & name) & "* = " & $modCount & "\n"
+      inc modCount
+  
+  writeFile(nimFile, nimSrc)
