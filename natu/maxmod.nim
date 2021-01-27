@@ -213,6 +213,9 @@ const
   MM_SIZEOF_ACTCH* = 28
   MM_SIZEOF_MIXCH* = 24
 
+proc `==`*(a, b: MmModuleId): bool {.borrow.}
+proc `==`*(a, b: MmSampleId): bool {.borrow.}
+proc `==`*(a, b: MmSfxHandle): bool {.borrow.}
 
 proc init*(soundbank: pointer; channels: uint) {.importc:"mmInitDefault", header:"maxmod.h".}
   ## Initialize Maxmod with default settings.
@@ -460,6 +463,7 @@ macro importSoundbank*(dir: static[string] = "audio", camelCase: static[bool] = 
 proc position*(position: uint) {.deprecated, importc:"mmPosition", header:"maxmod.h".}
 proc effectRelease*(handle: MmSfxHandle) {.deprecated, importc:"mmEffectRelease", header:"maxmod.h".}
 proc effectCancel*(handle: MmSfxHandle) {.deprecated, importc:"mmEffectCancel", header:"maxmod.h".}
+proc effectRate*(handle: MmSfxHandle; rate: uint) {.importc:"mmEffectRate", header:"maxmod.h".}
 proc effectScaleRate*(handle: MmSfxHandle; factor: uint) {.deprecated, importc:"mmEffectScaleRate", header:"maxmod.h".}
 proc effectPanning*(handle: MmSfxHandle; panning: uint8) {.deprecated, importc:"mmEffectPanning", header:"maxmod.h".}
 proc effectVolume*(handle: MmSfxHandle; volume: uint) {.deprecated, importc:"mmEffectVolume", header:"maxmod.h".}
