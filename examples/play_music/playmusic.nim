@@ -34,7 +34,7 @@ proc main() =
       let handle = maxmod.effect(sfxShoot)
       
       # invalidate handle (allow effect to be interrupted)
-      maxmod.effectRelease(handle)
+      handle.release()
     
     # update maxmod
     maxmod.frame()

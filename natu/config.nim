@@ -129,18 +129,33 @@ proc createMaxmodSoundbank*(files: seq[string], binFile = "soundbank.bin", nimFi
   
   exec devkitPro() / "tools/bin/mmutil -o" & binFile & " " & files.join(" ")
   
-  let pathToBin = relativePath(binFile, nimFile.parentDir).replace('\\', '/')
-  var nimSrc =
-    "let soundbankBin* = static staticRead(\"" & pathToBin & "\").cstring\n"
-
-  var modCount, sfxCount: int
+  var sfxList, modList: seq[string]
+  
   for f in files:
     let (_, name, ext) = splitFile(f)
+    
     if ext == ".wav":
-      nimSrc.add "const " & toCamelCase("sfx_" & name) & "* = " & $sfxCount & "\n"
-      inc sfxCount
+      sfxList.add toCamelCase("sfx_" & name)
+    
     elif ext in [".mod", ".xm", ".s3m", ".it"]:
-      nimSrc.add "const " & toCamelCase("mod_" & name) & "* = " & $modCount & "\n"
-      inc modCount
+      modList.add toCamelCase("mod_" & name)
   
-  writeFile(nimFile, nimSrc)
+  writeFile nimFile, """
+import natu/maxmod
+
+let soundbankBin* = static staticRead("$1").cstring
+
+type
+  SampleId* {.size: 4.} = enum
+$2
+  ModuleId* {.size: 4.} = enum
+$3
+
+# Allow implicit conversion:
+converter toMmSampleId*(id: SampleId): MmSampleId {.inline.} = id.MmSampleId
+converter toMmModuleId*(id: ModuleId): MmModuleId {.inline.} = id.MmModuleId
+""" % [
+    relativePath(binFile, nimFile.parentDir).replace('\\', '/'),
+    sfxList.join("\n").indent(4),
+    modList.join("\n").indent(4),
+  ]

@@ -37,8 +37,12 @@ const mmAsmFlags = "-g -x assembler-with-cpp -DSYS_GBA -DUSE_IWRAM -I" & mmPath 
 # -----
 
 type
-  MmSfxHandle* = uint16
+  MmModuleId* = distinct uint32
+    ## ID of a song in the soundbank
+  MmSampleId* = distinct uint32
+    ## ID of a sample in the soundbank
   
+  MmSfxHandle* = distinct uint16
   MmMode* {.size: sizeof(cint).} = enum
     MM_MODE_A,
     MM_MODE_B,
@@ -249,7 +253,7 @@ proc frame*() {.importc:"mmFrame", header:"maxmod.h".}
 # Module Playback
 # ---------------
 
-proc start*(id: uint; mode: MmPlaybackMode) {.importc:"mmStart", header:"maxmod.h".}
+proc start*(id: MmModuleId; mode: MmPlaybackMode) {.importc:"mmStart", header:"maxmod.h".}
   ## Start module playback.
   ## `id` : ID of module to play.
   ## `mode` : Playback mode (loop/once)
@@ -263,14 +267,17 @@ proc resume*() {.importc:"mmResume", header:"maxmod.h".}
 proc stop*() {.importc:"mmStop", header:"maxmod.h".}
   ## Stop module playback. start again with mmStart().
 
-proc position*(position: uint) {.importc:"mmPosition", header:"maxmod.h".}
+proc setPosition*(position: uint) {.importc:"mmSetPosition", header:"maxmod.h".}
   ## Set playback position.
   ## `position` : New position in the module sequence.
+
+proc getPosition*(): uint {.importc:"mmGetPosition", header:"maxmod.h".}
+  ## Get playback position.
 
 proc active*(): bool {.importc:"mmActive", header:"maxmod.h".}
   ## Returns true if module is playing.
 
-proc jingle*(moduleID: uint) {.importc:"mmJingle", header:"maxmod.h".}
+proc jingle*(id: MmModuleId) {.importc:"mmJingle", header:"maxmod.h".}
   ##  Play module as jingle. Jingles are limited to 4 channels only.
   ##  `moduleID` : ID of module (defined in soundbank header)
 
@@ -294,14 +301,16 @@ proc setModulePitch*(pitch: uint) {.importc:"mmSetModulePitch", header:"maxmod.h
   ## Set pitch of playback.
   ## `pitch` : Range = 0x200 -> 0x800 = 0.5 -> 2.0
 
-proc playModule*(address: uint; mode: uint; layer: uint) {.importc:"mmPlayModule", header:"maxmod.h".}
+# TODO: check types of mode and layer.
+
+proc playModule*(address: pointer; mode: uint; layer: uint) {.importc:"mmPlayModule", header:"maxmod.h".}
   ## Play direct MAS file
 
 
 # Sound Effects
 # -------------
 
-proc effect*(sampleID: uint): MmSfxHandle {.importc:"mmEffect", header:"maxmod.h", discardable.}
+proc effect*(id: MmSampleId): MmSfxHandle {.importc:"mmEffect", header:"maxmod.h", discardable.}
   ## Play a sound effect at its default frequency with full volume and centered panning.
   ## `sampleID` : Sound effect ID. (defined in soundbank header)
 
@@ -309,39 +318,45 @@ proc effectEx*(sound: ptr MmSoundEffect): MmSfxHandle {.importc:"mmEffectEx", he
   ## Play a sound effect with all parameters.
   ## `sound` : Sound effect attributes.
 
-proc effectVolume*(handle: MmSfxHandle; volume: uint) {.importc:"mmEffectVolume", header:"maxmod.h".}
+proc setVolume*(handle: MmSfxHandle; volume: uint) {.importc:"mmEffectVolume", header:"maxmod.h".}
   ## Set the volume of a sound effect.
   ## `handle` : Sound effect handle.
   ## `volume` : 0->65535
 
-proc effectPanning*(handle: MmSfxHandle; panning: uint8) {.importc:"mmEffectPanning", header:"maxmod.h".}
+proc setPanning*(handle: MmSfxHandle; panning: uint8) {.importc:"mmEffectPanning", header:"maxmod.h".}
   ## Set the panning of a sound effect.
   ## `handle` : Sound effect handle.
   ## `panning` : 0->255 = left..right
 
-proc effectRate*(handle: MmSfxHandle; rate: uint) {.importc:"mmEffectRate", header:"maxmod.h".}
+# TODO: use fixed point param for these two procs:
+
+proc setRate*(handle: MmSfxHandle; rate: uint) {.importc:"mmEffectRate", header:"maxmod.h".}
   ## Set the playback rate of an effect.
   ## `handle` : Sound effect handle.
   ## `rate : 6.10 factor
 
-proc effectScaleRate*(handle: MmSfxHandle; factor: uint) {.importc:"mmEffectScaleRate", header:"maxmod.h".}
+proc scaleRate*(handle: MmSfxHandle; factor: uint) {.importc:"mmEffectScaleRate", header:"maxmod.h".}
   ## Scale the playback rate of an effect.
   ## `handle` : Sound effect handle.
   ## `factor` : 6.10 fixed point factor.
 
-proc effectCancel*(handle: MmSfxHandle) {.importc:"mmEffectCancel", header:"maxmod.h".}
+proc cancel*(handle: MmSfxHandle) {.importc:"mmEffectCancel", header:"maxmod.h".}
   ## Stop sound effect.
   ## `handle` : Sound effect handle.
 
-proc effectRelease*(handle: MmSfxHandle) {.importc:"mmEffectRelease", header:"maxmod.h".}
+proc release*(handle: MmSfxHandle) {.importc:"mmEffectRelease", header:"maxmod.h".}
   ## Release sound effect (invalidate handle and allow interruption)
+  ## `handle` : Sound effect handle.
+
+proc isActive*(handle: MmSfxHandle) {.importc:"mmEffectActive", header:"maxmod.h".}
+  ## Indicates if a sound effect is active or not.
   ## `handle` : Sound effect handle.
 
 proc setEffectsVolume*(volume: uint) {.importc:"mmSetEffectsVolume", header:"maxmod.h".}
   ## Set master volume scale for effect playback.
   ## `volume` : 0->1024 representing 0%->100% volume
 
-proc effectCancelAll*() {.importc:"mmEffectCancelAll", header:"maxmod.h".}
+proc cancelAllEffects*() {.importc:"mmEffectCancelAll", header:"maxmod.h".}
   ## Stop all sound effects
 
 
@@ -359,6 +374,8 @@ const MMCB_SONGFINISHED* = 0x0000002B
 
 # Nim Extras
 # ----------
+# Deprecated, please use `createMaxmodSoundbank` in your project's `config.nims` instead.
+# Or use the `trick` library.
 
 import macros, strutils
 
@@ -420,9 +437,11 @@ macro importSoundbank*(dir: static[string] = "audio", camelCase: static[bool] = 
     if name == "" or name.startsWith("ls: cannot access"):
       continue
     
+    {.push warning[Deprecated]: off.}
     var name = getSoundName(name)
     if name == "":
       continue
+    {.pop.}
     
     let soundIdent = ident(if camelCase: (name.toCamelCase()) else: (name))
     let soundStrLit = newStrLitNode(name)
@@ -434,3 +453,14 @@ macro importSoundbank*(dir: static[string] = "audio", camelCase: static[bool] = 
   let soundbankBinStrLit = newStrLitNode("soundbank_bin")
   result.add quote do:
     var `soundbankBinIdent`* {.importc:`soundbankBinStrLit`, header:"soundbank_bin.h".}: pointer
+
+
+# Old names, deprecated.
+
+proc position*(position: uint) {.deprecated, importc:"mmPosition", header:"maxmod.h".}
+proc effectRelease*(handle: MmSfxHandle) {.deprecated, importc:"mmEffectRelease", header:"maxmod.h".}
+proc effectCancel*(handle: MmSfxHandle) {.deprecated, importc:"mmEffectCancel", header:"maxmod.h".}
+proc effectScaleRate*(handle: MmSfxHandle; factor: uint) {.deprecated, importc:"mmEffectScaleRate", header:"maxmod.h".}
+proc effectPanning*(handle: MmSfxHandle; panning: uint8) {.deprecated, importc:"mmEffectPanning", header:"maxmod.h".}
+proc effectVolume*(handle: MmSfxHandle; volume: uint) {.deprecated, importc:"mmEffectVolume", header:"maxmod.h".}
+proc effectCancelAll*() {.deprecated, importc:"mmEffectCancelAll", header:"maxmod.h".}
