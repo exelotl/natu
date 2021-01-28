@@ -44,53 +44,8 @@ type
   
   MmSfxHandle* = distinct uint16
   
-  MmMode* {.size: 4.} = enum
-    mmModeA
-    mmModeB
-    mmModeC
-  
-  MmStreamFormat* {.size: 4.} = enum
-    mmStream8BitMono    = 0b000
-    mmStream8BitStereo  = 0b001
-    mmStream16BitMono   = 0b010
-    mmStream16BitStereo = 0b011
-  
   MmFnPtr* = proc () {.noconv.}
   MmCallback* = proc (msg: uint; param: uint): uint {.noconv.}
-  MmStreamFunc* = proc (length: uint; dest: pointer; format: MmStreamFormat): uint {.noconv.}
-  
-  MmReverbFlag* = enum
-    mmrfMemory
-    mmrfDelay
-    mmrfRate
-    mmrfFeedback
-    mmrfPanning
-    mmrfLeft
-    mmrfRight
-    mmrfInversePan
-    mmrfNoDryLeft
-    mmrfNoDryRight
-    mmrf8BitLeft
-    mmrf16BitLeft
-    mmrf8BitRight
-    mmrf16BitRight
-    mmrfDryLeft
-    mmrfDryRight
-  
-  MmReverbFlags* {.size: 2.} = set[MmReverbFlag]
-  
-  MmReverbCh* {.size: 4.} = enum
-    mmrcLeft = 1
-    mmrcRight = 2
-    mmrcBoth = 3
-  
-  MmReverbCfg* {.importc: "mm_reverb_cfg", header:"mm_types.h", bycopy.} = object
-    flags* {.importc: "flags".}: uint32
-    memory* {.importc: "memory".}: pointer
-    delay* {.importc: "delay".}: uint16
-    rate* {.importc: "rate".}: uint16
-    feedback* {.importc: "feedback".}: uint16
-    panning* {.importc: "panning".}: uint8
   
   MmPlaybackMode* {.size: 4.} = enum
     mmPlayLoop
@@ -106,28 +61,8 @@ type
     mmMix27Khz
     mmMix31Khz
   
-  MmStreamTimer* {.size: 4.} = enum
-    mmTimer0   ## hardware timer 0
-    mmTimer1   ## hardware timer 1
-    mmTimer2   ## hardware timer 2
-    mmTimer3   ## hardware timer 3
-  
-  MmDsSample* {.importc: "mm_ds_sample", header:"mm_types.h", bycopy.} = object
-    loopStart* {.importc: "loop_start".}: uint32
-    # begin union
-    loopLength* {.importc: "loop_length".}: uint32
-    length* {.importc: "length".}: uint32
-    # end union
-    format* {.importc: "format".}: uint8
-    repeatMode* {.importc: "repeat_mode".}: uint8
-    baseRate* {.importc: "base_rate".}: uint16
-    data* {.importc: "data".}: pointer
-  
   MmSoundEffect* {.importc: "mm_sound_effect", header:"mm_types.h", bycopy.} = object
-    # begin union
-    id* {.importc: "id".}: uint32                 ## sample ID (defined in soundbank header)
-    sample* {.importc: "sample".}: ptr MmDsSample ## external sample address, not valid on GBA system
-    # end union
+    id* {.importc: "id".}: uint32              ## sample ID (defined in soundbank header)
     rate* {.importc: "rate".}: uint16          
     handle* {.importc: "handle".}: MmSfxHandle ## sound handle
     volume* {.importc: "volume".}: uint8       ## volume, 0..255
@@ -143,20 +78,6 @@ type
     mixingMemory* {.importc: "mixing_memory".}: pointer
     waveMemory* {.importc: "wave_memory".}: pointer
     soundbank* {.importc: "soundbank".}: pointer
-  
-  MmDsSystem* {.importc: "mm_ds_system", header:"mm_types.h", bycopy.} = object
-    modCount* {.importc: "mod_count".}: uint32       ## give MSL_NSONGS
-    sampCount* {.importc: "samp_count".}: uint32     ## pass MSL_NSAMPS
-    memBank* {.importc: "mem_bank".}: ptr uint32     ## pass pointer to memory buffer (mm_word mem_bank[MSL_BANKSIZE]) 
-    fifoChannel* {.importc: "fifo_channel".}: uint32 ## fifo channel to use (usually 7)
-  
-  MmStream* {.importc: "mm_stream", header:"mm_types.h", bycopy.} = object
-    samplingRate* {.importc: "sampling_rate".}: uint32  ## sampling rate. 1024->32768 (HZ)
-    bufferLength* {.importc: "buffer_length".}: uint32  ## number of samples to buffer
-    callback* {.importc: "callback".}: MmStreamFunc     ## pointer to filling routine
-    format* {.importc: "format".}: uint32               ## stream format (MmStreamFormat)
-    timer* {.importc: "timer".}: uint32                 ## hardware timer selection (mm_stream_timers)
-    manual* {.importc: "manual".}: uint8                ## if set, user must call mmStreamUpdate manually
   
   MmModLayer* {.importc: "mm_modlayer", header:"mm_types.h", bycopy.} = object
     tick* {.importc: "tick".}: uint8                   ## current tick count
