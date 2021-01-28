@@ -43,49 +43,46 @@ type
     ## ID of a sample in the soundbank
   
   MmSfxHandle* = distinct uint16
-  MmMode* {.size: sizeof(cint).} = enum
-    MM_MODE_A,
-    MM_MODE_B,
-    MM_MODE_C
   
-  MmStreamFormat* {.size: sizeof(cint).} = enum
-    MM_STREAM_8BIT_MONO    = 0b000,
-    MM_STREAM_8BIT_STEREO  = 0b001,
-    MM_STREAM_16BIT_MONO   = 0b010,
-    MM_STREAM_16BIT_STEREO = 0b011,
-    
-    # MM_STREAM_ADPCM_MONO   = 0b100,
-    # MM_STREAM_ADPCM_STEREO = 0b101,
-    # adpcm streaming is not supported by the ds hardware
-    # (the loop point data gets recorded so ring buffers are not possible)
+  MmMode* {.size: 4.} = enum
+    mmModeA
+    mmModeB
+    mmModeC
+  
+  MmStreamFormat* {.size: 4.} = enum
+    mmStream8BitMono    = 0b000
+    mmStream8BitStereo  = 0b001
+    mmStream16BitMono   = 0b010
+    mmStream16BitStereo = 0b011
   
   MmFnPtr* = proc () {.noconv.}
   MmCallback* = proc (msg: uint; param: uint): uint {.noconv.}
   MmStreamFunc* = proc (length: uint; dest: pointer; format: MmStreamFormat): uint {.noconv.}
   
-  MmReverbFlags* {.size: sizeof(cint).} = enum
-    MMRF_MEMORY = 0x0001,
-    MMRF_DELAY = 0x0002,
-    MMRF_RATE = 0x0004,
-    MMRF_FEEDBACK = 0x0008,
-    MMRF_PANNING = 0x0010,
-    MMRF_LEFT = 0x0020,
-    MMRF_RIGHT = 0x0040,
-    MMRF_BOTH = 0x0060,
-    MMRF_INVERSEPAN = 0x0080,
-    MMRF_NODRYLEFT = 0x0100,
-    MMRF_NODRYRIGHT = 0x0200,
-    MMRF_8BITLEFT = 0x0400,
-    MMRF_16BITLEFT = 0x0800,
-    MMRF_8BITRIGHT = 0x1000,
-    MMRF_16BITRIGHT = 0x2000,
-    MMRF_DRYLEFT = 0x4000,
-    MMRF_DRYRIGHT = 0x8000
+  MmReverbFlag* = enum
+    mmrfMemory
+    mmrfDelay
+    mmrfRate
+    mmrfFeedback
+    mmrfPanning
+    mmrfLeft
+    mmrfRight
+    mmrfInversePan
+    mmrfNoDryLeft
+    mmrfNoDryRight
+    mmrf8BitLeft
+    mmrf16BitLeft
+    mmrf8BitRight
+    mmrf16BitRight
+    mmrfDryLeft
+    mmrfDryRight
   
-  MmReverbCh* {.size: sizeof(cint).} = enum
-    MMRC_LEFT = 1,
-    MMRC_RIGHT = 2,
-    MMRC_BOTH = 3
+  MmReverbFlags* {.size: 2.} = set[MmReverbFlag]
+  
+  MmReverbCh* {.size: 4.} = enum
+    mmrcLeft = 1
+    mmrcRight = 2
+    mmrcBoth = 3
   
   MmReverbCfg* {.importc: "mm_reverb_cfg", header:"mm_types.h", bycopy.} = object
     flags* {.importc: "flags".}: uint32
@@ -95,25 +92,25 @@ type
     feedback* {.importc: "feedback".}: uint16
     panning* {.importc: "panning".}: uint8
   
-  MmPlaybackMode* {.size: sizeof(cint).} = enum
-    MM_PLAY_LOOP,
-    MM_PLAY_ONCE
+  MmPlaybackMode* {.size: 4.} = enum
+    mmPlayLoop
+    mmPlayOnce
   
-  MmMixMode* {.size: sizeof(cint).} = enum
-    MM_MIX_8KHZ,
-    MM_MIX_10KHZ,
-    MM_MIX_13KHZ,
-    MM_MIX_16KHZ,
-    MM_MIX_18KHZ,
-    MM_MIX_21KHZ,
-    MM_MIX_27KHZ,
-    MM_MIX_31KHZ
+  MmMixMode* {.size: 4.} = enum
+    mmMix8Khz
+    mmMix10Khz
+    mmMix13Khz
+    mmMix16Khz
+    mmMix18Khz
+    mmMix21Khz
+    mmMix27Khz
+    mmMix31Khz
   
-  MmStreamTimer* {.size: sizeof(cint).} = enum
-    MM_TIMER0,  ## hardware timer 0
-    MM_TIMER1,  ## hardware timer 1
-    MM_TIMER2,  ## hardware timer 2
-    MM_TIMER3   ## hardware timer 3
+  MmStreamTimer* {.size: 4.} = enum
+    mmTimer0   ## hardware timer 0
+    mmTimer1   ## hardware timer 1
+    mmTimer2   ## hardware timer 2
+    mmTimer3   ## hardware timer 3
   
   MmDsSample* {.importc: "mm_ds_sample", header:"mm_types.h", bycopy.} = object
     loopStart* {.importc: "loop_start".}: uint32
@@ -172,46 +169,50 @@ type
     bpm* {.importc: "bpm".}: uint8                     ## tempo of module
   
   MmVoice* {.importc: "mm_voice", header:"mm_types.h", bycopy.} = object
+    
     # data source information
     source* {.importc: "source".}: pointer        ## address to sample data
     length* {.importc: "length".}: uint32         ## length of sample data OR loop length (expressed in WORDS)
     loopStart* {.importc: "loop_start".}: uint16  ## loop start position (expressed in WORDS)
     
-    timer* {.importc: "timer".}: uint16   ## frequency divider
-    flags* {.importc: "flags".}: uint8    ## update flags
-    format* {.importc: "format".}: uint8  ## source format (0: 8-bit, 1: 16-bit, 2: adpcm)
-    repeat* {.importc: "repeat".}: uint8  ## repeat mode (0: manual, 1: forward loop, 2: one shot)
+    timer* {.importc: "timer".}: uint16       ## frequency divider
+    flags* {.importc: "flags".}: MmVoiceFlags ## update flags
+    format* {.importc: "format".}: uint8      ## source format (0: 8-bit, 1: 16-bit, 2: adpcm)
+    repeat* {.importc: "repeat".}: uint8      ## repeat mode (0: manual, 1: forward loop, 2: one shot)
     
     volume* {.importc: "volume".}: uint8   ## volume setting (0->127)
     divider* {.importc: "divider".}: uint8 ## divider setting (0->3 = /1, /2, /4, /16)
     
     panning* {.importc: "panning".}: uint8 ## panning setting (0->127)
     index* {.importc: "index".}: uint8     ## index of voice (0->15)
-
-const
-  MMVF_FREQ* = 2     ## update frequency when this flag is set
-  MMVF_VOLUME* = 4   ## update volume
-  MMVF_PANNING* = 8  ## update panning
-  MMVF_SOURCE* = 16  ## update source and start note
-  MMVF_STOP* = 32    ## stop voice (cut sound)
+  
+  MmVoiceFlag* = enum
+    mmvfUnused = 0  # (todo: figure out if this bit is used for something)
+    mmvfFreq = 1    ## update frequency when this flag is set
+    mmvfVolume = 2  ## update volume
+    mmvfPanning = 3 ## update panning
+    mmvfSource = 4  ## update source and start note
+    mmvfStop = 5    ## stop voice (cut sound)
+  
+  MmVoiceFlags* {.size: 1.} = set[MmVoiceFlag]
 
 
 # Precalculated mix buffer lengths (in bytes)
 const
-  MM_MIXLEN_8KHZ* = 544    # (8121 hz)
-  MM_MIXLEN_10KHZ* = 704   # (10512 hz)
-  MM_MIXLEN_13KHZ* = 896   # (13379 hz)
-  MM_MIXLEN_16KHZ* = 1056  # (15768 hz)
-  MM_MIXLEN_18KHZ* = 1216  # (18157 hz)
-  MM_MIXLEN_21KHZ* = 1408  # (21024 hz)
-  MM_MIXLEN_27KHZ* = 1792  # (26758 hz)
-  MM_MIXLEN_31KHZ* = 2112  # (31536 hz)
+  mmMixLen8Khz* = 544    # (8121 hz)
+  mmMixLen10Khz* = 704   # (10512 hz)
+  mmMixLen13Khz* = 896   # (13379 hz)
+  mmMixLen16Khz* = 1056  # (15768 hz)
+  mmMixLen18Khz* = 1216  # (18157 hz)
+  mmMixLen21Khz* = 1408  # (21024 hz)
+  mmMixLen27Khz* = 1792  # (26758 hz)
+  mmMixLen31Khz* = 2112  # (31536 hz)
 
 # Measurements of channel types (bytes)
 const
-  MM_SIZEOF_MODCH* = 40
-  MM_SIZEOF_ACTCH* = 28
-  MM_SIZEOF_MIXCH* = 24
+  mmSizeofModCh* = 40
+  mmSizeofActCh* = 28
+  mmSizeofMixCh* = 24
 
 proc `==`*(a, b: MmModuleId): bool {.borrow.}
 proc `==`*(a, b: MmSampleId): bool {.borrow.}
@@ -366,11 +367,11 @@ proc cancelAllEffects*() {.importc:"mmEffectCancelAll", header:"maxmod.h".}
 # Playback events
 # ---------------
 
-const MMCB_SONGMESSAGE* = 0x0000002A
+const mmcbSongMessage* = 0x0000002A
   ## This happens when Maxmod reads a SFx (or mod/xm EFx) effect from a module
   ## It will store 'x' in param_b
 
-const MMCB_SONGFINISHED* = 0x0000002B
+const mmcbSongFinished* = 0x0000002B
   ## A module has finished playing
   ## param == 0 if main module, 1 otherwise
 

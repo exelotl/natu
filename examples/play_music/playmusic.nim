@@ -24,7 +24,7 @@ proc main() =
   maxmod.init(soundbankBin, 8)
   
   # play music
-  maxmod.start(modSpacecat, MM_PLAY_LOOP)
+  maxmod.start(modSpacecat, mmPlayLoop)
   
   while true:
     keyPoll()
