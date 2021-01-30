@@ -200,7 +200,12 @@ type
   ObjFxMode* {.size:2.} = enum
     fxNormal = 0
     fxBlend = ATTR0_BLEND
+      ## Alpha blending enabled.
+      ## This ignores `bldcnt.mode`, effectively placing the object into
+      ## the `bldcnt.a` layer and blending it against the `bldcnt.b` layer,
+      ## using the coefficients from `bldalpha`.
     fxWin = ATTR0_WINDOW
+      ## The sprite becomes part of the object window.
   
   ObjSize* {.size:1.} = enum
     ## Sprite size constants, high-level interface.

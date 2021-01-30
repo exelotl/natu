@@ -287,6 +287,9 @@ template `top=`*(winb: WinBoundsV, top: uint8) =
   cast[ptr UncheckedArray[uint8]](addr winb)[1] = top
 
 
+# Mosaic
+# ------
+
 type Mosaic* = distinct uint32
 
 # Once again, hiding these since the register is write-only.
@@ -300,51 +303,85 @@ template `bgv=`*(mos: Mosaic, v: SomeInteger) = mos = (((v.uint32 and 0x000f) sh
 template `objh=`*(mos: Mosaic, v: SomeInteger) = mos = (((v.uint32 and 0x000f) shl MOS_OH_SHIFT) or (mos.uint32 and not MOS_OH_MASK)).Mosaic
 template `objv=`*(mos: Mosaic, v: SomeInteger) = mos = (((v.uint32 and 0x000f) shl MOS_OV_SHIFT) or (mos.uint32 and not MOS_OV_MASK)).Mosaic
 
+
+# Color Special Effects
+# ---------------------
+
 type
   BldCnt* = distinct uint16
     ## Blend control register
   
   BlendMode* {.size:2.} = enum
+    ## Color special effects modes
     bmOff = BLD_OFF       ## Blending disabled
-    bmStd = BLD_STD       ## Alpha blend both A and B (using the weights from `bldalpha`)
-    bmWhite = BLD_WHITE   ## Blend A with white using the weight from `bldy`
-    bmBlack = BLD_BLACK   ## Blend A with black using the weight from `bldy`
+    bmStd = BLD_STD       ## Alpha blend both A and B (using the weights from ``bldalpha``)
+    bmWhite = BLD_WHITE   ## Blend A with white using the weight from ``bldy``
+    bmBlack = BLD_BLACK   ## Blend A with black using the weight from ``bldy``
   
   BlendLayer* {.size:2.} = enum
     blBg0, blBg1, blBg2, blBg3, blObj, blBd
 
 const blAll* = { blBg0, blBg1, blBg2, blBg3, blObj, blBd }
 
-# idea: shorthand to reinterpret some var as an array of some type
-#  template rei[T](a:untyped): ptr UncheckedArray[T] =
-#    cast[ptr UncheckedArray[T]](addr a)
-
-proc top*(bld: BldCnt): set[BlendLayer] {.inline.} =
+proc a*(bld: BldCnt): set[BlendLayer] {.inline.} =
+  ## Upper layer of color special effects.
   cast[set[BlendLayer]](bld.uint16 and BLD_TOP_MASK)
-
-proc bottom*(bld: BldCnt): set[BlendLayer] {.inline.} =
-  cast[set[BlendLayer]]((bld.uint16 and BLD_BOT_MASK) shr BLD_BOT_SHIFT)
-
-template `top=`*(bld: BldCnt, layers: set[BlendLayer]) =
+  
+proc `a=`*(bld: var BldCnt, layers: set[BlendLayer]) {.inline.} =
   bld = ((bld.uint16 and not BLD_TOP_MASK) or (cast[uint16](layers))).BldCnt
 
-template `bottom=`*(bld: BldCnt, layers: set[BlendLayer]) =
+proc b*(bld: BldCnt): set[BlendLayer] {.inline.} =
+  ## Lower layer of color special effects.
+  cast[set[BlendLayer]]((bld.uint16 and BLD_BOT_MASK) shr BLD_BOT_SHIFT)
+
+proc `b=`*(bld: var BldCnt, layers: set[BlendLayer]) {.inline.} =
   bld = ((bld.uint16 and not BLD_BOT_MASK) or (cast[uint16](layers) shl BLD_BOT_SHIFT)).BldCnt
 
 
-# can't do this because `top` has 'mode' bits that aren't part of the set...
-# which could lead to subtly broken behaviour
-#  template top*(bld: BldCnt): set[BlendLayer] =
-#    set[BlendLayer](cast[ptr UncheckedArray[set[uint8]]](addr bld)[0])
-#  template bottom*(bld: BldCnt): set[BlendLayer] =
-#    set[BlendLayer](cast[ptr UncheckedArray[set[uint8]]](addr bld)[1])
+# Old names - I think `a` and `b` are way better because they correspond to `eva` and `evb` and cannot be confused with window positions.
+
+proc top*(bld: BldCnt): set[BlendLayer] {.inline, deprecated:"Use bldcnt.a instead".} =
+  cast[set[BlendLayer]](bld.uint16 and BLD_TOP_MASK)
+proc `top=`*(bld: var BldCnt, layers: set[BlendLayer]) {.inline, deprecated:"Use bldcnt.a instead".} =
+  bld = ((bld.uint16 and not BLD_TOP_MASK) or (cast[uint16](layers))).BldCnt
+proc bottom*(bld: BldCnt): set[BlendLayer] {.inline, deprecated:"Use bldcnt.b instead".} =
+  cast[set[BlendLayer]]((bld.uint16 and BLD_BOT_MASK) shr BLD_BOT_SHIFT)
+proc `bottom=`*(bld: var BldCnt, layers: set[BlendLayer]) {.inline, deprecated:"Use bldcnt.b instead".} =
+  bld = ((bld.uint16 and not BLD_BOT_MASK) or (cast[uint16](layers) shl BLD_BOT_SHIFT)).BldCnt
 
 
-template mode*(bld: BldCnt): BlendMode =
+proc mode*(bld: BldCnt): BlendMode {.inline.} =
+  ## Color special effects mode
   (bld.uint16 and BLD_MODE_MASK).BlendMode
 
-template `mode=`*(bld: BldCnt, v: BlendMode) =
+proc `mode=`*(bld: var BldCnt, v: BlendMode) {.inline.} =
   bld = (v.uint16 or (bld.uint16 and not BLD_MODE_MASK)).BldCnt
+
+type
+  BlendCoefficient* = uint16
+    ## A blend amount ranging from 0..16.
+    ## Values from 17..31 are treated the same as 16.
+  
+  BldAlpha* = distinct uint16
+    ## Alpha blending fade levels
+  
+  BlendBrightness* {.size:2.} = BlendCoefficient
+    ## Brightness (fade in/out) coefficient
+
+proc eva*(bldalpha: BldAlpha): BlendCoefficient {.inline.} =
+  ## Upper layer alpha blending coefficient
+  (bldalpha.uint16 and BLD_EVA_MASK).uint16
+
+proc `eva=`*(bldalpha: var BldAlpha, v: BlendCoefficient) {.inline.} =
+  bldalpha = ((bldalpha.uint16 and not BLD_EVA_MASK) or (v.uint16)).BldAlpha
+
+proc evb*(bldalpha: BldAlpha): BlendCoefficient {.inline.} =
+  ## Lower layer alpha blending coefficient
+  ((bldalpha.uint16 and BLD_EVB_MASK) shr BLD_EVB_SHIFT).uint16
+
+proc `evb=`*(bldalpha: var BldAlpha, v: BlendCoefficient) {.inline.} =
+  bldalpha = ((bldalpha.uint16 and not BLD_EVB_MASK) or (v.uint16 shl BLD_EVB_SHIFT)).BldAlpha
+
 
 type BgOfs = BgPoint
 
@@ -387,16 +424,15 @@ var winobjcnt* {.importc:"REG_WINOBJCNT", header:"tonc.h".}: WinCnt  ## Object w
 
 var mosaic* {.importc:"REG_MOSAIC", header:"tonc.h".}: Mosaic   ## [Write only!] Mosaic size register
 
-var bldcnt* {.importc:"REG_BLDCNT", header:"tonc.h".}: BldCnt
-  ## Blend control register
-# var bldalpha* {.importc:"REG_BLDALPHA", header:"tonc.h".}: uint16  ## Fade level
-var bldy* {.importc:"REG_BLDY", header:"tonc.h".}: uint16          ## [Write only!] Brightness (fade in/out) coefficient
+var bldcnt* {.importc:"REG_BLDCNT", header:"tonc.h".}: BldCnt        ## Blend control register
+var bldalpha* {.importc:"REG_BLDALPHA", header:"tonc.h".}: BldAlpha  ## Alpha blending fade coefficients
+var bldy* {.importc:"REG_BLDY", header:"tonc.h".}: BlendBrightness   ## [Write only!] Brightness (fade in/out) coefficient
 
 
 import macros
 
 type
-  ReadWriteRegister = DispCnt | DispStat | BgCnt | WinCnt | BldCnt
+  ReadWriteRegister = DispCnt | DispStat | BgCnt | WinCnt | BldCnt | BldAlpha
   WriteOnlyRegister = BgOfs | BgAffine | WinBoundsH | WinBoundsV
   WritableRegister = ReadWriteRegister | WriteOnlyRegister
 
