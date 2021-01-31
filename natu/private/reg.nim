@@ -258,10 +258,10 @@ type
   WinBoundsV* = distinct uint16
     ## Defines the vertical bounds of a window register (top ..< bottom)
   
-  WinCntLayer* {.size:1.} = enum
+  WindowLayer* {.size:1.} = enum
     wlBg0, wlBg1, wlBg2, wlBg3, wlObj, wlBlend
   
-  WinCnt* = set[WinCntLayer]
+  WinCnt* = set[WindowLayer]
     ## Allows to make changes to one half of a window control register.
 
 # Window bounds getters:
@@ -314,7 +314,7 @@ type
   BlendMode* {.size:2.} = enum
     ## Color special effects modes
     bmOff = BLD_OFF       ## Blending disabled
-    bmStd = BLD_STD       ## Alpha blend both A and B (using the weights from ``bldalpha``)
+    bmAlpha = BLD_STD     ## Alpha blend both A and B (using the weights from ``bldalpha``)
     bmWhite = BLD_WHITE   ## Blend A with white using the weight from ``bldy``
     bmBlack = BLD_BLACK   ## Blend A with black using the weight from ``bldy``
   
@@ -326,7 +326,7 @@ const blAll* = { blBg0, blBg1, blBg2, blBg3, blObj, blBd }
 proc a*(bld: BldCnt): set[BlendLayer] {.inline.} =
   ## Upper layer of color special effects.
   cast[set[BlendLayer]](bld.uint16 and BLD_TOP_MASK)
-  
+
 proc `a=`*(bld: var BldCnt, layers: set[BlendLayer]) {.inline.} =
   bld = ((bld.uint16 and not BLD_TOP_MASK) or (cast[uint16](layers))).BldCnt
 
@@ -359,28 +359,35 @@ proc `mode=`*(bld: var BldCnt, v: BlendMode) {.inline.} =
 
 type
   BlendCoefficient* = uint16
-    ## A blend amount ranging from 0..16.
+    ## A blend value ranging from 0..16.
     ## Values from 17..31 are treated the same as 16.
   
-  BldAlpha* = distinct uint16
-    ## Alpha blending fade levels
+  BlendAlpha* = distinct uint16
+    ## Alpha blending levels.
+    ## Features two coefficients: ``eva`` for the top layer, ``evb`` for the bottom layer.
   
-  BlendBrightness* {.size:2.} = BlendCoefficient
-    ## Brightness (fade in/out) coefficient
+  BlendBrightness* = distinct uint16
+    ## Brightness level (fade to black or white).
+    ## Has a single coefficient ``evy``.
 
-proc eva*(bldalpha: BldAlpha): BlendCoefficient {.inline.} =
+proc eva*(bldalpha: BlendAlpha): BlendCoefficient {.inline.} =
   ## Upper layer alpha blending coefficient
-  (bldalpha.uint16 and BLD_EVA_MASK).uint16
+  (bldalpha.uint16 and BLD_EVA_MASK).BlendCoefficient
 
-proc `eva=`*(bldalpha: var BldAlpha, v: BlendCoefficient) {.inline.} =
-  bldalpha = ((bldalpha.uint16 and not BLD_EVA_MASK) or (v.uint16)).BldAlpha
+proc `eva=`*(bldalpha: var BlendAlpha, v: BlendCoefficient) {.inline.} =
+  bldalpha = ((bldalpha.uint16 and not BLD_EVA_MASK) or (v.uint16)).BlendAlpha
 
-proc evb*(bldalpha: BldAlpha): BlendCoefficient {.inline.} =
+proc evb*(bldalpha: BlendAlpha): BlendCoefficient {.inline.} =
   ## Lower layer alpha blending coefficient
-  ((bldalpha.uint16 and BLD_EVB_MASK) shr BLD_EVB_SHIFT).uint16
+  ((bldalpha.uint16 and BLD_EVB_MASK) shr BLD_EVB_SHIFT).BlendCoefficient
 
-proc `evb=`*(bldalpha: var BldAlpha, v: BlendCoefficient) {.inline.} =
-  bldalpha = ((bldalpha.uint16 and not BLD_EVB_MASK) or (v.uint16 shl BLD_EVB_SHIFT)).BldAlpha
+proc `evb=`*(bldalpha: var BlendAlpha, v: BlendCoefficient) {.inline.} =
+  bldalpha = ((bldalpha.uint16 and not BLD_EVB_MASK) or (v.uint16 shl BLD_EVB_SHIFT)).BlendAlpha
+
+
+proc `evy=`*(bldy: var BlendBrightness, v: BlendCoefficient) {.inline.} =
+  ## Brightness coefficient (write-only!)
+  bldy = v.BlendBrightness
 
 
 type BgOfs = BgPoint
@@ -425,15 +432,15 @@ var winobjcnt* {.importc:"REG_WINOBJCNT", header:"tonc.h".}: WinCnt  ## Object w
 var mosaic* {.importc:"REG_MOSAIC", header:"tonc.h".}: Mosaic   ## [Write only!] Mosaic size register
 
 var bldcnt* {.importc:"REG_BLDCNT", header:"tonc.h".}: BldCnt        ## Blend control register
-var bldalpha* {.importc:"REG_BLDALPHA", header:"tonc.h".}: BldAlpha  ## Alpha blending fade coefficients
+var bldalpha* {.importc:"REG_BLDALPHA", header:"tonc.h".}: BlendAlpha  ## Alpha blending fade coefficients
 var bldy* {.importc:"REG_BLDY", header:"tonc.h".}: BlendBrightness   ## [Write only!] Brightness (fade in/out) coefficient
 
 
 import macros
 
 type
-  ReadWriteRegister = DispCnt | DispStat | BgCnt | WinCnt | BldCnt | BldAlpha
-  WriteOnlyRegister = BgOfs | BgAffine | WinBoundsH | WinBoundsV
+  ReadWriteRegister = DispCnt | DispStat | BgCnt | WinCnt | BldCnt | BlendAlpha
+  WriteOnlyRegister = BgOfs | BgAffine | WinBoundsH | WinBoundsV | BlendBrightness
   WritableRegister = ReadWriteRegister | WriteOnlyRegister
 
 macro writeRegister(register: WritableRegister, args: varargs[untyped]) =
@@ -541,7 +548,7 @@ template initBgCnt*(args: varargs[untyped]): BgCnt =
 
 # Set operation fixes
 
-type LayerEnum = DisplayLayer | BlendLayer | WinCntLayer
+type LayerEnum = DisplayLayer | BlendLayer | WindowLayer
 
 macro incl*[T:LayerEnum](x: set[T], y: T) =
   expectKind(x, nnkCall)

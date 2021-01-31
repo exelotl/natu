@@ -198,13 +198,14 @@ type
     omAffDbl = ATTR0_AFF_DBL
   
   ObjFxMode* {.size:2.} = enum
-    fxNormal = 0
+    fxNone = 0
+      ## Normal object, no special effects.
     fxBlend = ATTR0_BLEND
       ## Alpha blending enabled.
-      ## This ignores `bldcnt.mode`, effectively placing the object into
-      ## the `bldcnt.a` layer and blending it against the `bldcnt.b` layer,
-      ## using the coefficients from `bldalpha`.
-    fxWin = ATTR0_WINDOW
+      ## The object is effectively placed into the `bldcnt.a` layer to be blended
+      ## with the `bldcnt.b` layer using the coefficients from `bldalpha`,
+      ## regardless of the current `bldcnt.mode` setting.
+    fxWindow = ATTR0_WINDOW
       ## The sprite becomes part of the object window.
   
   ObjSize* {.size:1.} = enum
@@ -223,7 +224,7 @@ type
     s64x32
     s64x64
 
-const sizeToFlags: array[ObjSize, tuple[shape:uint16, size:uint16]] = [
+const sizeToFlags: array[ObjSize, tuple[shape, size: uint16]] = [
   (ATTR0_SQUARE, ATTR1_SIZE_8x8),
   (ATTR0_TALL, ATTR1_SIZE_8x16),
   (ATTR0_TALL, ATTR1_SIZE_8x32),
