@@ -20,6 +20,8 @@ type
   
   DisplayLayer* {.size:4.} = enum
     lBg0, lBg1, lBg2, lBg3, lObj
+  
+  DisplayLayers* {.size:4.} = set[DisplayLayer]
 
 # getters
 
@@ -50,8 +52,8 @@ template blank*(dcnt: DispCnt): bool =
   ## This allows fast access to VRAM, PAL RAM, OAM.
   (dcnt.uint32 and DCNT_BLANK) != 0
 
-proc layers*(bld: DispCnt): set[DisplayLayer] {.inline.} =
-  cast[set[DisplayLayer]]((bld.uint32 and DCNT_LAYER_MASK) shr DCNT_LAYER_SHIFT)
+proc layers*(dcnt: DispCnt): DisplayLayers {.inline.} =
+  cast[DisplayLayers]((dcnt.uint32 and DCNT_LAYER_MASK) shr DCNT_LAYER_SHIFT)
 
 template bg0*(dcnt: DispCnt): bool =
   (dcnt.uint32 and DCNT_BG0) != 0
@@ -92,8 +94,8 @@ template `oamHbl=`*(dcnt: DispCnt, v: bool) =
 template `obj1d=`*(dcnt: DispCnt, v: bool) =
   dcnt = ((v.uint32 shl 6) or (dcnt.uint32 and not DCNT_OBJ_1D)).DispCnt
 
-template `layers=`*(bld: DispCnt, layers: set[DisplayLayer]) =
-  bld = ((bld.uint32 and not DCNT_LAYER_MASK) or (cast[uint32](layers) shl DCNT_LAYER_SHIFT)).DispCnt
+template `layers=`*(dcnt: DispCnt, layers: DisplayLayers) =
+  dcnt = ((dcnt.uint32 and not DCNT_LAYER_MASK) or (cast[uint32](layers) shl DCNT_LAYER_SHIFT)).DispCnt
 
 template `blank=`*(dcnt: DispCnt, v: bool) =
   dcnt = ((v.uint32 shl 7) or (dcnt.uint32 and not DCNT_BLANK)).DispCnt
@@ -222,7 +224,7 @@ template wrap*(bg: BgCnt): bool =
 
 template size*(bg: BgCnt): BgSizeFlag =
   ## Value representing the size of the background in tiles.
-  ## Regular and affine backgrounds have different sizes available to them, hence the two groups of constants (`bgRegXXX`, `bgAffXXX`)
+  ## Regular and affine backgrounds have different sizes available to them, hence the two groups of constants (``regXXX``, ``affXXX``)
   (bg.uint16 and BG_SIZE_MASK).BgSizeFlag
 
 # setters
@@ -320,33 +322,35 @@ type
   
   BlendLayer* {.size:2.} = enum
     blBg0, blBg1, blBg2, blBg3, blObj, blBd
+  
+  BlendLayers* {.size:2.} = set[BlendLayer]
 
 const blAll* = { blBg0, blBg1, blBg2, blBg3, blObj, blBd }
 
-proc a*(bld: BldCnt): set[BlendLayer] {.inline.} =
+proc a*(bld: BldCnt): BlendLayers {.inline.} =
   ## Upper layer of color special effects.
-  cast[set[BlendLayer]](bld.uint16 and BLD_TOP_MASK)
+  cast[BlendLayers](bld.uint16 and BLD_TOP_MASK)
 
-proc `a=`*(bld: var BldCnt, layers: set[BlendLayer]) {.inline.} =
+proc `a=`*(bld: var BldCnt, layers: BlendLayers) {.inline.} =
   bld = ((bld.uint16 and not BLD_TOP_MASK) or (cast[uint16](layers))).BldCnt
 
-proc b*(bld: BldCnt): set[BlendLayer] {.inline.} =
+proc b*(bld: BldCnt): BlendLayers {.inline.} =
   ## Lower layer of color special effects.
-  cast[set[BlendLayer]]((bld.uint16 and BLD_BOT_MASK) shr BLD_BOT_SHIFT)
+  cast[BlendLayers]((bld.uint16 and BLD_BOT_MASK) shr BLD_BOT_SHIFT)
 
-proc `b=`*(bld: var BldCnt, layers: set[BlendLayer]) {.inline.} =
+proc `b=`*(bld: var BldCnt, layers: BlendLayers) {.inline.} =
   bld = ((bld.uint16 and not BLD_BOT_MASK) or (cast[uint16](layers) shl BLD_BOT_SHIFT)).BldCnt
 
 
 # Old names - I think `a` and `b` are way better because they correspond to `eva` and `evb` and cannot be confused with window positions.
 
-proc top*(bld: BldCnt): set[BlendLayer] {.inline, deprecated:"Use bldcnt.a instead".} =
-  cast[set[BlendLayer]](bld.uint16 and BLD_TOP_MASK)
-proc `top=`*(bld: var BldCnt, layers: set[BlendLayer]) {.inline, deprecated:"Use bldcnt.a instead".} =
+proc top*(bld: BldCnt): BlendLayers {.inline, deprecated:"Use bldcnt.a instead".} =
+  cast[BlendLayers](bld.uint16 and BLD_TOP_MASK)
+proc `top=`*(bld: var BldCnt, layers: BlendLayers) {.inline, deprecated:"Use bldcnt.a instead".} =
   bld = ((bld.uint16 and not BLD_TOP_MASK) or (cast[uint16](layers))).BldCnt
-proc bottom*(bld: BldCnt): set[BlendLayer] {.inline, deprecated:"Use bldcnt.b instead".} =
-  cast[set[BlendLayer]]((bld.uint16 and BLD_BOT_MASK) shr BLD_BOT_SHIFT)
-proc `bottom=`*(bld: var BldCnt, layers: set[BlendLayer]) {.inline, deprecated:"Use bldcnt.b instead".} =
+proc bottom*(bld: BldCnt): BlendLayers {.inline, deprecated:"Use bldcnt.b instead".} =
+  cast[BlendLayers]((bld.uint16 and BLD_BOT_MASK) shr BLD_BOT_SHIFT)
+proc `bottom=`*(bld: var BldCnt, layers: BlendLayers) {.inline, deprecated:"Use bldcnt.b instead".} =
   bld = ((bld.uint16 and not BLD_BOT_MASK) or (cast[uint16](layers) shl BLD_BOT_SHIFT)).BldCnt
 
 

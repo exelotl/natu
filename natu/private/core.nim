@@ -163,9 +163,9 @@ proc ASM_NOP*() {.importc: "ASM_NOP", header: "tonc.h".}
 
 proc SND_RATE*(note, oct: int32) {.importc: "SND_RATE", header: "tonc.h".}
   ## Gives the period of a note for the tone-gen registers.
-  ## GBA sound range: 8 octaves: [-2, 5]; 8*12= 96 notes (kinda).
-  ## `note` ID (range: [0,11>). See eSndNoteId.
-  ## `oct`  octave (range [-2,4)>).
+  ## GBA sound range: 8 octaves: ``-2..5``; 8*12 = 96 notes (kinda).
+  ## `note` ID (range: ``0 ..< 11``). See eSndNoteId.
+  ## `oct`  octave (range ``-2 ..< 4``).
 
 
 # Sector checking
@@ -204,10 +204,10 @@ proc sqran*(seed: int): int {.importc: "sqran", header: "tonc.h".}
   ## Returns the old seed.
   
 proc qran*(): int {.importc: "qran", header: "tonc.h".}
-  ## Quick (and very dirty) pseudo-random number generator
-  ## Returns: random in range [0,8000h>
+  ## Quick (and very dirty) pseudo-random number generator.
+  ## Returns: random in range ``0x0000 ..< 0x8000``
   
 proc qranRange*(min: int; max: int): int {.importc: "qran_range", header: "tonc.h".}
-  ## Returns a random number in range [`min`, `max`>
-  ## Note: (max-min) must be lower than 8000h
+  ## Returns a random number in range ``min ..< max``
+  ## Note: ``(max-min)`` must be lower than ``0x8000``
 
