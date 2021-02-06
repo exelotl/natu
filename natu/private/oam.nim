@@ -45,14 +45,6 @@ proc setPos*(obj: var ObjAttr; pos: Vec2i) {.inline.} =
   ## Set the position of an object using a vector
   setPos(addr obj, pos.x, pos.y)
 
-#  example pure Nim implementation
-#  how is the performance of this?
-#  does explicitly using uint16 have a negative impact?
-# proc setPos*(obj: ObjAttrPtr; x, y: uint16) =
-#   ## Set the position of an object
-#   obj.attr0 = (obj.attr0 and not ATTR0_Y_MASK) or ((y shl ATTR0_Y_SHIFT) and ATTR0_Y_MASK)
-#   obj.attr1 = (obj.attr1 and not ATTR1_X_MASK) or ((x shl ATTR1_X_SHIFT) and ATTR1_X_MASK)
-
 
 proc hide*(oatr: ObjAttrPtr) {.importc: "obj_hide", header: "tonc.h".}
   ## Hide an object
@@ -188,7 +180,6 @@ proc affShearyInv*(oa: var ObjAffine; hy: Fixed) {.importc: "obj_aff_sheary_inv"
 
 # SPRITE GETTERS/SETTERS
 # ----------------------
-# [Here we can use Nim features to make these a little bit more bearable]
 
 type
   ObjMode* {.size:2.} = enum
@@ -208,42 +199,34 @@ type
     fxWindow = ATTR0_WINDOW
       ## The sprite becomes part of the object window.
   
-  ObjSize* {.size:1.} = enum
+  ObjSize* {.size:2.} = enum
     ## Sprite size constants, high-level interface.
     ## Each corresponds to a pair of fields (`size` in attr0, `shape` in attr1)
-    s8x8
-    s8x16
-    s8x32
-    s16x8
-    s16x16
-    s16x32
-    s32x8
-    s32x16
-    s32x32
-    s32x64
-    s64x32
-    s64x64
+    s8x8, s16x16, s32x32, s64x64,
+    s16x8, s32x8, s32x16, s64x32,
+    s8x16, s8x32, s16x32, s32x64,
 
-const sizeToFlags: array[ObjSize, tuple[shape, size: uint16]] = [
-  (ATTR0_SQUARE, ATTR1_SIZE_8x8),
-  (ATTR0_TALL, ATTR1_SIZE_8x16),
-  (ATTR0_TALL, ATTR1_SIZE_8x32),
-  (ATTR0_WIDE, ATTR1_SIZE_16x8),
-  (ATTR0_SQUARE, ATTR1_SIZE_16x16),
-  (ATTR0_TALL, ATTR1_SIZE_16x32),
-  (ATTR0_WIDE, ATTR1_SIZE_32x8),
-  (ATTR0_WIDE, ATTR1_SIZE_32x16),
-  (ATTR0_SQUARE, ATTR1_SIZE_32x32),
-  (ATTR0_TALL, ATTR1_SIZE_32x64),
-  (ATTR0_WIDE, ATTR1_SIZE_64x32),
-  (ATTR0_SQUARE, ATTR1_SIZE_64x64),
-]
 
-const flagsToSize = [
-  [ s8x8, s16x16, s32x32, s64x64 ], 
-  [ s16x8, s32x8, s32x16, s64x32 ],
-  [ s8x16, s8x32, s16x32, s32x64 ],
-]
+# enum versions of size functions:
+
+import core
+
+func getSize*(size: ObjSize): tuple[w,h:int] {.inline.} =
+  {.noSideEffect.}:
+    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](addr oamSizes)
+    let arr = sizes[size]
+    (arr[0].int, arr[1].int)
+  
+func getWidth*(size: ObjSize): int {.inline.} =
+  {.noSideEffect.}:
+    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](addr oamSizes)
+    sizes[size][0].int
+
+func getHeight*(size: ObjSize): int {.inline.} =
+  {.noSideEffect.}:
+    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](addr oamSizes)
+    sizes[size][1].int
+
 
 # copy attr0,1,2 from one object into another
 proc setAttr*(obj: ObjAttrPtr, src: ObjAttr) {.inline.} = setAttr(obj, src.attr0, src.attr1, src.attr2)
@@ -261,7 +244,7 @@ proc fx*(obj: ObjAttr): ObjFxMode {.inline.} = (obj.attr0 and (ATTR0_BLEND or AT
 proc mos*(obj: ObjAttr): bool {.inline.} = (obj.attr0 and ATTR0_MOSAIC) != 0
 proc is8bpp*(obj: ObjAttr): bool {.inline.} = (obj.attr0 and ATTR0_8BPP) != 0
 proc aff*(obj: ObjAttr): int {.inline.} = ((obj.attr1 and ATTR1_AFF_ID_MASK) shr ATTR1_AFF_ID_SHIFT).int
-proc size*(obj: ObjAttr): ObjSize {.inline.} = flagsToSize[obj.attr0 shr 14][obj.attr1 shr 14].ObjSize
+proc size*(obj: ObjAttr): ObjSize {.inline.} = (((obj.attr0 and ATTR0_SHAPE_MASK) shr 12) or (obj.attr1 shr 14)).ObjSize
 proc hflip*(obj: ObjAttr): bool {.inline.} = (obj.attr1 and ATTR1_HFLIP) != 0
 proc vflip*(obj: ObjAttr): bool {.inline.} = (obj.attr1 and ATTR1_VFLIP) != 0
 proc tid*(obj: ObjAttr): int {.inline.} = ((obj.attr2 and ATTR2_ID_MASK) shr ATTR2_ID_SHIFT).int
@@ -286,10 +269,10 @@ proc `tid=`*(obj: ObjAttrPtr, tid: int) {.inline.} =
 proc `pal=`*(obj: ObjAttrPtr, pal: int) {.inline.} =
   obj.attr2 = ((pal.uint16 shl ATTR2_PALBANK_SHIFT) and ATTR2_PALBANK_MASK) or (obj.attr2 and not ATTR2_PALBANK_MASK)
 
-proc `hflip=`*(obj: ObjAttrPtr, v:bool) {.inline.} =
+proc `hflip=`*(obj: ObjAttrPtr, v: bool) {.inline.} =
   obj.attr1 = (v.uint16 shl 12) or (obj.attr1 and not ATTR1_HFLIP)
   
-proc `vflip=`*(obj: ObjAttrPtr, v:bool) {.inline.} =
+proc `vflip=`*(obj: ObjAttrPtr, v: bool) {.inline.} =
   obj.attr1 = (v.uint16 shl 13) or (obj.attr1 and not ATTR1_VFLIP)
 
 proc `mode=`*(obj: ObjAttrPtr, v: ObjMode) {.inline.} =
@@ -308,9 +291,10 @@ proc `aff=`*(obj: ObjAttrPtr, aff: int) {.inline.} =
   obj.attr1 = ((aff.uint16 shl ATTR1_AFF_ID_SHIFT) and ATTR1_AFF_ID_MASK) or (obj.attr1 and not ATTR1_AFF_ID_MASK)
 
 proc `size=`*(obj: ObjAttrPtr, v: ObjSize) {.inline.} =
-  let (shape, size) = sizeToFlags[v]
-  obj.attr0 = shape.uint16 or (obj.attr0 and not ATTR0_SHAPE_MASK)
-  obj.attr1 = size.uint16 or (obj.attr1 and not ATTR1_SIZE_MASK)
+  let shape = (v.uint16 shl 12) and ATTR0_SHAPE_MASK
+  let size = (v.uint16 shl 14)
+  obj.attr0 = shape or (obj.attr0 and not ATTR0_SHAPE_MASK)
+  obj.attr1 = size or (obj.attr1 and not ATTR1_SIZE_MASK)
   
 proc `prio=`*(obj: ObjAttrPtr, prio: int) {.inline.} =
   obj.attr2 = ((prio.uint16 shl ATTR2_PRIO_SHIFT) and ATTR2_PRIO_MASK) or (obj.attr2 and not ATTR2_PRIO_MASK)
