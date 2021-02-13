@@ -20,64 +20,47 @@ import types, core, math, bios, memmap, memdef
 # ---------
 # Sizes in pixels
 const
-  SCREEN_WIDTH* = 240
-  SCREEN_HEIGHT* = 160
-  M3_WIDTH* = SCREEN_WIDTH
-  M3_HEIGHT* = SCREEN_HEIGHT
-  M4_WIDTH* = SCREEN_WIDTH
-  M4_HEIGHT* = SCREEN_HEIGHT
-  M5_WIDTH* = 160
-  M5_HEIGHT* = 128
+  ScreenWidth* = 240          ## Width in pixels
+  ScreenHeight* = 160         ## Height in pixels
+  ScreenLines* = 228          ## Total number of scanlines (max vcount value)
+  Mode3Width* = ScreenWidth
+  Mode3Height* = ScreenHeight
+  Mode4Width* = ScreenWidth
+  Mode4Height* = ScreenHeight
+  Mode5Width* = 160
+  Mode5Height* = 128
 
+# Size in tiles
 const
-  SCREEN_WIDTH_T* = (SCREEN_WIDTH div 8)    ## Width in tiles
-  SCREEN_HEIGHT_T* = (SCREEN_HEIGHT div 8)  ## Height in tiles
+  ScreenWidthInTiles* = (ScreenWidth div 8)    ## Width in tiles
+  ScreenHeightInTiles* = (ScreenHeight div 8)  ## Height in tiles
   
+# Color constants
 const
-  SCREEN_LINES* = 228  ## Total scanlines
+  clrBlack* = 0x0000.Color
+  clrRed* = 0x001F.Color
+  clrLime* = 0x03E0.Color
+  clrYellow* = 0x03FF.Color
+  clrBlue* = 0x7C00.Color
+  clrMagenta* = 0x7C1F.Color
+  clrCyan* = 0x7FE0.Color
+  clrWhite* = 0x7FFF.Color
+  clrDead* = 0xDEAD.Color
+  clrMaroon* = 0x0010.Color
+  clrGreen* = 0x0200.Color
+  clrOlive* = 0x0210.Color
+  clrOrange* = 0x021F.Color
+  clrNavy* = 0x4000.Color
+  clrPurple* = 0x4010.Color
+  clrTeal* = 0x4200.Color
+  clrGray* = 0x4210.Color
+  clrMedGray* = 0x5294.Color
+  clrSilver* = 0x6318.Color
+  clrMoneyGreen* = 0x6378.Color
+  clrFuchsia* = 0x7C1F.Color
+  clrSkyBlue* = 0x7B34.Color
+  clrCream* = 0x7BFF.Color
 
-# Alpha blend layers (use with REG_BLDMOD)
-const
-  LAYER_BG0* = 0x0001
-  LAYER_BG1* = 0x0002
-  LAYER_BG2* = 0x0004
-  LAYER_BG3* = 0x0008
-  LAYER_OBJ* = 0x0010
-  LAYER_BD* = 0x0020
-
-const
-  CLR_BLACK* = 0x0000.Color
-  CLR_RED* = 0x001F.Color
-  CLR_LIME* = 0x03E0.Color
-  CLR_YELLOW* = 0x03FF.Color
-  CLR_BLUE* = 0x7C00.Color
-  CLR_MAG* = 0x7C1F.Color
-  CLR_CYAN* = 0x7FE0.Color
-  CLR_WHITE* = 0x7FFF.Color
-  CLR_DEAD* = 0xDEAD.Color
-  CLR_MAROON* = 0x0010.Color
-  CLR_GREEN* = 0x0200.Color
-  CLR_OLIVE* = 0x0210.Color
-  CLR_ORANGE* = 0x021F.Color
-  CLR_NAVY* = 0x4000.Color
-  CLR_PURPLE* = 0x4010.Color
-  CLR_TEAL* = 0x4200.Color
-  CLR_GRAY* = 0x4210.Color
-  CLR_MEDGRAY* = 0x5294.Color
-  CLR_SILVER* = 0x6318.Color
-  CLR_MONEYGREEN* = 0x6378.Color
-  CLR_FUCHSIA* = 0x7C1F.Color
-  CLR_SKYBLUE* = 0x7B34.Color
-  CLR_CREAM* = 0x7BFF.Color
-
-const
-  CLR_MASK*:uint32 = 0x001F
-  RED_MASK*:uint32 = 0x001F
-  RED_SHIFT*:uint32 = 0
-  GREEN_MASK*:uint32 = 0x03E0
-  GREEN_SHIFT*:uint32 = 5
-  BLUE_MASK*:uint32 = 0x7C00
-  BLUE_SHIFT*:uint32 = 10
 
 proc clrRotate*(clrs: ptr Color; nclrs: uint; ror: int) {.importc: "clr_rotate", header: "tonc.h".}
   ## Rotate `nclrs` colors at `clrs` to the right by `ror`.
@@ -174,11 +157,19 @@ proc clrFadeFast*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: uint; alpha
 ## Colors
 ## ------
 
-template rgb15*(red, green, blue: int): Color =
+template rgb15*(red, green, blue: int): Color {.deprecated:"Use rgb5 instead".} =
   ## Create a 15-bit BGR color.
   (red + (green shl 5) + (blue shl 10)).Color
 
-template rgb15safe*(red, green, blue: int): Color =
+template rgb15safe*(red, green, blue: int): Color {.deprecated:"Use rgb5 instead".} =
+  ## Create a 15-bit BGR color, with proper masking of R,G,B components.
+  ((red and 31) + ((green and 31) shl 5) + ((blue and 31) shl 10)).Color
+
+template rgb5*(red, green, blue: int): Color =
+  ## Create a 15-bit BGR color.
+  (red + (green shl 5) + (blue shl 10)).Color
+
+template rgb5safe*(red, green, blue: int): Color =
   ## Create a 15-bit BGR color, with proper masking of R,G,B components.
   ((red and 31) + ((green and 31) shl 5) + ((blue and 31) shl 10)).Color
 
@@ -191,15 +182,16 @@ template rgb8*(rgb: int): Color =
   (((rgb and 0xff0000) shr 19) + (((rgb and 0x00ff00) shr 11) shl 5) + (((rgb and 0x0000ff) shr 3) shl 10)).Color
 
 
-proc cbbClear*(cbb: int) =
+proc cbbClear*(cbb: int) {.inline.} =
   memset32(addr tileMem[cbb], 0, CBB_SIZE div 4)
 
-proc sbbClear*(sbb: int) =
+proc sbbClear*(sbb: int) {.inline.} =
   memset32(addr seMem[sbb], 0, SBB_SIZE div 4)
 
-proc sbbClearRow*(sbb, row: int) =
+proc sbbClearRow*(sbb, row: int) {.inline.} =
   memset32(addr seMem[sbb][row*32], 0, 32 div 2)
 
+# TODO: document and/or port these two
 proc bgIsAffine*(n:int):bool {.importc: "BG_IS_AFFINE", header: "tonc.h".}
 proc bgIsAvail*(n:int):bool {.importc: "BG_IS_AVAIL", header: "tonc.h".}
 
@@ -258,7 +250,8 @@ proc bgRotscaleEx*(bgaff: ptr BgAffine; asx: ptr AffSrcEx) {.importc: "bg_rotsca
   ## `asx`   Affine source data: screen and texture origins, scales and angle.
 
 
-proc m3Clear*() = memset32(addr vidMem, 0, M3_SIZE div 4)
+proc m3Clear*() {.inline.} =
+  memset32(addr vidMem, 0, M3_SIZE div 4)
 proc m3Fill*(clr: Color) {.importc: "m3_fill", header: "tonc.h".}
   ## Fill the mode 3 background with color `clr`.
 proc m3Plot*(x, y: int; clr: Color) {.importc: "m3_plot", header: "tonc.h".}
@@ -319,9 +312,9 @@ proc m5Fill*(clr: Color) {.importc: "m5_fill", header: "tonc.h".}
   ## Fill the current mode 5 backbuffer with `clr`
 proc m5Plot*(x, y: int; clr: Color) {.importc: "m5_plot", header: "tonc.h".}
   ## Plot a `clrid` pixel on the current mode 5 backbuffer
-proc m5Hline*(x1, y, x2: int; clr: Color) {.importc: "m5_hline", header: "tonc.h".}
+proc m5HLine*(x1, y, x2: int; clr: Color) {.importc: "m5_hline", header: "tonc.h".}
   ## Draw a colored horizontal line in mode 5.
-proc m5Vline*(x, y1, y2: int; clr: Color) {.importc: "m5_vline", header: "tonc.h".}
+proc m5VLine*(x, y1, y2: int; clr: Color) {.importc: "m5_vline", header: "tonc.h".}
   ## Draw a colored vertical line in mode 5.
 proc m5Line*(x1, y1, x2, y2: int; clr: Color) {.importc: "m5_line", header: "tonc.h".}
   ## Draw a colored line in mode 5.
@@ -351,9 +344,11 @@ proc m5Frame*(left, top, right, bottom: int; clr: Color) {.importc: "m5_frame", 
 proc tid*(se:ScrEntry): int = (se and SE_ID_MASK).int
 proc hflip*(se:ScrEntry): bool = (se and SE_HFLIP) != 0
 proc vflip*(se:ScrEntry): bool = (se and SE_VFLIP) != 0
-proc palbank*(se:ScrEntry): int = ((se and SE_PALBANK_MASK) shr SE_PALBANK_SHIFT).int
+proc palbank*(se:ScrEntry): int {.deprecated:"Use `pal` instead.".} = ((se and SE_PALBANK_MASK) shr SE_PALBANK_SHIFT).int
+proc pal*(se:ScrEntry): int = ((se and SE_PALBANK_MASK) shr SE_PALBANK_SHIFT).int
 
 proc `tid=`*(se:var ScrEntry, val: int) =     se = ((val.uint16 shl SE_ID_SHIFT) and SE_ID_MASK) or (se and not SE_ID_MASK)
 proc `hflip=`*(se:var ScrEntry, val: bool) =  se = (val.uint16 shl 10) or (se and not SE_HFLIP)
 proc `vflip=`*(se:var ScrEntry, val: bool) =  se = (val.uint16 shl 11) or (se and not SE_VFLIP)
-proc `palbank=`*(se:var ScrEntry, val: int) = se = ((val.uint16 shl SE_PALBANK_SHIFT) and SE_PALBANK_MASK) or (se and not SE_PALBANK_MASK)
+proc `palbank=`*(se:var ScrEntry, val: int) {.deprecated:"Use `pal` instead".} = se = ((val.uint16 shl SE_PALBANK_SHIFT) and SE_PALBANK_MASK) or (se and not SE_PALBANK_MASK)
+proc `pal=`*(se:var ScrEntry, val: int) = se = ((val.uint16 shl SE_PALBANK_SHIFT) and SE_PALBANK_MASK) or (se and not SE_PALBANK_MASK)
