@@ -2,7 +2,7 @@
 # ==========================
 
 type
-  FnPtr* = proc () {.noconv.}          ## void foo() function pointer, used for interrupt handlers etc.
+  FnPtr* = proc () {.nimcall.}    ## void foo() function pointer, used for interrupt handlers etc.
 
 # To be used with codegenDecl pragma:
 const

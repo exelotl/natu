@@ -90,9 +90,9 @@ const
 # -----
 
 type
-  FnDrawg* = proc (gid: uint) {.noconv.}
+  FnDrawg* = proc (gid: uint) {.nimcall.}
     ## Glyph render function format.
-  FnErase* = proc (left, top, right, bottom: int) {.noconv.}
+  FnErase* = proc (left, top, right, bottom: int) {.nimcall.}
     ## Erase rectangle function format.
   
   Font* = ptr FontObj
@@ -366,30 +366,30 @@ proc tteInitSe*(bgnr: int; bgcnt: BgCnt; se0: ScrEntry; clrs: uint32; bupofs: ui
   ## `font`   Font to initialize with.
   ## `fn`     Glyph renderer.
 
-proc seErase*(left: int; top: int; right: int; bottom: int) {.importc: "se_erase", header: "tonc.h", noconv.}
+proc seErase*(left: int; top: int; right: int; bottom: int) {.importc: "se_erase", header: "tonc.h".}
   ## Erase part of the regular tilemap canvas.
-proc seDrawgW8H8*(gid: uint) {.importc: "se_drawg_w8h8", header: "tonc.h", noconv.}
+proc seDrawgW8H8*(gid: uint) {.importc: "se_drawg_w8h8", header: "tonc.h".}
   ## Character-plot for reg BGs using an 8x8 font.
-proc seDrawgW8H16*(gid: uint) {.importc: "se_drawg_w8h16", header: "tonc.h", noconv.}
+proc seDrawgW8H16*(gid: uint) {.importc: "se_drawg_w8h16", header: "tonc.h".}
   ## Character-plot for reg BGs using an 8x16 font.
-proc seDrawg*(gid: uint) {.importc: "se_drawg", header: "tonc.h", noconv.}
+proc seDrawg*(gid: uint) {.importc: "se_drawg", header: "tonc.h".}
   ## Character-plot for reg BGs, any sized font.
-proc seDrawgS*(gid: uint) {.importc: "se_drawg_s", header: "tonc.h", noconv.}
+proc seDrawgS*(gid: uint) {.importc: "se_drawg_s", header: "tonc.h".}
   ## Character-plot for reg BGs, any sized, vertically tiled font.
 
 # Affine tilemaps
 # ---------------
 proc tteInitAse*(bgnr: int; bgcnt: BgCnt; ase0: uint8; clrs: uint32; bupofs: uint32; font: Font = addr(fwfDefault); fn: FnDrawg = nil) {.importc: "tte_init_ase", header: "tonc.h".}
   ## 
-proc aseErase*(left: int; top: int; right: int; bottom: int) {.importc: "ase_erase", header: "tonc.h", noconv.}
+proc aseErase*(left: int; top: int; right: int; bottom: int) {.importc: "ase_erase", header: "tonc.h".}
   ## Erase part of the affine tilemap canvas.
-proc aseDrawgW8H8*(gid: uint) {.importc: "ase_drawg_w8h8", header: "tonc.h", noconv.}
+proc aseDrawgW8H8*(gid: uint) {.importc: "ase_drawg_w8h8", header: "tonc.h".}
   ## Character-plot for affine BGs using an 8x16 font.
-proc aseDrawgW8H16*(gid: uint) {.importc: "ase_drawg_w8h16", header: "tonc.h", noconv.}
+proc aseDrawgW8H16*(gid: uint) {.importc: "ase_drawg_w8h16", header: "tonc.h".}
   ## Character-plot for affine BGs using an 8x16 font.
-proc aseDrawg*(gid: uint) {.importc: "ase_drawg", header: "tonc.h", noconv.}
+proc aseDrawg*(gid: uint) {.importc: "ase_drawg", header: "tonc.h".}
   ## Character-plot for affine Bgs, any size.
-proc aseDrawgS*(gid: uint) {.importc: "ase_drawg_s", header: "tonc.h", noconv.}
+proc aseDrawgS*(gid: uint) {.importc: "ase_drawg_s", header: "tonc.h".}
   ## Character-plot for affine BGs, any sized, vertically oriented font.
 
 # 4bpp tiles
@@ -409,13 +409,13 @@ proc tteInitChr4c*(bgnr: int; bgcnt: BgCnt, se0: uint16; cattrs, clrs: uint32; f
   ## `font`   Font to initialize with.
   ## `fn`     Glyph renderer
   
-proc chr4cErase*(left, top, right, bottom: int) {.importc: "chr4c_erase", header: "tonc.h", noconv.}
+proc chr4cErase*(left, top, right, bottom: int) {.importc: "chr4c_erase", header: "tonc.h".}
   ## Erase part of the 4bpp text canvas.
 
-proc chr4cDrawgB1CTS*(gid: uint) {.importc: "chr4c_drawg_b1cts_fast", header: "tonc.h", noconv.}
+proc chr4cDrawgB1CTS*(gid: uint) {.importc: "chr4c_drawg_b1cts_fast", header: "tonc.h".}
   ## Render 1bpp fonts to 4bpp tiles, column-major
 
-proc chr4cDrawgB4CTS*(gid: uint) {.importc: "chr4c_drawg_b4cts_fast", header: "tonc.h", noconv.}
+proc chr4cDrawgB4CTS*(gid: uint) {.importc: "chr4c_drawg_b4cts_fast", header: "tonc.h".}
   ## Render 4bpp fonts to 4bpp tiles, column-major
 
 
@@ -429,10 +429,10 @@ proc tteInitChr4r*(bgnr: int; bgcnt: BgCnt; se0: uint16; cattrs: uint32; clrs: u
   ## `font`   Font to initialize with.
   ## `fn`     Glyph renderer
 
-proc chr4rErase*(left, top, right, bottom: int) {.importc: "chr4r_erase", header: "tonc.h", noconv.}
+proc chr4rErase*(left, top, right, bottom: int) {.importc: "chr4r_erase", header: "tonc.h".}
   ## Erase part of the 4bpp text canvas.
 
-proc chr4rDrawgB1CTS*(gid: uint) {.importc: "chr4r_drawg_b1cts_fast", header: "tonc.h", noconv.}
+proc chr4rDrawgB1CTS*(gid: uint) {.importc: "chr4r_drawg_b1cts_fast", header: "tonc.h".}
   ## Render 1bpp fonts to 4bpp tiles, row-major
 
 
@@ -449,45 +449,45 @@ proc tteInitBmp*(vmode: int; font: Font = addr(vwfDefault); fn: FnDrawg = nil) {
   ## `fn`    Glyph renderer.
 
 # 8bpp bitmaps
-proc bmp8Erase*(left, top, right, bottom: int) {.importc: "bmp8_erase", header: "tonc.h", noconv.}
-proc bmp8Drawg*(gid: uint) {.importc: "bmp8_drawg", header: "tonc.h", noconv.}
+proc bmp8Erase*(left, top, right, bottom: int) {.importc: "bmp8_erase", header: "tonc.h".}
+proc bmp8Drawg*(gid: uint) {.importc: "bmp8_drawg", header: "tonc.h".}
   ## Linear 8bpp bitmap glyph renderer, opaque.
   ## `gid`  Character to plot.
   ## Font params: bitmapped, 8bpp.
   ## Untested
-proc bmp8DrawgT*(gid: uint) {.importc: "bmp8_drawg_t", header: "tonc.h", noconv.}
+proc bmp8DrawgT*(gid: uint) {.importc: "bmp8_drawg_t", header: "tonc.h".}
   ## Linear 8bpp bitmap glyph renderer, transparent.
   ## `gid` Character to plot.
   ## Font params: bitmapped, 8bpp. special cattr is transparent.
   ## Untested
-proc bmp8DrawgB1CTS*(gid: uint) {.importc: "bmp8_drawg_b1cts_fast", header: "tonc.h", noconv.}
+proc bmp8DrawgB1CTS*(gid: uint) {.importc: "bmp8_drawg_b1cts_fast", header: "tonc.h".}
   ## 8bpp bitmap glyph renderer. 1->8bpp recolored, any size, transparent
-proc bmp8DrawgB1COS*(gid: uint) {.importc: "bmp8_drawg_b1cos", header: "tonc.h", noconv.}
+proc bmp8DrawgB1COS*(gid: uint) {.importc: "bmp8_drawg_b1cos", header: "tonc.h".}
   ## 8bpp bitmap glyph renderer. 1->8bpp recolored, any size, opaque
 
 # 16bpp bitmaps
-proc bmp16Erase*(left, top, right, bottom: int) {.importc: "bmp16_erase", header: "tonc.h", noconv.}
+proc bmp16Erase*(left, top, right, bottom: int) {.importc: "bmp16_erase", header: "tonc.h".}
   ## Erase part of the 16bpp text canvas.
   
-proc bmp16Drawg*(gid: uint) {.importc: "bmp16_drawg", header: "tonc.h", noconv.}
+proc bmp16Drawg*(gid: uint) {.importc: "bmp16_drawg", header: "tonc.h".}
   ## Linear 16bpp bitmap glyph renderer, opaque.
   ## Works on a 16 bpp bitmap.
   ## `gid` Character to plot.
   ## Font params: bitmapped, 16bpp.
   
-proc bmp16DrawgT*(gid: uint) {.importc: "bmp16_drawg_t", header: "tonc.h", noconv.}
+proc bmp16DrawgT*(gid: uint) {.importc: "bmp16_drawg_t", header: "tonc.h".}
   ## Linear 16bpp bitmap glyph renderer, transparent.
   ## Works on a 16 bpp bitmap
   ## `gid` Character to plot.
   ## Font params: bitmapped, 16bpp. special cattr is transparent.
   
-proc bmp16DrawgB1CTS*(gid: uint) {.importc: "bmp16_drawg_b1cts", header: "tonc.h", noconv.}
+proc bmp16DrawgB1CTS*(gid: uint) {.importc: "bmp16_drawg_b1cts", header: "tonc.h".}
   ## Linear bitmap, 16bpp transparent character plotter.
   ## Works on a 16 bpp bitmap (mode 3 or 5).
   ## `gid` Character to plot.
   ## Font req: Any width/height. 1bpp font, 8px strips.
   
-proc bmp16DrawgB1COS*(gid: uint) {.importc: "bmp16_drawg_b1cos", header: "tonc.h", noconv.}
+proc bmp16DrawgB1COS*(gid: uint) {.importc: "bmp16_drawg_b1cos", header: "tonc.h".}
   ## Linear bitmap, 16bpp opaque character plotter.
   ## Works on a 16 bpp bitmap (mode 3 or 5).
   ## `gid` Character to plot.
@@ -508,9 +508,9 @@ proc tteInitObj*(dst: ObjAttrPtr; attr0, attr1, attr2: uint32; clrs: uint32, bup
   ## `fn`     Character plotting procedure.
   ## Note: The TTE-obj system uses the surface differently than then rest. Be careful when modifying the surface data.
 
-proc objErase*(left, top, right, bottom: int) {.importc: "obj_erase", header: "tonc.h", noconv.}
+proc objErase*(left, top, right, bottom: int) {.importc: "obj_erase", header: "tonc.h".}
   ## Unwind the object text-buffer
-proc objDrawg*(gid: uint) {.importc: "obj_drawg", header: "tonc.h", noconv.}
+proc objDrawg*(gid: uint) {.importc: "obj_drawg", header: "tonc.h".}
   ## Character-plot for objects. 
 
 

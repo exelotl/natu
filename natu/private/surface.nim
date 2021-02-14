@@ -61,15 +61,15 @@ type
 # Rendering procedure types
 # [idea: Use this to create a runtime-polymorphic kind of Surface?]
 type
-  FnGetPixel* = proc (src: SurfacePtr; x, y: int): uint32 {.noconv.}
-  FnPlot* = proc (dst: SurfacePtr; x, y: int; clr: uint32) {.noconv.}
-  FnHLine* = proc (dst: SurfacePtr; x1, y, x2: int; clr: uint32) {.noconv.}
-  FnVLine* = proc (dst: SurfacePtr; x, y1, y2: int; clr: uint32) {.noconv.}
-  FnLine* = proc (dst: SurfacePtr; x1, y1, x2, y2: int; clr: uint32) {.noconv.}
-  FnRect* = proc (dst: SurfacePtr; left, top, right, bottom: int; clr: uint32) {.noconv.}
-  FnFrame* = proc (dst: SurfacePtr; left, top, right, bottom: int; clr: uint32) {.noconv.}
-  FnBlit* = proc (dst: SurfacePtr; dstX, dstY: int; width, height: uint, src: SurfacePtr; srcX, srcY: int) {.noconv.}
-  FnFlood* = proc (dst: SurfacePtr; x, y: int; clr: uint32) {.noconv.}
+  FnGetPixel* = proc (src: SurfacePtr; x, y: int): uint32 {.nimcall.}
+  FnPlot* = proc (dst: SurfacePtr; x, y: int; clr: uint32) {.nimcall.}
+  FnHLine* = proc (dst: SurfacePtr; x1, y, x2: int; clr: uint32) {.nimcall.}
+  FnVLine* = proc (dst: SurfacePtr; x, y1, y2: int; clr: uint32) {.nimcall.}
+  FnLine* = proc (dst: SurfacePtr; x1, y1, x2, y2: int; clr: uint32) {.nimcall.}
+  FnRect* = proc (dst: SurfacePtr; left, top, right, bottom: int; clr: uint32) {.nimcall.}
+  FnFrame* = proc (dst: SurfacePtr; left, top, right, bottom: int; clr: uint32) {.nimcall.}
+  FnBlit* = proc (dst: SurfacePtr; dstX, dstY: int; width, height: uint, src: SurfacePtr; srcX, srcY: int) {.nimcall.}
+  FnFlood* = proc (dst: SurfacePtr; x, y: int; clr: uint32) {.nimcall.}
   
   SurfaceProcTab* {.importc: "TSurfaceProcTab", header: "tonc.h", bycopy.} = object
     ## Rendering procedure table

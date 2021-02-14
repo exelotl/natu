@@ -44,8 +44,8 @@ type
   
   MmSfxHandle* = distinct uint16
   
-  MmFnPtr* = proc () {.noconv.}
-  MmCallback* = proc (msg: uint; param: uint): uint {.noconv.}
+  MmFnPtr* = proc () {.nimcall.}
+  MmCallback* = proc (msg: uint; param: uint): uint {.nimcall.}
   
   MmPlaybackMode* {.size: 4.} = enum
     mmPlayLoop
@@ -152,7 +152,7 @@ proc init*(soundbank: pointer; channels: uint) {.importc:"mmInitDefault", header
 proc init*(setup: ptr MmGbaSystem) {.importc:"mmInit", header:"maxmod.h".}
   ## Initialize system. Call once at startup.
 
-proc vblank*() {.importc:"mmVBlank", header:"maxmod.h", noconv.}
+proc vblank*() {.importc:"mmVBlank", header:"maxmod.h".}
   ## Must be linked to the VBlank IRQ.
   ## This function must be linked directly to the VBlank IRQ.
   ## During this function, the sound DMA is reset. The timing is extremely critical, so
