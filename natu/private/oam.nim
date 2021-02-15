@@ -9,56 +9,55 @@ import types, memdef, bios, math
 {.compile(toncPath & "/src/tonc_oam.c", toncCFlags).}
 {.compile(toncPath & "/src/tonc_obj_affine.c", toncCFlags).}
 
-proc oamInit*(obj: ObjAttrPtr; count: uint) {.importc: "oam_init", header: "tonc.h".}
-  ## Initialize an array of `count` ObjAttrs with with safe values.
-
-proc oamCopy*(dst, src: ObjAttrPtr; count: uint) {.importc: "oam_copy", header: "tonc.h".}
-  ## Copies `count` OAM entries from `src` to `dst`.
+type
+  ObjMode* {.size:2.} = enum
+    omReg = ATTR0_REG
+    omAff = ATTR0_AFF
+    omHide = ATTR0_HIDE
+    omAffDbl = ATTR0_AFF_DBL
   
-proc oamClear*() {.importc: "OAM_CLEAR", header: "tonc.h".}
+  ObjFxMode* {.size:2.} = enum
+    fxNone = 0
+      ## Normal object, no special effects.
+    fxBlend = ATTR0_BLEND
+      ## Alpha blending enabled.
+      ## The object is effectively placed into the `bldcnt.a` layer to be blended
+      ## with the `bldcnt.b` layer using the coefficients from `bldalpha`,
+      ## regardless of the current `bldcnt.mode` setting.
+    fxWindow = ATTR0_WINDOW
+      ## The sprite becomes part of the object window.
+  
+  ObjSize* {.size:2.} = enum
+    ## Sprite size constants, high-level interface.
+    ## Each corresponds to a pair of fields (`size` in attr0, `shape` in attr1)
+    s8x8, s16x16, s32x32, s64x64,
+    s16x8, s32x8, s32x16, s64x32,
+    s8x16, s8x32, s16x32, s32x64
 
 
-# Obj attr only
-
-proc setAttr*(obj: ObjAttrPtr; a0, a1, a2: uint16) {.inline.} =
+proc setAttr*(obj: ObjAttrPtr | var ObjAttr; a0, a1, a2: uint16) {.inline.} =
   ## Set the attributes of an object
   obj.attr0 = a0
   obj.attr1 = a1
   obj.attr2 = a2
 
-proc setAttr*(obj: var ObjAttr; a0, a1, a2: uint16) {.inline.} =
-  ## Set the attributes of an object
-  setAttr(addr obj, a0, a1, a2)
 
-proc setPos*(obj: ObjAttrPtr; x, y: int) {.importc: "obj_set_pos", header: "tonc.h".}
-  ## Set the position of an object
-  
-proc setPos*(obj: var ObjAttr; x, y: int) {.inline.} =
-  ## Set the position of an object
-  setPos(addr obj, x, y)
-
-proc setPos*(obj: ObjAttrPtr; pos: Vec2i) {.inline.} =
-  ## Set the position of an object using a vector
-  setPos(obj, pos.x, pos.y)
-  
-proc setPos*(obj: var ObjAttr; pos: Vec2i) {.inline.} =
-  ## Set the position of an object using a vector
-  setPos(addr obj, pos.x, pos.y)
-
-
-proc hide*(oatr: ObjAttrPtr) {.importc: "obj_hide", header: "tonc.h".}
+proc hide*(obj: ObjAttrPtr | var ObjAttr) {.importc: "obj_hide", header: "tonc.h".}
   ## Hide an object
+  ## Equivalent to ``obj.mode = omHide``
 
-proc hide*(oatr: var ObjAttr) {.inline.} =
-  hide(addr oatr)
-
-proc unhide*(obj: ObjAttrPtr; mode: uint16) {.importc: "obj_unhide", header: "tonc.h".}
+proc unhide*(obj: ObjAttrPtr | var ObjAttr; mode: ObjMode) {.importc: "obj_unhide", header: "tonc.h".}
   ## Unhide an object.
-  ## `obj`  Object to unhide.
-  ## `mode` Object mode to unhide to. Necessary because this affects the affine-ness of the object.
+  ## Equivalent to ``obj.mode = mode``
+  ## 
+  ## **Parameters:**
+  ## 
+  ## obj
+  ##   Object to unhide.
+  ## 
+  ## mode
+  ##   Object mode to unhide to. Necessary because this affects the affine-ness of the object.
 
-proc unhide*(oatr: var ObjAttr)  {.inline.} =
-  hide(addr oatr)
 
 func getSizeImpl(obj: ObjAttrPtr): ptr array[2, uint8] {.importc: "obj_get_size", header: "tonc.h".}
 
@@ -86,14 +85,26 @@ template getHeight*(obj: ObjAttr): int =
   getHeight(unsafeAddr obj)
 
 
-proc copy*(dst, src: ObjAttrPtr; count: uint) {.importc: "obj_copy", header: "tonc.h".}
-  ## Copy attributes 0-2 in `count` ObjAttrs.
+# enum versions of size functions:
 
-proc hideMulti*(obj: ObjAttrPtr; count: uint32) {.importc: "obj_hide_multi", header: "tonc.h".}
-  ## Hide an array of ObjAttrs
+import core
 
-proc unhideMulti*(obj: ObjAttrPtr; mode: uint16; count: uint) {.importc: "obj_unhide_multi", header: "tonc.h".}
-  ## Unhide an array of ObjAttrs
+func getSize*(size: ObjSize): tuple[w,h:int] {.inline.} =
+  {.noSideEffect.}:
+    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](addr oamSizes)
+    let arr = sizes[size]
+    (arr[0].int, arr[1].int)
+  
+func getWidth*(size: ObjSize): int {.inline.} =
+  {.noSideEffect.}:
+    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](addr oamSizes)
+    sizes[size][0].int
+
+func getHeight*(size: ObjSize): int {.inline.} =
+  {.noSideEffect.}:
+    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](addr oamSizes)
+    sizes[size][1].int
+
 
 
 # Obj affine procedures
@@ -181,58 +192,11 @@ proc affShearyInv*(oa: var ObjAffine; hy: Fixed) {.importc: "obj_aff_sheary_inv"
 # SPRITE GETTERS/SETTERS
 # ----------------------
 
-type
-  ObjMode* {.size:2.} = enum
-    omReg = ATTR0_REG
-    omAff = ATTR0_AFF
-    omHide = ATTR0_HIDE
-    omAffDbl = ATTR0_AFF_DBL
-  
-  ObjFxMode* {.size:2.} = enum
-    fxNone = 0
-      ## Normal object, no special effects.
-    fxBlend = ATTR0_BLEND
-      ## Alpha blending enabled.
-      ## The object is effectively placed into the `bldcnt.a` layer to be blended
-      ## with the `bldcnt.b` layer using the coefficients from `bldalpha`,
-      ## regardless of the current `bldcnt.mode` setting.
-    fxWindow = ATTR0_WINDOW
-      ## The sprite becomes part of the object window.
-  
-  ObjSize* {.size:2.} = enum
-    ## Sprite size constants, high-level interface.
-    ## Each corresponds to a pair of fields (`size` in attr0, `shape` in attr1)
-    s8x8, s16x16, s32x32, s64x64,
-    s16x8, s32x8, s32x16, s64x32,
-    s8x16, s8x32, s16x32, s32x64,
-
-
-# enum versions of size functions:
-
-import core
-
-func getSize*(size: ObjSize): tuple[w,h:int] {.inline.} =
-  {.noSideEffect.}:
-    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](addr oamSizes)
-    let arr = sizes[size]
-    (arr[0].int, arr[1].int)
-  
-func getWidth*(size: ObjSize): int {.inline.} =
-  {.noSideEffect.}:
-    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](addr oamSizes)
-    sizes[size][0].int
-
-func getHeight*(size: ObjSize): int {.inline.} =
-  {.noSideEffect.}:
-    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](addr oamSizes)
-    sizes[size][1].int
-
-
 # copy attr0,1,2 from one object into another
 proc setAttr*(obj: ObjAttrPtr, src: ObjAttr) {.inline.} = setAttr(obj, src.attr0, src.attr1, src.attr2)
 proc setAttr*(obj: var ObjAttr, src: ObjAttr) {.inline.} = setAttr(addr obj, src)
-proc clear*(obj: ObjAttrPtr) {.inline.} = setAttr(obj, 0, 0, 0)
-proc clear*(obj: var ObjAttr) {.inline.} = clear(addr obj)
+proc clear*(obj: ObjAttrPtr) {.inline, deprecated:"Use obj.init() to clear".} = setAttr(obj, 0, 0, 0)
+proc clear*(obj: var ObjAttr) {.inline, deprecated:"Use obj.init() to clear".} = clear(addr obj)
 
 # getters
 
