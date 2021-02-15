@@ -15,7 +15,7 @@
 ##
 ## This produces an assembly file that we can compile and link with our project using the {.compile.} pragma.
 
-import natu
+import natu/[core, irq, oam, input]
 
 {.compile: "ship.s".}
 var shipTiles {.importc: "shipTiles".}: array[512, uint32]
@@ -30,8 +30,8 @@ const pal = 0  # palette slot
 var pos = vec2i(50, 30)
 
 # enable VBlank interrupt so we can wait for the end of the frame without burning CPU cycles
-irqInit()
-irqEnable(II_VBLANK)
+irq.init()
+irq.enable(iiVBlank)
 
 # enable sprites with 1d mapping
 dispcnt.init(obj = true, obj1d = true)

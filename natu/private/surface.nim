@@ -40,14 +40,14 @@ type
     palSize* {.importc: "palSize".}: uint16  ## Number of colors.
     palData* {.importc: "palData".}: ptr Color  ## Pointer to palette.
   
-  SurfaceKind* {.size: sizeof(int).} = enum
-    SRF_NONE = 0,          ## No specific type.
-    SRF_BMP16 = 1,         ## 16bpp linear (bitmap/tilemap).
-    SRF_BMP8 = 2,          ## 8bpp linear (bitmap/tilemap).
-    SRF_CHR4R = 4,         ## 4bpp tiles, row-major.
-    SRF_CHR4C = 5,         ## 4bpp tiles, column-major.
-    # SRF_CHR8 = 6,        ## 8bpp tiles, row-major. [not implemented]
-    # SRF_ALLOCATED = 0x80
+  SurfaceKind* {.size: 4.} = enum
+    srfNone = 0,          ## No specific type.
+    srfBmp16 = 1,         ## 16bpp linear (bitmap/tilemap).
+    srfBmp8 = 2,          ## 8bpp linear (bitmap/tilemap).
+    srfChr4r = 4,         ## 4bpp tiles, row-major.
+    srfChr4c = 5,         ## 4bpp tiles, column-major.
+    # srfChr8 = 6,        ## 8bpp tiles, row-major. [not implemented]
+    # srfAllocated = 0x80
   
   SomeSurface* = Surface | SurfaceBmp16 | SurfaceBmp8 | SurfaceChr4c | SurfaceChr4r
   
@@ -105,10 +105,10 @@ var chr4cTab* {.importc: "chr4c_tab", header: "tonc.h".}: SurfaceProcTab
 # graphic surfaces, like 16bpp bitmaps, 8bpp bitmaps, but also
 # tiled surfaces.
 #
-# - SRF_BMP8: 8bpp linear (Mode 4 / affine BGs)
-# - SRF_BMP16: 16bpp bitmaps (Mode 3/5 / regular BGs to some extent)
-# - SRF_CHR4C: 4bpp tiles, column-major (Regular tiled BG)
-# - SRF_CHR4R: 4bpp tiles, row-major (Regular tiled BG, OBJs)
+# - srfBmp8: 8bpp linear (Mode 4 / affine BGs)
+# - srfBmp16: 16bpp bitmaps (Mode 3/5 / regular BGs to some extent)
+# - srfChr4c: 4bpp tiles, column-major (Regular tiled BG)
+# - srfChr4r: 4bpp tiles, row-major (Regular tiled BG, OBJs)
 #
 # For each of these functions exist for the most important drawing
 # options: plotting, lines and rectangles. For BMP8/BMP16 and to
@@ -129,7 +129,7 @@ proc init*(srf: SurfaceChr4cPtr; data: pointer; width, height: uint; pal: ptr Co
   ## `width`   Width of surface.
   ## `height`  Height of surface.
   ## `pal`     Pointer to the surface's palette.
-  init(srf.SurfacePtr, SRF_CHR4C, data, width, height, bpp=4, pal)
+  init(srf.SurfacePtr, srfChr4c, data, width, height, bpp=4, pal)
 
 proc init*(srf: SurfaceChr4rPtr; data: pointer; width, height: uint; pal: ptr Color) =
   ## Initalize a surface for 4bpp row-major tiles
@@ -138,7 +138,7 @@ proc init*(srf: SurfaceChr4rPtr; data: pointer; width, height: uint; pal: ptr Co
   ## `width`   Width of surface.
   ## `height`  Height of surface.
   ## `pal`     Pointer to the surface's palette.
-  init(srf.SurfacePtr, SRF_CHR4R, data, width, height, bpp=4, pal)
+  init(srf.SurfacePtr, srfChr4r, data, width, height, bpp=4, pal)
 
 proc init*(srf: SurfaceBmp16Ptr; data: pointer; width, height: uint; pal: ptr Color) =
   ## Initalize a 16bpp bitmap surface
@@ -147,7 +147,7 @@ proc init*(srf: SurfaceBmp16Ptr; data: pointer; width, height: uint; pal: ptr Co
   ## `width`   Width of surface.
   ## `height`  Height of surface.
   ## `pal`     Pointer to the surface's palette.
-  init(srf.SurfacePtr, SRF_BMP16, data, width, height, bpp=16, pal)
+  init(srf.SurfacePtr, srfBmp16, data, width, height, bpp=16, pal)
 
 proc init*(srf: SurfaceBmp8Ptr; data: pointer; width, height: uint; pal: ptr Color) =
   ## Initalize an 8bpp bitmap surface
@@ -156,7 +156,7 @@ proc init*(srf: SurfaceBmp8Ptr; data: pointer; width, height: uint; pal: ptr Col
   ## `width`   Width of surface.
   ## `height`  Height of surface.
   ## `pal`     Pointer to the surface's palette.
-  init(srf.SurfacePtr, SRF_BMP8, data, width, height, bpp=8, pal)
+  init(srf.SurfacePtr, srfBmp8, data, width, height, bpp=8, pal)
 
 
 # Common Procedures

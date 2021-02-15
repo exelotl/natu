@@ -344,7 +344,7 @@ proc m5Frame*(left, top, right, bottom: int; clr: Color) {.importc: "m5_frame", 
 proc tid*(se:ScrEntry): int = (se and SE_ID_MASK).int
 proc hflip*(se:ScrEntry): bool = (se and SE_HFLIP) != 0
 proc vflip*(se:ScrEntry): bool = (se and SE_VFLIP) != 0
-proc palbank*(se:ScrEntry): int {.deprecated:"Use `pal` instead.".} = ((se and SE_PALBANK_MASK) shr SE_PALBANK_SHIFT).int
+proc palbank*(se:ScrEntry): int {.deprecated:"Use `pal` instead".} = ((se and SE_PALBANK_MASK) shr SE_PALBANK_SHIFT).int
 proc pal*(se:ScrEntry): int = ((se and SE_PALBANK_MASK) shr SE_PALBANK_SHIFT).int
 
 proc `tid=`*(se:var ScrEntry, val: int) =     se = ((val.uint16 shl SE_ID_SHIFT) and SE_ID_MASK) or (se and not SE_ID_MASK)

@@ -15,71 +15,122 @@ import types, core
 
 type
   IrqIndex* {.size: sizeof(cint).} = enum
-    ## IRQ indices, to be used in most functions.
-    II_VBLANK=0, II_HBLANK,  II_VCOUNT,  II_TIMER0,
-    II_TIMER1,   II_TIMER2,  II_TIMER3,  II_SERIAL,
-    II_DMA0,     II_DMA1,    II_DMA2,    II_DMA3,
-    II_KEYPAD,   II_GAMEPAK, II_MAX
+    ## IRQ indices, used to enable/disable and register handlers for interrupts.
+    iiVBlank=0, iiHBlank,  iiVCount,  iiTimer0,
+    iiTimer1,   iiTimer2,  iiTimer3,  iiSerial,
+    iiDma0,     iiDma1,    iiDma2,    iiDma3,
+    iiKeypad,   iiGamepak
 
-# Options for `irqSet`
+# TODO: clean up below?
+
+# Options for ``irq.put``
 const
-  ISR_LAST*:uint32 = 0x0040      ## Last isr in line (Lowest priority)
-  ISR_REPLACE*:uint32 = 0x0080   ## Replace old isr if existing (prio ignored)
+  ISR_LAST:uint32 = 0x0040      ## Last isr in line (Lowest priority)
+  ISR_REPLACE:uint32 = 0x0080   ## Replace old isr if existing (prio ignored)
 
-const
-  ISR_PRIO_MASK*:uint32 = 0x003F
-  ISR_PRIO_SHIFT*:uint32 = 0
+# const
+#   ISR_PRIO_MASK*:uint32 = 0x003F
+#   ISR_PRIO_SHIFT*:uint32 = 0
 
-template ISR_PRIO*(n: uint32): uint32 =
-  ((n) shl ISR_PRIO_SHIFT)
+# template ISR_PRIO*(n: uint32): uint32 =
+#   ((n) shl ISR_PRIO_SHIFT)
 
-const
-  ISR_DEF*:uint32 = (ISR_LAST or ISR_REPLACE)
+# const
+#   ISR_DEF*:uint32 = (ISR_LAST or ISR_REPLACE)
 
-
-type
-  IRQ_REC* {.importc: "struct IRQ_REC", header: "tonc.h", bycopy.} = object
-    ## Struct for prioritized irq table
-    flag* {.importc: "flag".}: uint32  ## Flag for interrupt in REG_IF, etc
-    isr* {.importc: "isr".}: FnPtr     ## Pointer to interrupt routine
+# type
+#   IRQ_REC* {.importc: "struct IRQ_REC", header: "tonc.h", bycopy.} = object
+#     ## Struct for prioritized irq table
+#     flag* {.importc: "flag".}: uint32  ## Flag for interrupt in REG_IF, etc
+#     isr* {.importc: "isr".}: FnPtr     ## Pointer to interrupt routine
 
 
 proc isrMaster*() {.importc: "isr_master", header: "tonc.h".}
 proc isrMasterNest*() {.importc: "isr_master_nest", header: "tonc.h".}
 
-proc irqInit*(isr: FnPtr = nil) {.importc: "irq_init", header: "tonc.h".}
+proc init*(isr: FnPtr = nil) {.importc: "irq_init", header: "tonc.h".}
   ## Initialize irq business
   ## Clears ISR table and sets up a master isr.
-  ## `isr` Master ISR. If NULL, `isrMasterNest` is used
+  ## 
+  ## **Parameters:**
+  ## 
+  ## isr
+  ##   Master ISR. If nil, ``isrMaster`` is used
+  ## 
 
-proc irqSetMaster*(isr: FnPtr = nil): FnPtr {.importc: "irq_set_master", header: "tonc.h", discardable.}
+proc setMaster*(isr: FnPtr = nil): FnPtr {.importc: "irq_set_master", header: "tonc.h", discardable.}
   ## Set a master ISR
-  ## `isr` Master ISR. If NULL, `isrMasterMulti` is used
+  ## 
+  ## **Parameters:**
+  ## 
+  ## isr
+  ##   Master ISR. If nil, ``isrMaster`` is used
+  ## 
   ## Returns: Previous master ISR
 
-proc irqAdd*(irqId: IrqIndex; isr: FnPtr = nil): FnPtr {.importc: "irq_add", header: "tonc.h", discardable.}
+proc add*(irqId: IrqIndex; isr: FnPtr = nil): FnPtr {.importc: "irq_add", header: "tonc.h", discardable.}
   ## Add a specific ISR
-  ## Special case of `irqSet`. If the interrupt has an ISR already it'll be replaced; if not it will add it in the back.
-  ## `irqId` Index of irq.
-  ## `isr`   Interrupt service routine for this irq; can be NULL
+  ## Special case of ``irq.set``. If the interrupt has an ISR already it'll be replaced; if not it will add it in the back.
+  ## 
+  ## **Parameters:**
+  ## 
+  ## irqId
+  ##   Index of irq.
+  ## 
+  ## isr
+  ##   Interrupt service routine for this irq; can be nil
+  ## 
   ## Returns: Previous ISR
-  ## Note: `irqId` is *NOT* a bit-mask, it is an index!
 
-proc irqDelete*(irqId: IrqIndex): FnPtr {.importc: "irq_delete", header: "tonc.h", discardable.}
+proc delete*(irqId: IrqIndex): FnPtr {.importc: "irq_delete", header: "tonc.h", discardable.}
   ## Remove an ISR
-  ## It'll be replaced; if not it will add it in the back.
-  ## `irqId` Index of irq.
+  ## 
+  ## **Parameters:**
+  ## 
+  ## irqId
+  ##   Index of irq.
+  ## 
   ## Returns: Previous ISR
-  ## Note: `irqId` is *NOT* a bit-mask, it is an index!
 
-proc irqSet*(irqId: IrqIndex; isr: FnPtr = nil; opts: uint32 = ISR_DEF): FnPtr {.importc: "irq_set", header: "tonc.h", discardable.}
+
+proc irqSet(irqId: IrqIndex; isr: FnPtr; opts: uint32): FnPtr {.importc: "irq_set", header: "tonc.h", discardable.}
+
+
+template put*(irqId: IrqIndex; isr: FnPtr = nil; prio: range[0..64] = 64; replace = false): FnPtr =
+  {.warning:"put() is potentially buggy, recommend to instead use irq.add, irq.delete, irq.enable, irq.disable".}
+  ## 
+  ## Insert or replace a handler for an interrupt.
+  ## 
   ## General IRQ manager
-  ## This routine manages the ISRs of interrupts and their priorities.
-  ## `irqId` Index of irq.
-  ## `isr`   Interrupt service routine for this irq; can be NULL
-  ## `opts`  ISR options
-  ## Returns: Previous specific ISR
-  ## Note:	`irqId` is *NOT* a bit-mask, it is an index!
+  ## 
+  ## This routine manages the handlers of interrupts and their priorities.
+  ## 
+  ## **Parameters:**
+  ## 
+  ## irqId
+  ##   Index of irq.
+  ## 
+  ## isr
+  ##   Interrupt service routine for this irq; can be nil
+  ## 
+  ## prio
+  ##   ISR priority, 0 = highest, 64 = lowest.
+  ##   
+  ## 
+  ## replace
+  ##   Replace old isr if existing (prio ignored)
+  ##   TODO: check that this works? (implementation looks buggy...)
+  ## 
+  ## Returns: previous specific ISR    # TODO what does this mean?
+  ## 
+  var opts = cast[uint32](prio)
+  if replace:
+    opts = opts or ISR_REPLACE
+  irqSet(irqId, isr, opts)
+  
 
-proc irqEnable*(irqId: IrqIndex) {.importc: "irq_enable", header: "tonc.h".}
-proc irqDisable*(irqId: IrqIndex) {.importc: "irq_disable", header: "tonc.h".}
+proc enable*(irqId: IrqIndex) {.importc: "irq_enable", header: "tonc.h".}
+  ## Enable an interrupt.
+
+proc disable*(irqId: IrqIndex) {.importc: "irq_disable", header: "tonc.h".}
+  ## Disable an interrupt.
