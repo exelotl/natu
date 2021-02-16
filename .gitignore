@@ -9,3 +9,4 @@ examples/*/nimcache/
 *.gba
 *.sav
 *.DS_Store
+*.out
