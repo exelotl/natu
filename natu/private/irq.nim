@@ -24,9 +24,8 @@ type
 # TODO: clean up below?
 
 # Options for ``irq.put``
-const
-  ISR_LAST:uint32 = 0x0040      ## Last isr in line (Lowest priority)
-  ISR_REPLACE:uint32 = 0x0080   ## Replace old isr if existing (prio ignored)
+# const ISR_LAST:uint32 = 0x0040      ## Last isr in line (Lowest priority)
+const ISR_REPLACE:uint32 = 0x0080   ## Replace old isr if existing (prio ignored)
 
 # const
 #   ISR_PRIO_MASK*:uint32 = 0x003F

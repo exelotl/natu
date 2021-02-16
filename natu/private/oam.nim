@@ -35,18 +35,18 @@ type
     s8x16, s8x32, s16x32, s32x64
 
 
-proc setAttr*(obj: ObjAttrPtr | var ObjAttr; a0, a1, a2: uint16) {.inline.} =
+func setAttr*(obj: ObjAttrPtr | var ObjAttr; a0, a1, a2: uint16) {.inline.} =
   ## Set the attributes of an object
   obj.attr0 = a0
   obj.attr1 = a1
   obj.attr2 = a2
 
 
-proc hide*(obj: ObjAttrPtr | var ObjAttr) {.importc: "obj_hide", header: "tonc.h".}
+func hide*(obj: var ObjAttr) {.importc: "obj_hide", header: "tonc.h".}
   ## Hide an object
   ## Equivalent to ``obj.mode = omHide``
 
-proc unhide*(obj: ObjAttrPtr | var ObjAttr; mode: ObjMode) {.importc: "obj_unhide", header: "tonc.h".}
+func unhide*(obj: var ObjAttr; mode: ObjMode) {.importc: "obj_unhide", header: "tonc.h".}
   ## Unhide an object.
   ## Equivalent to ``obj.mode = mode``
   ## 
@@ -57,54 +57,6 @@ proc unhide*(obj: ObjAttrPtr | var ObjAttr; mode: ObjMode) {.importc: "obj_unhid
   ## 
   ## mode
   ##   Object mode to unhide to. Necessary because this affects the affine-ness of the object.
-
-
-func getSizeImpl(obj: ObjAttrPtr): ptr array[2, uint8] {.importc: "obj_get_size", header: "tonc.h".}
-
-func getSize*(obj: ObjAttrPtr): tuple[w,h:int] {.inline.} =
-  ## Get the width and height of an object in pixels
-  let arr = getSizeImpl(obj)
-  (arr[0].int, arr[1].int)
-
-template getSize*(obj: ObjAttr): tuple[w,h:int] =
-  ## Get the width and height of an object in pixels
-  getSize(unsafeAddr obj)
-
-func getWidth*(obj: ObjAttrPtr): int {.importc: "obj_get_width", header: "tonc.h".}
-  ## Get the width of an object in pixels
-  
-template getWidth*(obj: ObjAttr): int =
-  ## Get the width of an object in pixels
-  getWidth(unsafeAddr obj)
-  
-func getHeight*(obj: ObjAttrPtr): int {.importc: "obj_get_height", header: "tonc.h".}
-  ## Get the height of an object in pixels
-  
-template getHeight*(obj: ObjAttr): int =
-  ## Get the height of an object in pixels
-  getHeight(unsafeAddr obj)
-
-
-# enum versions of size functions:
-
-import core
-
-func getSize*(size: ObjSize): tuple[w,h:int] {.inline.} =
-  {.noSideEffect.}:
-    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](addr oamSizes)
-    let arr = sizes[size]
-    (arr[0].int, arr[1].int)
-  
-func getWidth*(size: ObjSize): int {.inline.} =
-  {.noSideEffect.}:
-    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](addr oamSizes)
-    sizes[size][0].int
-
-func getHeight*(size: ObjSize): int {.inline.} =
-  {.noSideEffect.}:
-    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](addr oamSizes)
-    sizes[size][1].int
-
 
 
 # Obj affine procedures
@@ -193,93 +145,93 @@ proc affShearyInv*(oa: var ObjAffine; hy: Fixed) {.importc: "obj_aff_sheary_inv"
 # ----------------------
 
 # copy attr0,1,2 from one object into another
-proc setAttr*(obj: ObjAttrPtr, src: ObjAttr) {.inline.} = setAttr(obj, src.attr0, src.attr1, src.attr2)
-proc setAttr*(obj: var ObjAttr, src: ObjAttr) {.inline.} = setAttr(addr obj, src)
-proc clear*(obj: ObjAttrPtr) {.inline, deprecated:"Use obj.init() to clear".} = setAttr(obj, 0, 0, 0)
-proc clear*(obj: var ObjAttr) {.inline, deprecated:"Use obj.init() to clear".} = clear(addr obj)
+func setAttr*(obj: ObjAttrPtr, src: ObjAttr) {.inline.} = setAttr(obj, src.attr0, src.attr1, src.attr2)
+func setAttr*(obj: var ObjAttr, src: ObjAttr) {.inline.} = setAttr(addr obj, src)
+func clear*(obj: ObjAttrPtr) {.inline, deprecated:"Use obj.init() to clear".} = setAttr(obj, 0, 0, 0)
+func clear*(obj: var ObjAttr) {.inline, deprecated:"Use obj.init() to clear".} = setAttr(addr obj, 0, 0, 0)
 
 # getters
 
-proc x*(obj: ObjAttr): int {.inline.} = (obj.attr1 and ATTR1_X_MASK).int
-proc y*(obj: ObjAttr): int {.inline.} = (obj.attr0 and ATTR0_Y_MASK).int
-proc pos*(obj: ObjAttr): Vec2i {.inline.} = vec2i(obj.x, obj.y)
-proc mode*(obj: ObjAttr): ObjMode {.inline.} = (obj.attr0 and ATTR0_MODE_MASK).ObjMode
-proc fx*(obj: ObjAttr): ObjFxMode {.inline.} = (obj.attr0 and (ATTR0_BLEND or ATTR0_WINDOW)).ObjFxMode
-proc mos*(obj: ObjAttr): bool {.inline.} = (obj.attr0 and ATTR0_MOSAIC) != 0
-proc is8bpp*(obj: ObjAttr): bool {.inline.} = (obj.attr0 and ATTR0_8BPP) != 0
-proc aff*(obj: ObjAttr): int {.inline.} = ((obj.attr1 and ATTR1_AFF_ID_MASK) shr ATTR1_AFF_ID_SHIFT).int
-proc size*(obj: ObjAttr): ObjSize {.inline.} = (((obj.attr0 and ATTR0_SHAPE_MASK) shr 12) or (obj.attr1 shr 14)).ObjSize
-proc hflip*(obj: ObjAttr): bool {.inline.} = (obj.attr1 and ATTR1_HFLIP) != 0
-proc vflip*(obj: ObjAttr): bool {.inline.} = (obj.attr1 and ATTR1_VFLIP) != 0
-proc tid*(obj: ObjAttr): int {.inline.} = ((obj.attr2 and ATTR2_ID_MASK) shr ATTR2_ID_SHIFT).int
-proc pal*(obj: ObjAttr): int {.inline.} = ((obj.attr2 and ATTR2_PALBANK_MASK) shr ATTR2_PALBANK_SHIFT).int
-proc prio*(obj: ObjAttr): int {.inline.} = ((obj.attr2 and ATTR2_PRIO_MASK) shr ATTR2_PRIO_SHIFT).int
+func x*(obj: ObjAttr): int {.inline.} = (obj.attr1 and ATTR1_X_MASK).int
+func y*(obj: ObjAttr): int {.inline.} = (obj.attr0 and ATTR0_Y_MASK).int
+func pos*(obj: ObjAttr): Vec2i {.inline.} = vec2i(obj.x, obj.y)
+func mode*(obj: ObjAttr): ObjMode {.inline.} = (obj.attr0 and ATTR0_MODE_MASK).ObjMode
+func fx*(obj: ObjAttr): ObjFxMode {.inline.} = (obj.attr0 and (ATTR0_BLEND or ATTR0_WINDOW)).ObjFxMode
+func mos*(obj: ObjAttr): bool {.inline.} = (obj.attr0 and ATTR0_MOSAIC) != 0
+func is8bpp*(obj: ObjAttr): bool {.inline.} = (obj.attr0 and ATTR0_8BPP) != 0
+func aff*(obj: ObjAttr): int {.inline.} = ((obj.attr1 and ATTR1_AFF_ID_MASK) shr ATTR1_AFF_ID_SHIFT).int
+func size*(obj: ObjAttr): ObjSize {.inline.} = (((obj.attr0 and ATTR0_SHAPE_MASK) shr 12) or (obj.attr1 shr 14)).ObjSize
+func hflip*(obj: ObjAttr): bool {.inline.} = (obj.attr1 and ATTR1_HFLIP) != 0
+func vflip*(obj: ObjAttr): bool {.inline.} = (obj.attr1 and ATTR1_VFLIP) != 0
+func tid*(obj: ObjAttr): int {.inline.} = ((obj.attr2 and ATTR2_ID_MASK) shr ATTR2_ID_SHIFT).int
+func pal*(obj: ObjAttr): int {.inline.} = ((obj.attr2 and ATTR2_PALBANK_MASK) shr ATTR2_PALBANK_SHIFT).int
+func prio*(obj: ObjAttr): int {.inline.} = ((obj.attr2 and ATTR2_PRIO_MASK) shr ATTR2_PRIO_SHIFT).int
 
 # ptr setters
 
-proc `x=`*(obj: ObjAttrPtr, x: int) {.inline.} =
+func `x=`*(obj: ObjAttrPtr, x: int) {.inline.} =
   obj.attr1 = (x.uint16 and ATTR1_X_MASK) or (obj.attr1 and not ATTR1_X_MASK)
 
-proc `y=`*(obj: ObjAttrPtr, y: int) {.inline.} =
+func `y=`*(obj: ObjAttrPtr, y: int) {.inline.} =
   obj.attr0 = (y.uint16 and ATTR0_Y_MASK) or (obj.attr0 and not ATTR0_Y_MASK)
 
-proc `pos=`*(obj: ObjAttrPtr, v: Vec2i) {.inline.} =
+func `pos=`*(obj: ObjAttrPtr, v: Vec2i) {.inline.} =
   obj.x = v.x
   obj.y = v.y
 
-proc `tid=`*(obj: ObjAttrPtr, tid: int) {.inline.} =
+func `tid=`*(obj: ObjAttrPtr, tid: int) {.inline.} =
   obj.attr2 = ((tid.uint16 shl ATTR2_ID_SHIFT) and ATTR2_ID_MASK) or (obj.attr2 and not ATTR2_ID_MASK)
 
-proc `pal=`*(obj: ObjAttrPtr, pal: int) {.inline.} =
+func `pal=`*(obj: ObjAttrPtr, pal: int) {.inline.} =
   obj.attr2 = ((pal.uint16 shl ATTR2_PALBANK_SHIFT) and ATTR2_PALBANK_MASK) or (obj.attr2 and not ATTR2_PALBANK_MASK)
 
-proc `hflip=`*(obj: ObjAttrPtr, v: bool) {.inline.} =
+func `hflip=`*(obj: ObjAttrPtr, v: bool) {.inline.} =
   obj.attr1 = (v.uint16 shl 12) or (obj.attr1 and not ATTR1_HFLIP)
   
-proc `vflip=`*(obj: ObjAttrPtr, v: bool) {.inline.} =
+func `vflip=`*(obj: ObjAttrPtr, v: bool) {.inline.} =
   obj.attr1 = (v.uint16 shl 13) or (obj.attr1 and not ATTR1_VFLIP)
 
-proc `mode=`*(obj: ObjAttrPtr, v: ObjMode) {.inline.} =
+func `mode=`*(obj: ObjAttrPtr, v: ObjMode) {.inline.} =
   obj.attr0 = (v.uint16) or (obj.attr0 and not ATTR0_MODE_MASK)
 
-proc `fx=`*(obj: ObjAttrPtr, v: ObjFxMode) {.inline.} =
+func `fx=`*(obj: ObjAttrPtr, v: ObjFxMode) {.inline.} =
   obj.attr0 = (v.uint16) or (obj.attr0 and not (ATTR0_BLEND or ATTR0_WINDOW))
 
-proc `mos=`*(obj: ObjAttrPtr, v: bool) {.inline.} =
+func `mos=`*(obj: ObjAttrPtr, v: bool) {.inline.} =
   obj.attr0 = (v.uint16 shl 12) or (obj.attr0 and not ATTR0_MOSAIC)
 
-proc `is8bpp=`*(obj: ObjAttrPtr, v: bool) {.inline.} =
+func `is8bpp=`*(obj: ObjAttrPtr, v: bool) {.inline.} =
   obj.attr0 = (v.uint16 shl 13) or (obj.attr0 and not ATTR0_8BPP)
 
-proc `aff=`*(obj: ObjAttrPtr, aff: int) {.inline.} =
+func `aff=`*(obj: ObjAttrPtr, aff: int) {.inline.} =
   obj.attr1 = ((aff.uint16 shl ATTR1_AFF_ID_SHIFT) and ATTR1_AFF_ID_MASK) or (obj.attr1 and not ATTR1_AFF_ID_MASK)
 
-proc `size=`*(obj: ObjAttrPtr, v: ObjSize) {.inline.} =
+func `size=`*(obj: ObjAttrPtr, v: ObjSize) {.inline.} =
   let shape = (v.uint16 shl 12) and ATTR0_SHAPE_MASK
   let size = (v.uint16 shl 14)
   obj.attr0 = shape or (obj.attr0 and not ATTR0_SHAPE_MASK)
   obj.attr1 = size or (obj.attr1 and not ATTR1_SIZE_MASK)
   
-proc `prio=`*(obj: ObjAttrPtr, prio: int) {.inline.} =
+func `prio=`*(obj: ObjAttrPtr, prio: int) {.inline.} =
   obj.attr2 = ((prio.uint16 shl ATTR2_PRIO_SHIFT) and ATTR2_PRIO_MASK) or (obj.attr2 and not ATTR2_PRIO_MASK)
 
 
 # var setters
 
-proc `x=`*(obj: var ObjAttr, x: int) {.inline.} = (addr obj).x = x
-proc `y=`*(obj: var ObjAttr, y: int) {.inline.} = (addr obj).y = y
-proc `pos=`*(obj: var ObjAttr, pos: Vec2i) {.inline.} = (addr obj).pos = pos
-proc `tid=`*(obj: var ObjAttr, tid: int) {.inline.} = (addr obj).tid = tid
-proc `pal=`*(obj: var ObjAttr, pal: int) {.inline.} = (addr obj).pal = pal
-proc `hflip=`*(obj: var ObjAttr, hflip: bool) {.inline.} = (addr obj).hflip = hflip
-proc `vflip=`*(obj: var ObjAttr, vflip: bool) {.inline.} = (addr obj).vflip = vflip
-proc `mode=`*(obj: var ObjAttr, mode: ObjMode) {.inline.} = (addr obj).mode = mode
-proc `fx=`*(obj: var ObjAttr, fx: ObjFxMode) {.inline.} = (addr obj).fx = fx
-proc `mos=`*(obj: var ObjAttr, mos: bool) {.inline.} = (addr obj).mos = mos
-proc `is8bpp=`*(obj: var ObjAttr, is8bpp: bool) {.inline.} = (addr obj).is8bpp = is8bpp
-proc `size=`*(obj: var ObjAttr, size: ObjSize) {.inline.} = (addr obj).size = size
-proc `aff=`*(obj: var ObjAttr, aff: int) {.inline.} = (addr obj).aff = aff
-proc `prio=`*(obj: var ObjAttr, prio: int) {.inline.} = (addr obj).prio = prio
+func `x=`*(obj: var ObjAttr, x: int) {.inline.} = (addr obj).x = x
+func `y=`*(obj: var ObjAttr, y: int) {.inline.} = (addr obj).y = y
+func `pos=`*(obj: var ObjAttr, pos: Vec2i) {.inline.} = (addr obj).pos = pos
+func `tid=`*(obj: var ObjAttr, tid: int) {.inline.} = (addr obj).tid = tid
+func `pal=`*(obj: var ObjAttr, pal: int) {.inline.} = (addr obj).pal = pal
+func `hflip=`*(obj: var ObjAttr, hflip: bool) {.inline.} = (addr obj).hflip = hflip
+func `vflip=`*(obj: var ObjAttr, vflip: bool) {.inline.} = (addr obj).vflip = vflip
+func `mode=`*(obj: var ObjAttr, mode: ObjMode) {.inline.} = (addr obj).mode = mode
+func `fx=`*(obj: var ObjAttr, fx: ObjFxMode) {.inline.} = (addr obj).fx = fx
+func `mos=`*(obj: var ObjAttr, mos: bool) {.inline.} = (addr obj).mos = mos
+func `is8bpp=`*(obj: var ObjAttr, is8bpp: bool) {.inline.} = (addr obj).is8bpp = is8bpp
+func `size=`*(obj: var ObjAttr, size: ObjSize) {.inline.} = (addr obj).size = size
+func `aff=`*(obj: var ObjAttr, aff: int) {.inline.} = (addr obj).aff = aff
+func `prio=`*(obj: var ObjAttr, prio: int) {.inline.} = (addr obj).prio = prio
 
 import macros
 
@@ -307,19 +259,58 @@ template initObj*(args: varargs[untyped]): ObjAttr =
 
 template init*(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
   ## Initialise an object.
+  ## 
   ## Omitted fields will default to zero.
-  ## e.g.
-  ## ::
+  ## 
+  ## **Example:**
+  ## 
+  ## .. code-block:: nim
   ##   oamMem[0].init:
   ##     pos = vec2i(100, 100)
   ##     size = s32x32
   ##     tid = 0
   ##     pal = 3
-  obj.clear()
+  obj.setAttr(0, 0, 0)
   writeObj(obj, args)
 
 template edit*(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
   ## Update some fields of an object.
-  ## Like `init`, but omitted fields will be left unchanged.
+  ## 
+  ## Like `obj.init`, but omitted fields will be left unchanged.
   writeObj(obj, args)
 
+
+# Size helpers:
+
+import core
+
+func getSize*(size: ObjSize): tuple[w, h: int] {.inline.} =
+  ## Get the width and height in pixels of an `ObjSize` enum value.
+  {.noSideEffect.}:
+    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](addr oamSizes)
+    let arr = sizes[size]
+    (arr[0].int, arr[1].int)
+  
+func getWidth*(size: ObjSize): int {.inline.} =
+  ## Get the width in pixels of an `ObjSize` enum value.
+  {.noSideEffect.}:
+    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](addr oamSizes)
+    sizes[size][0].int
+
+func getHeight*(size: ObjSize): int {.inline.} =
+  ## Get the height in pixels of an `ObjSize` enum value.
+  {.noSideEffect.}:
+    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](addr oamSizes)
+    sizes[size][1].int
+
+func getSize*(obj: ObjAttr | ObjAttrPtr): tuple[w, h: int] {.inline.} =
+  ## Get the width and height of an object in pixels.
+  getSize(obj.size)
+  
+func getWidth*(obj: ObjAttr | ObjAttrPtr): int {.inline.} =
+  ## Get the width of an object in pixels.
+  getWidth(obj.size)
+  
+func getHeight*(obj: ObjAttr | ObjAttrPtr): int {.inline.} =
+  ## Get the height of an object in pixels.
+  getHeight(obj.size)
