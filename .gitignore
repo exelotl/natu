@@ -10,3 +10,4 @@ examples/*/nimcache/
 *.sav
 *.DS_Store
 *.out
+*.exe
