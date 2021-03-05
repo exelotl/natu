@@ -19,7 +19,7 @@
 ##    grit twiggy.png -gB4 -pn16
 ## 
 
-import natu
+import natu/[core, irq, oam]
 
 # Include the spritesheet in the build, make the data available to Nim
 {.compile: "twiggy.s".}
@@ -36,19 +36,19 @@ var twiggyPal {.importc: "twiggyPal".}: array[16, uint16]
 type
   AnimDataPtr = ptr AnimData
   AnimData {.bycopy, exportc.} = object
-    frames: ptr UncheckedArray[int]
+    frames: ptr UncheckedArray[uint16]
     len: int
     speed: int
 
 # Use emit to produce C code.
 {.emit:"""
 static const AnimData animIdleData = {
-  .frames = (int[]){1,3,4,5},
+  .frames = (const NU16[]){1,3,4,5},
   .len = 4,
   .speed = 7,
 };
 static const AnimData animWalkData = {
-  .frames = (int[]){13,14,15,16,17,18},
+  .frames = (const u16[]){13,14,15,16,17,18},
   .len = 6,
   .speed = 4,
 };
@@ -77,7 +77,7 @@ proc initAnim(data: AnimDataPtr): Anim {.noinit.} =
 
 proc frame(a: Anim): int {.inline.} =
   ## Get the current frame number within the sprite sheet.
-  a.data.frames[a.pos]
+  a.data.frames[a.pos].int
 
 proc update(a: var Anim) =
   ## Progress anim timer, advance to the next frame if necessary.
@@ -121,8 +121,8 @@ const frameWords = frameBytes div sizeof(uint32)
 
 proc main() =
   
-  irqInit()
-  irqEnable(II_VBLANK)
+  irq.init()
+  irq.enable(iiVBlank)
   
   # enable sprites with 1d mapping
   dispcnt.init:
@@ -130,17 +130,17 @@ proc main() =
     obj1d = true
   
   # copy palette into Object PAL RAM
-  memcpy16(addr palObjBank[pal], addr twiggyPal, twiggyPal.len)
+  memcpy16(addr objPalMem[pal], addr twiggyPal, twiggyPal.len)
   
   # copy an initial frame into Object VRAM
-  memcpy32(addr tileMemObj[0][tid], addr twiggyTiles, frameWords)
+  memcpy32(addr objTileMem[tid], addr twiggyTiles, frameWords)
   
   # hide all sprites
-  for obj in mitems(oamMem):
+  for obj in mitems(objMem):
     obj.hide()
   
   # set up sprite
-  oamMem[oid].init:
+  objMem[oid].init:
     pos = vec2i(100, 60)
     size = s32x32
     tid = tid
@@ -150,6 +150,6 @@ proc main() =
     updatePlayerAnim()
     VBlankIntrWait()
     # Copy current frame of animation into Object VRAM (replacing the old frame)
-    memcpy32(addr tileMemObj[0][tid], addr twiggyTiles[anim.frame * frameWords], frameWords)
+    memcpy32(addr objTileMem[tid], addr twiggyTiles[anim.frame * frameWords], frameWords)
 
 main()

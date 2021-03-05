@@ -35,7 +35,13 @@ type
     s8x16, s8x32, s16x32, s32x64
 
 
-func setAttr*(obj: ObjAttrPtr | var ObjAttr; a0, a1, a2: uint16) {.inline.} =
+func setAttr*(obj: ObjAttrPtr; a0, a1, a2: uint16) {.inline.} =
+  ## Set the attributes of an object
+  obj.attr0 = a0
+  obj.attr1 = a1
+  obj.attr2 = a2
+
+func setAttr*(obj: var ObjAttr; a0, a1, a2: uint16) {.inline.} =
   ## Set the attributes of an object
   obj.attr0 = a0
   obj.attr1 = a1
@@ -146,7 +152,7 @@ proc affShearyInv*(oa: var ObjAffine; hy: Fixed) {.importc: "obj_aff_sheary_inv"
 
 # copy attr0,1,2 from one object into another
 func setAttr*(obj: ObjAttrPtr, src: ObjAttr) {.inline.} = setAttr(obj, src.attr0, src.attr1, src.attr2)
-func setAttr*(obj: var ObjAttr, src: ObjAttr) {.inline.} = setAttr(addr obj, src)
+func setAttr*(obj: var ObjAttr, src: ObjAttr) {.inline.} = setAttr(obj, src.attr0, src.attr1, src.attr2)
 func clear*(obj: ObjAttrPtr) {.inline, deprecated:"Use obj.init() to clear".} = setAttr(obj, 0, 0, 0)
 func clear*(obj: var ObjAttr) {.inline, deprecated:"Use obj.init() to clear".} = setAttr(addr obj, 0, 0, 0)
 

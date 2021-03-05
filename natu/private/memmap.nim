@@ -93,6 +93,8 @@ var palObjMem* {.deprecated:"Use objColorMem instead", importc:"pal_obj_mem", he
   ## ::
   ##   palObjMem[i] = color i
 
+{.push warning[Deprecated]: off.}
+
 var palBgBank* {.deprecated:"Use bgPalMem instead", importc:"pal_bg_bank", header:"tonc.h".}: array[16, Palbank]
   ## Background palette matrix.
   ## ::
@@ -105,6 +107,7 @@ var palObjBank* {.deprecated:"Use objPalMem instead", importc:"pal_obj_bank", he
   ##   palObjBank[i] = bank i
   ##   palObjBank[i][j] = color i*16+j
 
+{.pop.}
 
 # VRAM
 

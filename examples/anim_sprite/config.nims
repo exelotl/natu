@@ -1,65 +1,32 @@
-import os except existsDir
-import strformat
+import os, strutils
+import natu/config
 
-const name = "anim_sprite"
-const main = "main"
+const main = "anim_sprite.nim"         # path to project file
+const name = splitFile(main).name      # name of ROM
 
-when not defined(nimsuggest):
-  doAssert(existsEnv("DEVKITARM"), "Please set DEVKITARM in your environment.")
-  doAssert(existsEnv("DEVKITPRO"), "Please set DEVKITPRO in your environment.")
+put "natu.toolchain", "devkitarm"
+put "natu.gameTitle", "ANIMSPRITE"     # max 12 chars, uppercase
+put "natu.gameCode", "0NTP"            # 4 chars, see GBATEK for info
 
-let devkitPro = getEnv("DEVKITPRO")
-let devkitArm = getEnv("DEVKITARM")
-let libtonc = devkitPro & "/libtonc"
-let libgba = devkitPro & "/libgba"
-
-proc gbaCfg() =
-  
-  let libs = "-ltonc -lmm"
-  let arch = "-mthumb -mthumb-interwork"
-  let specs = "-specs={devkitArm}/arm-none-eabi/lib/gba.specs".fmt
-  let omitWarnings = "-Wno-unused-variable -Wno-unused-but-set-variable -Wno-discarded-qualifiers"
-  let maxErrors = "-fmax-errors=1"
-  let cflags = "-g -Wall -O3 -mcpu=arm7tdmi -mtune=arm7tdmi -fomit-frame-pointer -ffast-math {arch} {omitWarnings} {maxErrors}".fmt
-  let ldflags = "{libs} {specs} -g {arch} -Wl,-Map,{name}.elf.map".fmt
-  
-  put "arm.standalone.gcc.path", devkitArm/"bin"
-  put "arm.standalone.gcc.exe", "arm-none-eabi-gcc"
-  put "arm.standalone.gcc.linkerexe", "arm-none-eabi-gcc"
-  put "arm.standalone.gcc.options.linker", ldflags
-  put "arm.standalone.gcc.options.always", cflags
-  
-  switch "cpu", "arm"
+if projectPath() == thisDir() / main:
+  # This runs only when compiling the project file:
+  gbaCfg()                             # set C compiler + linker options for GBA target
   switch "os", "standalone"
   switch "gc", "none"
-  switch "cc", "gcc"
-  switch "header"
-  switch "out", name & ".elf"
-  switch "path", projectDir()
-  switch "nimCache", "nimcache"  # output C sources to local directory
-  switch "lineTrace", "off"
-  switch "stackTrace", "off"
-  switch "checks", "off"
-  switch "define", "release"
-  switch "define", "gba"
-  switch "cincludes", projectDir()/"../nimcache"
-  switch "cincludes", libtonc/"include"
-  switch "cincludes", libgba/"include"
-  switch "cincludes", devkitArm/"arm-none-eabi/include"
-  switch "clibdir", libtonc/"lib"
-  switch "clibdir", libgba/"lib"
-
-if projectName() == lastPathPart(main):
-  gbaCfg()
+  switch "checks", "off"               # toggle assertions, bounds checking, etc.
+  switch "path", projectDir()          # allow imports relative to the main file
+  switch "header"                      # output "{project}.h"
+  switch "nimcache", "nimcache"        # output C sources to local directory
+  switch "cincludes", nimcacheDir()    # allow external C files to include "{project}.h"
 
 task build, "builds the GBA rom":
-  selfExec "c {main}".fmt
-  exec "{devkitArm}/bin/arm-none-eabi-objcopy -O binary {name}.elf {name}.gba".fmt
-  exec "{devkitPro}/tools/bin/gbafix {name}.gba".fmt
+  let args = commandLineParams()[1..^1].join(" ")
+  selfExec "c " & args & " -o:" & name & ".elf " & thisDir() / main
+  gbaStrip name & ".elf", name & ".gba"
+  gbaFix name & ".gba"
 
 task clean, "removes build files":
   rmDir "nimcache"
-  rmFile "{name}.gba".fmt
-  rmFile "{name}.elf".fmt
-  rmFile "{name}.elf.map".fmt
-  rmFile "{name}.sav".fmt
+  rmFile name & ".gba"
+  rmFile name & ".elf"
+  rmFile name & ".elf.map"
