@@ -416,9 +416,15 @@ converter toBgOfs*(p: BgPoint): BgOfs {.inline.} =
   p.BgOfs
 ]#
 
+type InvertedKeyState* = distinct uint16
+
+proc state*(keyinput: InvertedKeyState): KeyState {.inline.} =
+  ## Flip the `keyinput` register to obtain the set of keys which are currently pressed.
+  {KeyIndex.low .. KeyIndex.high} - cast[KeyState](keyinput)
+
 var dispcnt* {.importc:"REG_DISPCNT", header:"tonc.h".}: DispCnt            ## Display control register
 var dispstat* {.importc:"REG_DISPSTAT", header:"tonc.h".}: DispStat         ## Display status register
-var vcount* {.importc:"REG_VCOUNT", header:"tonc.h".}: uint16               ## Scanline count
+let vcount* {.importc:"REG_VCOUNT", header:"tonc.h".}: uint16               ## Scanline count
 var bgcnt* {.importc:"REG_BGCNT", header:"tonc.h".}: array[4, BgCnt]        ## BG control registers
 var bgofs* {.importc:"REG_BG_OFS", header:"tonc.h".}: array[4, BgOfs]       ## [Write only!] BG scroll registers
 var bgaff* {.importc:"REG_BG_AFFINE", header:"tonc.h".}: array[2, BgAffine] ## [Write only!] Affine parameters (matrix and scroll offset) for BG2 and BG3, depending on display mode.
@@ -435,9 +441,11 @@ var winobjcnt* {.importc:"REG_WINOBJCNT", header:"tonc.h".}: WinCnt  ## Object w
 
 var mosaic* {.importc:"REG_MOSAIC", header:"tonc.h".}: Mosaic   ## [Write only!] Mosaic size register
 
-var bldcnt* {.importc:"REG_BLDCNT", header:"tonc.h".}: BldCnt        ## Blend control register
+var bldcnt* {.importc:"REG_BLDCNT", header:"tonc.h".}: BldCnt          ## Blend control register
 var bldalpha* {.importc:"REG_BLDALPHA", header:"tonc.h".}: BlendAlpha  ## Alpha blending fade coefficients
-var bldy* {.importc:"REG_BLDY", header:"tonc.h".}: BlendBrightness   ## [Write only!] Brightness (fade in/out) coefficient
+var bldy* {.importc:"REG_BLDY", header:"tonc.h".}: BlendBrightness     ## [Write only!] Brightness (fade in/out) coefficient
+
+let keyinput* {.importc:"REG_KEYINPUT", header:"tonc.h".}: InvertedKeyState   ## The current state of the keypad
 
 
 import macros

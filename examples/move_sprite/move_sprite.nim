@@ -40,7 +40,7 @@ dispcnt.init(obj = true, obj1d = true)
 memcpy16(addr palObjBank[pal], addr shipPal, shipPal.len)
 
 # copy image into object VRAM
-memcpy32(addr tileMemObj[0][0], addr shipTiles, shipTiles.len)
+memcpy32(addr tileMemObj[0][tid], addr shipTiles, shipTiles.len)
 
 # hide all sprites
 for obj in mitems(oamMem):
@@ -59,10 +59,10 @@ while true:
   keyPoll()
   
   # move the ship
-  if keyIsDown(KEY_LEFT): pos.x -= 1
-  if keyIsDown(KEY_RIGHT): pos.x += 1
-  if keyIsDown(KEY_UP): pos.y -= 1
-  if keyIsDown(KEY_DOWN): pos.y += 1
+  if keyIsDown(kiLeft): pos.x -= 1
+  if keyIsDown(kiRight): pos.x += 1
+  if keyIsDown(kiUp): pos.y -= 1
+  if keyIsDown(kiDown): pos.y += 1
   
   # wait for the end of the frame
   VBlankIntrWait()

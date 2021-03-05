@@ -175,3 +175,20 @@ proc `=`*(dst: var ObjAffine, src: ObjAffine) {.inline.} =
   dst.pc = src.pc
   dst.pd = src.pd
 
+
+type
+  KeyIndex* = enum
+    ## Bit positions for ``reg.keyinput`` and ``reg.keycnt``.
+    ## Used with input module functions such as ``keyIsDown``.
+    kiA            ## Button A
+    kiB            ## Button B
+    kiSelect       ## Select button
+    kiStart        ## Start button
+    kiRight        ## Right D-pad
+    kiLeft         ## Left D-pad
+    kiUp           ## Up D-pad
+    kiDown         ## Down D-pad
+    kiR            ## Shoulder R
+    kiL            ## Shoulder L
+  
+  KeyState* {.size:2.} = set[KeyIndex]
