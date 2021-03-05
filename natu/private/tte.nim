@@ -42,6 +42,7 @@
 
 import common
 import types, surface, reg, math
+from video import clrOrange, clrYellow
 
 {.compile(toncPath & "/src/font/sys8.s", toncAsmFlags).}
 {.compile(toncPath & "/src/font/verdana10.s", toncAsmFlags).}

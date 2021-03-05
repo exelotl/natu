@@ -32,11 +32,11 @@ type
   Tile* = Tile4
   
   Tile4* {.importc: "TILE4", header: "tonc.h", bycopy, completeStruct.} = object
-    ## 4bpp tile type, for easy indexing and copying of 4-bit tiles
+    ## 4bpp tile type, for easy indexing and copying of 16-color tiles
     data* {.importc: "data".}: array[8, uint32]
     
   Tile8* {.importc: "TILE8", header: "tonc.h", bycopy, completeStruct.} = object
-    ## 8bpp tile type, for easy indexing and copying of 8-bit tiles
+    ## 8bpp tile type, for easy indexing and copying of 256-color tiles
     data* {.importc: "data".}: array[16, uint32]
 
 type
@@ -117,21 +117,52 @@ type
     count* {.importc: "count".}: uint16  # start and count are actually union fields? does this still work?
     cnt* {.importc: "cnt".}: uint16
 
-type Palbank* = array[16, Color]
-  ## Palette bank type, for 16-color palette banks
+type
+  Palbank* {.deprecated.} = array[16, Color]
+    ## Palette bank type, for 16-color palette banks
+  Palette* = array[16, Color]
+    ## A 16-color palette
 
 
 ## VRAM array types
 ## These types allow VRAM access as arrays or matrices in their most natural types.
 type
   Screenline* = array[32, ScrEntry]
-  ScreenMat* = array[32, array[32, ScrEntry]]
-  Screenblock* = array[1024, ScrEntry]
   M3Line* = array[240, Color]
   M4Line* = array[240, uint8]  ## NOTE: u8, not u16!! (be careful not to write single bytes to VRAM)
   M5Line* = array[160, Color]
+  ScreenMat* = array[32, array[32, ScrEntry]]
+  Screenblock* = array[1024, ScrEntry]
   Charblock* = array[512, Tile]
   Charblock8* = array[256, Tile8]
+
+proc `[]`*(a: var Screenblock; x, y: int): var ScrEntry {.inline.} =
+  cast[ptr array[1024, ScrEntry]](addr a)[x + y*32]
+
+proc `[]=`*(a: var Screenblock; x, y: int; v: ScrEntry) {.inline.} =
+  cast[ptr array[1024, ScrEntry]](addr a)[x + y*32] = v
+
+type
+  UnboundedCharblock* {.borrow:`.`.} = distinct array[512, Tile]
+  UnboundedCharblock8* {.borrow:`.`.} = distinct array[256, Tile8]
+
+template allowUnboundedAccess(A: typedesc, Len:static[int], T: typedesc) =
+  {.push inline.}
+  
+  proc `[]`*(a: var A, i: int): var T =
+    cast[ptr UncheckedArray[T]](addr a)[i]
+  
+  proc `[]=`*(a: var A, i: int, v: T) =
+    cast[ptr UncheckedArray[T]](addr a)[i] = v
+  
+  converter toArray*(a: var A): var array[Len, T] =
+    cast[ptr array[Len, T]](addr a)[]
+  
+  {.pop.}
+
+allowUnboundedAccess(UnboundedCharblock, 512, Tile)
+allowUnboundedAccess(UnboundedCharblock8, 256, Tile8)
+
 
 type
   ObjAttr* {.importc: "OBJ_ATTR", header: "tonc.h", bycopy, completeStruct.} = object

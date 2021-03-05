@@ -53,87 +53,121 @@ const
 
 # Palette
 
-var palBgMem* {.importc:"pal_bg_mem", header:"tonc.h".}: array[256, Color]
+
+var bgColorMem* {.importc:"pal_bg_mem", header:"tonc.h".}: array[256, Color]
+  ## Access to BG PAL RAM as a single array of colors.
+  ## 
+  ## This is useful when working with 8bpp backgrounds, or display mode 4.
+
+var bgPalMem* {.importc:"pal_bg_bank", header:"tonc.h".}: array[16, Palette]
+  ## Access to BG PAL RAM as a table of 16-color palettes.
+  ## 
+  ## This is useful when working when 4bpp backgrounds.
+  ## 
+  ## **Example:**
+  ## 
+  ## .. code-block:: nim
+  ##   
+  ##   # set all colors of the first palette in memory to white.
+  ##   for color in bgPalMem[0].mitems:
+  ##     color = clrWhite
+
+
+var objColorMem* {.importc:"pal_obj_mem", header:"tonc.h".}: array[256, Color]
+  ## Access to OBJ PAL RAM as a single array of colors.
+  ## 
+  ## This is useful when working with 8bpp sprites.
+
+var objPalMem* {.importc:"pal_obj_bank", header:"tonc.h".}: array[16, Palette]
+  ## Access to OBJ PAL RAM as a table of 16-color palettes.
+  ## 
+  ## This is useful when working when 4bpp sprites.
+
+var palBgMem* {.deprecated:"Use bgColorMem instead", importc:"pal_bg_mem", header:"tonc.h".}: array[256, Color]
   ## Background palette.
   ## ::
   ##   palBgMem[i] = color i
 
-var palObjMem* {.importc:"pal_obj_mem", header:"tonc.h".}: array[256, Color]
+var palObjMem* {.deprecated:"Use objColorMem instead", importc:"pal_obj_mem", header:"tonc.h".}: array[256, Color]
   ## Object palette.
   ## ::
   ##   palObjMem[i] = color i
 
-var palBgBank* {.importc:"pal_bg_bank", header:"tonc.h".}: array[16, Palbank]
+var palBgBank* {.deprecated:"Use bgPalMem instead", importc:"pal_bg_bank", header:"tonc.h".}: array[16, Palbank]
   ## Background palette matrix.
   ## ::
-  ##   palBgBank[y] = bank y
-  ##   palBgBank[y][x] = color y*16+x
+  ##   palBgBank[i] = bank i
+  ##   palBgBank[i][j] = color i*16+j
 
-var palObjBank* {.importc:"pal_obj_bank", header:"tonc.h".}: array[16, Palbank]
+var palObjBank* {.deprecated:"Use objPalMem instead", importc:"pal_obj_bank", header:"tonc.h".}: array[16, Palbank]
   ## Object palette matrix.
   ## ::
-  ##   palObjBank[y] = bank y
-  ##   palObjBank[y][x] = color y*16+x
+  ##   palObjBank[i] = bank i
+  ##   palObjBank[i][j] = color i*16+j
 
 
 # VRAM
 
-var tileMem* {.importc:"tile_mem", header:"tonc.h".}: array[4, Charblock]
-  ## Charblocks, 4bpp tiles.
+var bgTileMem* {.importc:"tile_mem", header:"tonc.h".}: array[4, UnboundedCharblock]
+  ## BG charblocks, 4bpp tiles.
+  ## 
+  ## **Note:** While `bgTileMem[0]` has 512 elements, it's valid to reach across
+  ## into the neighbouring charblock, for example `bgTileMem[0][1000]`.
+  ## 
+  ## For this reason, no bounds checking is performed on these charblocks even when 
+  ## 
   ## ::
-  ##   tileMem[y] = charblock y         (Tile[])
-  ##   tileMem[y][x] = block y, tile x  (Tile)
+  ##   tileMem[i]      # charblock i
+  ##   tileMem[i][j]   # charblock i, tile j
 
-var tile8Mem* {.importc:"tile8_mem", header:"tonc.h".}: array[4, Charblock8]
-  ## Charblocks, 8bpp tiles.
+var bgTileMem8* {.importc:"tile8_mem", header:"tonc.h".}: array[4, UnboundedCharblock8]
+  ## BG charblocks, 8bpp tiles.
   ## ::
-  ##   tile8Mem[y] = charblock y         (Tile[])
-  ##   tile8Mem[y][x] = block y, tile x  (Tile)
+  ##   tile8Mem[i]      # charblock i
+  ##   tile8Mem[i][j]   # charblock i, tile j
 
-var tileMemObj* {.importc:"tile_mem_obj", header:"tonc.h".}: array[2, Charblock]
-  ## Object charblocks, 4bpp tiles.
-  ## ::
-  ##   tileMemObj[y] = charblock y         (Tile[])
-  ##   tileMemObj[y][x] = block y, tile x  (Tile)
+var objTileMem* {.importc:"tile_mem_obj[0]", header:"tonc.h".}: array[1024, Tile]
+  ## Object (sprite) image data, as 4bpp tiles.
+  ## 
+  ## This is 2 charblocks in size, and is separate from BG tile memory.
+  ## 
+  ## **Example:**
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   objTileMem[n] = Tile()   # Clear the image data for a tile.
 
-var tile8MemObj* {.importc:"tile8_mem_obj", header:"tonc.h".}: array[2, Charblock8]
-  ## Object charblocks, 8bpp tiles.
-  ## ::
-  ##   tile8MemObj[y] = charblock y         (Tile[])
-  ##   tile8MemObj[y][x] = block y, tile x  (Tile)
+var objTileMem8* {.importc:"tile8_mem_obj[0]", header:"tonc.h".}: array[512, Tile8]
+  ## Object (sprite) tiles, 8bpp
 
 var seMem* {.importc:"se_mem", header:"tonc.h".}: array[32, Screenblock]
   ## Screenblocks as arrays
   ## ::
-  ##   se_mem[y] = screenblock y              (ScrEntry[])
-  ##   se_mem[y][x] = screenblock y, entry x  (ScrEntry)
+  ##   se_mem[i]       # screenblock i
+  ##   se_mem[i][j]    # screenblock i, entry j
+  ##   se_mem[i][x,y]  # screenblock i, entry x + y*32
 
-var seMat* {.importc:"se_mat", header:"tonc.h".}: array[32, ScreenMat]
-  ## Screenblock as matrices
-  ## ::
-  ##   se_mat[s] = screenblock s                     (ScrEntry[][])
-  ##   se_mat[s][y][x] = screenblock s, entry (x,y)  (ScrEntry)
 
 var vidMem* {.importc:"vid_mem", header:"tonc.h".}: array[240*160, Color]
   ## Main mode 3/5 frame as an array
   ## ::
-  ##   vid_mem[i] = pixel i   (Color)
+  ##   vid_mem[i]    # pixel i
 
 var m3Mem* {.importc:"m3_mem", header:"tonc.h".}: array[160, M3Line]
   ## Mode 3 frame as a matrix
   ## ::
-  ##   m3_mem[y][x]  = pixel (x, y)          ( Color )
+  ##   m3_mem[y][x]  # pixel (x, y)
 
 var m4Mem* {.importc:"m4_mem", header:"tonc.h".}: array[160, M4Line]
   ## Mode 4 first page as a matrix
   ## Note: This is a byte-buffer. Not to be used for writing.
   ## ::
-  ##   m4_mem[y][x]  = pixel (x, y)          ( u8 )
+  ##   m4_mem[y][x]  # pixel (x, y)
 
 var m5Mem* {.importc:"m5_mem", header:"tonc.h".}: array[128, M5Line]
   ## Mode 5 first page as a matrix
   ## ::
-  ##   m5_mem[y][x]  = pixel (x, y)          ( Color )
+  ##   m5_mem[y][x]  # pixel (x, y)
 
 var vidMemFront* {.importc:"vid_mem_front", header:"tonc.h".}: array[160*128, uint16]
   ## First page array
@@ -155,13 +189,10 @@ var m5MemBack* {.importc:"m5_mem_back", header:"tonc.h".}: array[128, M5Line]
 
 # OAM
 
-var oamMem* {.importc:"oam_mem", header:"tonc.h".}: array[128, ObjAttr]
+var objMem* {.importc:"oam_mem", header:"tonc.h".}: array[128, ObjAttr]
   ## Object attribute memory
   ## ::
   ##   oamMem[i] = object i            (ObjAttr)
-
-var objMem* {.importc:"obj_mem", header:"tonc.h".}: array[128, ObjAttr]
-  ## Alias for ``oamMem``
 
 var objAffMem* {.importc:"obj_aff_mem", header:"tonc.h".}: array[32, ObjAffine]
   ## Object affine memory
@@ -180,6 +211,14 @@ var romMem* {.importc:"rom_mem", header:"tonc.h".}: array[maxRomSize div sizeof(
 const maxSramSize = 0x10000  # 64KB
 var sramMem* {.importc:"sram_mem", header:"tonc.h".}: array[maxSramSize, uint8]
   ## SRAM pointer
+
+# deprecated
+var tileMem* {.deprecated:"Use bgTileMem", importc:"tile_mem", header:"tonc.h".}: array[6, Charblock]
+var tile8Mem* {.deprecated:"Use bgTileMem8", importc:"tile8_mem", header:"tonc.h".}: array[6, Charblock8]
+var tileMemObj* {.deprecated:"Use objTileMem[i] instead of tileMemObj[0][i]", importc:"tile_mem_obj", header:"tonc.h".}: array[2, Charblock]
+var tile8MemObj* {.deprecated:"Use objTileMem8[i] instead of tile8MemObj[0][i]", importc:"tile8_mem_obj", header:"tonc.h".}: array[2, Charblock8]
+var seMat* {.deprecated:"Use seMem[s][x,y] instead", importc:"se_mat", header:"tonc.h".}: array[32, ScreenMat]
+var oamMem* {.deprecated:"Use `objMem` instead", importc:"oam_mem", header:"tonc.h".}: array[128, ObjAttr]
 
 
 # REGISTER LIST
