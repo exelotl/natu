@@ -62,6 +62,8 @@ const
   clrCream* = 0x7BFF.Color
 
 
+# TODO: Rework color/pal function signatures?
+
 proc clrRotate*(clrs: ptr Color; nclrs: uint; ror: int) {.importc: "clr_rotate", header: "tonc.h".}
   ## Rotate `nclrs` colors at `clrs` to the right by `ror`.
 
@@ -157,57 +159,63 @@ proc clrFadeFast*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: uint; alpha
 ## Colors
 ## ------
 
-template rgb15*(red, green, blue: int): Color {.deprecated:"Use rgb5 instead".} =
+{.push inline.}
+
+proc rgb15*(red, green, blue: int): Color {.deprecated:"Use rgb5 instead".} =
   ## Create a 15-bit BGR color.
   (red + (green shl 5) + (blue shl 10)).Color
 
-template rgb15safe*(red, green, blue: int): Color {.deprecated:"Use rgb5 instead".} =
+proc rgb15safe*(red, green, blue: int): Color {.deprecated:"Use rgb5 instead".} =
   ## Create a 15-bit BGR color, with proper masking of R,G,B components.
   ((red and 31) + ((green and 31) shl 5) + ((blue and 31) shl 10)).Color
 
-template rgb5*(red, green, blue: int): Color =
+proc rgb5*(red, green, blue: int): Color =
   ## Create a 15-bit BGR color.
   (red + (green shl 5) + (blue shl 10)).Color
 
-template rgb5safe*(red, green, blue: int): Color =
+proc rgb5safe*(red, green, blue: int): Color =
   ## Create a 15-bit BGR color, with proper masking of R,G,B components.
   ((red and 31) + ((green and 31) shl 5) + ((blue and 31) shl 10)).Color
 
-template rgb8*(red, green, blue: uint8): Color =
+proc rgb8*(red, green, blue: uint8): Color =
   ## Create a 15-bit BGR color, using 8-bit components
   ((red.uint shr 3) + ((green.uint shr 3) shl 5) + ((blue.uint shr 3) shl 10)).Color
 
-template rgb8*(rgb: int): Color =
+proc rgb8*(rgb: int): Color =
   ## Create a 15-bit BGR color from a 24-bit RGB color of the form 0xRRGGBB
   (((rgb and 0xff0000) shr 19) + (((rgb and 0x00ff00) shr 11) shl 5) + (((rgb and 0x0000ff) shr 3) shl 10)).Color
 
+proc clear*[T: Screenblock | Charblock | Charblock8 | Tile | Tile8](dst: var T) =
+  ## Set all bytes in some VRAM block or tile to zero.
+  memset32(addr dst, 0, sizeof(T) div 4)
 
-proc cbbClear*(cbb: int) {.inline.} =
-  memset32(addr tileMem[cbb], 0, CBB_SIZE div 4)
+proc clearRow*(sbb: var Screenblock, row: range[0..31]) =
+  memset32(addr sbb[row*32], 0, 32 div sizeof(ScrEntry))
 
-proc sbbClear*(sbb: int) {.inline.} =
-  memset32(addr seMem[sbb], 0, SBB_SIZE div 4)
-
-proc sbbClearRow*(sbb, row: int) {.inline.} =
-  memset32(addr seMem[sbb][row*32], 0, 32 div 2)
+{.pop.}
 
 # TODO: document and/or port these two
 proc bgIsAffine*(n:int):bool {.importc: "BG_IS_AFFINE", header: "tonc.h".}
 proc bgIsAvail*(n:int):bool {.importc: "BG_IS_AVAIL", header: "tonc.h".}
 
-proc seFill*(sbb: ptr ScrEntry; se: ScrEntry) {.importc: "se_fill", header: "tonc.h".}
-  ## Fill screenblock `sbb` with `se`
-proc sePlot*(sbb: ptr ScrEntry; x, y: int; se: ScrEntry) {.importc: "se_plot", header: "tonc.h".}
+proc fill*(sbb: var Screenblock; se: ScrEntry) {.importc: "se_fill", header: "tonc.h".}
+  ## Fill screenblock `sbb` with `se`.
+
+proc plot*(sbb: var Screenblock; x, y: int; se: ScrEntry) {.importc: "se_plot", header: "tonc.h".}
   ## Plot a screen entry at (`x`,`y`) of screenblock `sbb`.
-proc seRect*(sbb: ptr ScrEntry; left, top, right, bottom: int; se: ScrEntry) {.importc: "se_rect", header: "tonc.h".}
+
+proc rect*(sbb: var Screenblock; left, top, right, bottom: int; se: ScrEntry) {.importc: "se_rect", header: "tonc.h".}
   ## Fill a rectangle on `sbb` with `se`.
-proc seFrame*(sbb: ptr ScrEntry; left, top, right, bottom: int; se: ScrEntry) {.importc: "se_frame", header: "tonc.h".}
+
+proc frame*(sbb: var Screenblock; left, top, right, bottom: int; se: ScrEntry) {.importc: "se_frame", header: "tonc.h".}
   ## Create a border on `sbb` with `se`.
 
-proc seWindow*(sbb: ptr ScrEntry; left, top, right, bottom: int; se0: ScrEntry) {.importc: "se_window", header: "tonc.h".}
-proc seHline*(sbb: ptr ScrEntry; x0, x1, y: int; se: ScrEntry) {.importc: "se_hline", header: "tonc.h".}
-proc seVline*(sbb: ptr ScrEntry; x, y0, y1: int; se: ScrEntry) {.importc: "se_vline", header: "tonc.h".}
+proc window*(sbb: var Screenblock; left, top, right, bottom: int; se0: ScrEntry) {.importc: "se_window", header: "tonc.h".}
+proc hline*(sbb: var Screenblock; x0, x1, y: int; se: ScrEntry) {.importc: "se_hline", header: "tonc.h".}
+proc vline*(sbb: var Screenblock; x, y0, y1: int; se: ScrEntry) {.importc: "se_vline", header: "tonc.h".}
 
+
+# TODO: rework below
 
 proc bgAffSet*(bgaff: ptr BgAffine; pa, pb, pc, pd: Fixed) {.importc: "bg_aff_set", header: "tonc.h".}
   ## Set the elements of a bg affine matrix.
@@ -341,14 +349,28 @@ proc m5Frame*(left, top, right, bottom: int; clr: Color) {.importc: "m5_frame", 
 
 # Convenience procs for working with tile map entries
 
-proc tid*(se:ScrEntry): int = (se and SE_ID_MASK).int
-proc hflip*(se:ScrEntry): bool = (se and SE_HFLIP) != 0
-proc vflip*(se:ScrEntry): bool = (se and SE_VFLIP) != 0
-proc palbank*(se:ScrEntry): int {.deprecated:"Use `pal` instead".} = ((se and SE_PALBANK_MASK) shr SE_PALBANK_SHIFT).int
-proc pal*(se:ScrEntry): int = ((se and SE_PALBANK_MASK) shr SE_PALBANK_SHIFT).int
+{.push inline.}
 
-proc `tid=`*(se:var ScrEntry, val: int) =     se = ((val.uint16 shl SE_ID_SHIFT) and SE_ID_MASK) or (se and not SE_ID_MASK)
-proc `hflip=`*(se:var ScrEntry, val: bool) =  se = (val.uint16 shl 10) or (se and not SE_HFLIP)
-proc `vflip=`*(se:var ScrEntry, val: bool) =  se = (val.uint16 shl 11) or (se and not SE_VFLIP)
-proc `palbank=`*(se:var ScrEntry, val: int) {.deprecated:"Use `pal` instead".} = se = ((val.uint16 shl SE_PALBANK_SHIFT) and SE_PALBANK_MASK) or (se and not SE_PALBANK_MASK)
-proc `pal=`*(se:var ScrEntry, val: int) = se = ((val.uint16 shl SE_PALBANK_SHIFT) and SE_PALBANK_MASK) or (se and not SE_PALBANK_MASK)
+proc tid*(se: ScrEntry): int = (se and SE_ID_MASK).int
+proc hflip*(se: ScrEntry): bool = (se and SE_HFLIP) != 0
+proc vflip*(se: ScrEntry): bool = (se and SE_VFLIP) != 0
+proc palbank*(se: ScrEntry): int {.deprecated:"Use `pal` instead".} = ((se and SE_PALBANK_MASK) shr SE_PALBANK_SHIFT).int
+proc pal*(se: ScrEntry): int = ((se and SE_PALBANK_MASK) shr SE_PALBANK_SHIFT).int
+
+proc `tid=`*(se: var ScrEntry, val: int) =     se = ((val.uint16 shl SE_ID_SHIFT) and SE_ID_MASK) or (se and not SE_ID_MASK)
+proc `hflip=`*(se: var ScrEntry, val: bool) =  se = (val.uint16 shl 10) or (se and not SE_HFLIP)
+proc `vflip=`*(se: var ScrEntry, val: bool) =  se = (val.uint16 shl 11) or (se and not SE_VFLIP)
+proc `palbank=`*(se: var ScrEntry, val: int) {.deprecated:"Use `pal` instead".} = se = ((val.uint16 shl SE_PALBANK_SHIFT) and SE_PALBANK_MASK) or (se and not SE_PALBANK_MASK)
+proc `pal=`*(se: var ScrEntry, val: int) = se = ((val.uint16 shl SE_PALBANK_SHIFT) and SE_PALBANK_MASK) or (se and not SE_PALBANK_MASK)
+
+{.pop.}
+
+
+proc cbbClear*(cbb: int) {.inline, deprecated:"Use e.g. bgTileMem[i].clear() instead.".} =
+  memset32(addr tileMem[cbb], 0, CBB_SIZE div 4)
+
+proc sbbClear*(sbb: int) {.inline, deprecated:"Use seMem[i].clear() instead.".} =
+  memset32(addr seMem[sbb], 0, SBB_SIZE div 4)
+
+proc sbbClearRow*(sbb, row: int) {.inline, deprecated:"Use seMem[i].clearRow(n) instead.".} =
+  memset32(addr seMem[sbb][row*32], 0, 32 div 2)
