@@ -341,6 +341,8 @@ proc m5Frame*(left, top, right, bottom: int; clr: Color) {.importc: "m5_frame", 
 
 # Convenience procs for working with tile map entries
 
+{.push inline.}
+
 proc tid*(se:ScrEntry): int = (se and SE_ID_MASK).int
 proc hflip*(se:ScrEntry): bool = (se and SE_HFLIP) != 0
 proc vflip*(se:ScrEntry): bool = (se and SE_VFLIP) != 0
@@ -352,3 +354,5 @@ proc `hflip=`*(se:var ScrEntry, val: bool) =  se = (val.uint16 shl 10) or (se an
 proc `vflip=`*(se:var ScrEntry, val: bool) =  se = (val.uint16 shl 11) or (se and not SE_VFLIP)
 proc `palbank=`*(se:var ScrEntry, val: int) {.deprecated:"Use `pal` instead".} = se = ((val.uint16 shl SE_PALBANK_SHIFT) and SE_PALBANK_MASK) or (se and not SE_PALBANK_MASK)
 proc `pal=`*(se:var ScrEntry, val: int) = se = ((val.uint16 shl SE_PALBANK_SHIFT) and SE_PALBANK_MASK) or (se and not SE_PALBANK_MASK)
+
+{.pop.}
