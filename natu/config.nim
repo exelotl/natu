@@ -99,6 +99,9 @@ proc gbaCfg*() =
   switch "cincludes", natuDir/"vendor/libtonc/include"
   switch "cincludes", natuDir/"vendor/maxmod/include"
   
+  # Ensure subprocesses can see the DLLs in tools/bin
+  putEnv "PATH", devkitPro()/"tools"/"bin" & PathSep & getEnv("PATH")
+
 
 proc gbaStrip*(elfFile, gbaFile: string) =
   ## Invoke objcopy to create a raw binary file (all debug symbols removed)
