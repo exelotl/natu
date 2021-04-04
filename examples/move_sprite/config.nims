@@ -6,7 +6,7 @@ const name = splitFile(main).name      # name of ROM
 
 put "natu.toolchain", "devkitarm"
 put "natu.gameTitle", "MOVESPRITE"     # max 12 chars, uppercase
-put "natu.gameCode", "0NTP"            # 4 chars, see GBATEK for info
+put "natu.gameCode", "2NTP"            # 4 chars, see GBATEK for info
 
 if projectPath() == thisDir() / main:
   # This runs only when compiling the project file:
