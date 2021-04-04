@@ -1,7 +1,7 @@
 import os, strutils
 import natu/config
 
-const main = "helloworld.nim"          # path to project file
+const main = "hello_world.nim"         # path to project file
 const name = splitFile(main).name      # name of ROM
 
 put "natu.toolchain", "devkitarm"
