@@ -1,7 +1,7 @@
 import os, strutils
 import natu/config
 
-const main = "playmusic.nim"          # path to project file
+const main = "play_music.nim"         # path to project file
 const name = splitFile(main).name     # name of ROM
 
 put "natu.toolchain", "devkitarm"
