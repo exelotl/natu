@@ -15,7 +15,7 @@
 ##   grit coin.png -gB4 -pn16
 ##
 
-import natu
+import natu/[core, oam, irq]
 
 {.compile: "coin.s".}
 var coinTiles {.importc: "coinTiles".}: array[128, uint32]
@@ -83,8 +83,8 @@ var coins {.noinit.}: array[40, Coin]
 
 proc main() =
   
-  irqInit()
-  irqEnable(II_VBLANK)
+  irq.init()
+  irq.enable(iiVBlank)
   
   # enable sprites with 1d mapping
   dispcnt.init:
@@ -92,10 +92,10 @@ proc main() =
     obj1d = true
   
   # copy palette into object PAL RAM
-  memcpy16(addr palObjBank[pal], addr coinPal, coinPal.len)
+  memcpy16(addr objPalMem[pal], addr coinPal, coinPal.len)
   
   # copy all frames into object VRAM
-  memcpy32(addr tileMemObj[0][tid], addr coinTiles, coinTiles.len)
+  memcpy32(addr objTileMem[tid], addr coinTiles, coinTiles.len)
   
   # initialize coins
   for coin in mitems(coins):
@@ -119,7 +119,7 @@ proc main() =
     
     # hide remaining sprites
     while oid < oamMem.len:
-      oamMem[oid].hide()
+      objMem[oid].hide()
       inc oid
   
 
