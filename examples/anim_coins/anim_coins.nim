@@ -15,7 +15,7 @@
 ##   grit coin.png -gB4 -pn16
 ##
 
-import natu
+import natu/[core, oam, irq]
 
 {.compile: "coin.s".}
 var coinTiles {.importc: "coinTiles".}: array[128, uint32]
@@ -83,8 +83,8 @@ var coins {.noinit.}: array[40, Coin]
 
 proc main() =
   
-  irqInit()
-  irqEnable(II_VBLANK)
+  irq.init()
+  irq.enable(iiVBLANK)
   
   # enable sprites with 1d mapping
   dispcnt.init:
