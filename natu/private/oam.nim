@@ -5,6 +5,7 @@
 
 import common
 import types, memdef, bios, math
+from core import oamSizes
 
 {.compile(toncPath & "/src/tonc_oam.c", toncCFlags).}
 {.compile(toncPath & "/src/tonc_obj_affine.c", toncCFlags).}
@@ -287,8 +288,6 @@ template edit*(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
 
 
 # Size helpers:
-
-import core
 
 func getSize*(size: ObjSize): tuple[w, h: int] {.inline.} =
   ## Get the width and height in pixels of an `ObjSize` enum value.
