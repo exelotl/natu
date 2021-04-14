@@ -11,15 +11,14 @@
 ## The `grit` command line tool can be used to convert an image to a representation that the hardware understands.
 ## i.e. 4bpp paletted, broken into 8x8px tiles which are arranged sequentially (1d mapping)
 ## ::
-##   grit ship.png -gB4 -pn16
+##   grit ship.png -gB4 -pn16 -ftb
 ##
-## This produces an assembly file that we can compile and link with our project using the {.compile.} pragma.
+## This produces some raw binary files that we can embed into our project using `readBin` from the core module.
 
 import natu/[core, irq, oam, input]
 
-{.compile: "ship.s".}
-var shipTiles {.importc: "shipTiles".}: array[512, uint32]
-var shipPal {.importc: "shipPal".}: array[16, uint16]
+let shipTiles = readBin("ship.img.bin")
+let shipPal = readBin("ship.pal.bin")
 
 # Memory locations used by our sprite:
 const tid = 0  # base tile in object VRAM
@@ -36,11 +35,11 @@ irq.enable(iiVBlank)
 # enable sprites with 1d mapping
 dispcnt.init(obj = true, obj1d = true)
 
-# copy palette into object PAL RAM
-memcpy16(addr palObjBank[pal], addr shipPal, shipPal.len)
+# copy palette into Object PAL RAM
+memcpy16(addr objPalMem[pal], unsafeAddr shipPal, shipPal.len div sizeof(uint16))
 
-# copy image into object VRAM
-memcpy32(addr tileMemObj[0][tid], addr shipTiles, shipTiles.len)
+# copy image into Object VRAM
+memcpy32(addr objTileMem[tid], unsafeAddr shipTiles, shipTiles.len div sizeof(uint32))
 
 # hide all sprites
 for obj in mitems(oamMem):

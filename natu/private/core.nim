@@ -211,3 +211,25 @@ proc qranRange*(min: int; max: int): int {.importc: "qran_range", header: "tonc.
   ## Returns a random number in range ``min ..< max``
   ## Note: ``(max-min)`` must be lower than ``0x8000``
 
+# Compile-time utils
+# ------------------
+
+template readBin*(path: static string): untyped =
+  ## 
+  ## Read a binary file at compile-time as an array of bytes.
+  ## 
+  ## If assigned to a top-level `let` variable, this data will be placed in ROM.
+  ## 
+  ## e.g.
+  ## 
+  ## .. code-block:: nim
+  ##   
+  ##   let shipPal = readBin("ship.pal.bin")
+  ## 
+  const data = static:
+    const str = staticRead(path)
+    var arr: array[str.len, byte]
+    for i, c in str:
+      arr[i] = c.byte
+    arr
+  data
