@@ -6,7 +6,7 @@ let natuDir* = currentSourcePath().parentDir.parentDir
 # ROM header info, should be overidden
 
 put "natu.gameTitle", "UNTITLED"
-put "natu.gameCode", "0NTP"
+put "natu.gameCode", "2NTP"
 
 # C compiler options, may be overidden
 
@@ -25,17 +25,20 @@ put "natu.cflags.noWarn", "-Wno-unused-variable -Wno-unused-but-set-variable -Wn
 # so I'm keeping this around just in case.
 put "natu.cflags.limitErrors", "-fmax-errors=1"
 
-proc devkitPro*(): string =
+proc devkitPro*: string =
   result = getEnv("DEVKITPRO")
   when not defined(nimsuggest):
     doAssert(result != "", "Please set DEVKITPRO in your environment.")
 
-proc devkitArm*(): string =
+proc devkitArm*: string =
   result = getEnv("DEVKITARM")
   when not defined(nimsuggest):
     doAssert(result != "", "Please set DEVKITARM in your environment.")
 
-proc gbaCfg*() =
+proc natuExe*: string =
+  getEnv("NATU_EXE", default="natu")
+
+proc gbaCfg* =
   
   doAssert(get("natu.toolchain") == "devkitarm", "Only \"devkitarm\" toolchain is supported for now.")
   
@@ -162,3 +165,46 @@ converter toMmModuleId*(id: ModuleId): MmModuleId {.inline.} = id.MmModuleId
     sfxList.join("\n").indent(4),
     modList.join("\n").indent(4),
   ]
+
+template doInclude*(path: static string) =
+  include `path`
+
+
+# Graphics
+# --------
+
+type ObjSize* = enum
+  s8x8, s16x16, s32x32, s64x64,
+  s16x8, s32x8, s32x16, s64x32,
+  s8x16, s8x32, s16x32, s32x64
+
+proc gfxConvert*(path: static string) =
+  var
+    natuOutput: seq[string]
+    natuPalCounter: int
+    natuIsSharingPal: bool
+  
+  template sharePal(body: untyped) =
+    doAssert(not natuIsSharingPal, "sharePal cannot be nested.")
+    natuIsSharingPal = true
+    `body`
+    natuIsSharingPal = false
+    inc natuPalCounter
+  
+  proc graphic(name: string, size: ObjSize, bpp = 4) =
+    doAssert({'\t', '\n'} notin name, name & " contains invalid characters.")
+    natuOutput.add name & '\t' & $size & '\t' & $bpp & '\t' & $natuPalCounter
+    if not natuIsSharingPal:
+      inc natuPalCounter
+  
+  var
+    indir = "gfx"
+    outdir = "res"
+  
+  doInclude(path)
+  
+  let tsvFile = outdir/"gfxconvert.tsv"
+  mkDir(outdir)
+  writeFile(tsvFile, natuOutput.join("\n"))
+  exec natuExe() & " gfxconvert " & tsvFile & " --script:" & path & " --indir:" & indir & " --outdir:" & outdir
+  rmFile(tsvFile)

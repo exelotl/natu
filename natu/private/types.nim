@@ -25,7 +25,7 @@ type
   Color* = distinct uint16  ## Type for colors
 
 type
-  ScrEntry* = uint16    ## Type for screen entries
+  ScrEntry* = uint16    ## Type for screen entries           TODO: make distinct
   ScrAffEntry* = uint8  ## Type for affine screen entries
 
 type
@@ -202,7 +202,7 @@ proc `=copy`*(dst: var ObjAttr, src: ObjAttr) =
   dst.attr2 = src.attr2
 
 proc `=sink`*(dst: var ObjAttr, src: ObjAttr) =
-  ## Custom sink assignment for ObjAttr to avoid clobbering the
+  ## Custom move assignment for ObjAttr to avoid clobbering the
   ## affine matrix data in the `fill` field.
   dst.attr0 = src.attr0
   dst.attr1 = src.attr1
@@ -215,9 +215,9 @@ proc `=copy`*(dst: var ObjAffine, src: ObjAffine) =
   dst.pb = src.pb
   dst.pc = src.pc
   dst.pd = src.pd
-  
+
 proc `=sink`*(dst: var ObjAffine, src: ObjAffine) =
-  ## Custom sink assignment for ObjAffine to avoid clobbering the
+  ## Custom move assignment for ObjAffine to avoid clobbering the
   ## object attribute data in the `fill` fields.
   dst.pa = src.pa
   dst.pb = src.pb
@@ -229,8 +229,8 @@ proc `=sink`*(dst: var ObjAffine, src: ObjAffine) =
 
 type
   KeyIndex* = enum
-    ## Bit positions for ``reg.keyinput`` and ``reg.keycnt``.
-    ## Used with input module functions such as ``keyIsDown``.
+    ## Bit positions for `reg.keyinput` and `reg.keycnt`.
+    ## Used with input module functions such as `keyIsDown`.
     kiA            ## Button A
     kiB            ## Button B
     kiSelect       ## Select button

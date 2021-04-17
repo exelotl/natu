@@ -1,0 +1,5 @@
+#? stdtmpl(emit="f.write") | standard
+#proc writeGraphicsC(f:File, imgData, palData: string) =
+
+const char natuGfxPalData[] = ${palData.makeCString()};
+const char natuGfxImgData[] = ${imgData.makeCString()};
