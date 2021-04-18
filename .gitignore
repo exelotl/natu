@@ -3,7 +3,6 @@
 wip/
 examples/*/output/
 examples/*/build/
-examples/*/source/
 examples/*/nimcache/
 *.elf
 *.elf.map
