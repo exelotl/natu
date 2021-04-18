@@ -7,11 +7,11 @@ import natu/maxmod
 let soundbankBin = static staticRead("./soundbank.bin").cstring
 
 type
-  SampleId* {.size: 4.} = enum
+  SampleId* {.size: 4.} = ${if sfxList.len > 0: "enum" else: "distinct uint32  # empty"}
     #for s in sfxList:
     $s,
     #end for
-  ModuleId* {.size: 4.} = enum
+  ModuleId* {.size: 4.} = ${if modList.len > 0: "enum" else: "distinct uint32  # empty"}
     #for m in modList:
     $m,
     #end for

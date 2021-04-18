@@ -8,8 +8,12 @@ include "templates/soundbank.nim.template"
 proc mmConvert*(script, sfxDir, modDir, outDir: string, files: seq[string]) =
   var filePaths, sfxList, modList: seq[string]
   
-  # input and output locations are assumed to exist
-  var newestModifiedIn = max(getLastModificationTime(sfxDir), getLastModificationTime(modDir))
+  var newestModifiedIn = max(
+    if dirExists(sfxDir): getLastModificationTime(sfxDir) else: fromUnix(0),
+    if dirExists(modDir): getLastModificationTime(modDir) else: fromUnix(0)
+  )
+  
+  # output location is assumed to exist
   var oldestModifiedOut = getLastModificationTime(outdir)
   
   let outputBinPath = outdir / "soundbank.bin"
@@ -63,7 +67,7 @@ proc mmConvert*(script, sfxDir, modDir, outDir: string, files: seq[string]) =
   
   # regenerate the output files if any input files have changed
   
-  if newestModifiedIn > oldestModifiedOut:
+  if newestModifiedIn >= oldestModifiedOut:
     
     echo "Building soundbank:"
     
