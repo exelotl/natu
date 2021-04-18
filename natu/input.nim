@@ -5,8 +5,8 @@ export KeyIndex, KeyState
 const allKeys*: KeyState = {kiA..kiL}
 
 var
-  keyCurrState: KeyState  ## The set of keys that are currently down on this frame
-  keyPrevState: KeyState  ## The set of keys that were down on the previous frame
+  keyCurrState*: KeyState  ## The set of keys that are currently down on this frame
+  keyPrevState*: KeyState  ## The set of keys that were down on the previous frame
 
 proc keyPoll* =
   ## Should be called once per frame.
@@ -54,5 +54,9 @@ proc keyHit*(k: KeyIndex): bool =
 proc keyReleased*(k: KeyIndex): bool =
   ## True if the given key was just released on this frame
   k in (keyPrevState - keyCurrState)
+
+proc anyKeyHit*(s: KeyState): bool =
+  ## True if any of the given keys are currently down
+  s * (keyCurrState - keyPrevState) != {}
 
 {.pop.}
