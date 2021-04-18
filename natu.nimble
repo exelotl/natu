@@ -8,4 +8,4 @@ skipDirs      = @["examples"]
 bin           = @["natu"]
 
 requires "nim >= 1.4.2"
-requires "trick >= 0.1.0"
+requires "trick >= 0.1.1"
