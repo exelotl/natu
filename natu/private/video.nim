@@ -367,7 +367,7 @@ proc `pal=`*(se: var ScrEntry, val: int) = se = ((val.uint16 shl SE_PALBANK_SHIF
 
 
 proc cbbClear*(cbb: int) {.inline, deprecated:"Use e.g. bgTileMem[i].clear() instead.".} =
-  memset32(addr tileMem[cbb], 0, CBB_SIZE div 4)
+  memset32(addr bgTileMem[cbb], 0, CBB_SIZE div 4)
 
 proc sbbClear*(sbb: int) {.inline, deprecated:"Use seMem[i].clear() instead.".} =
   memset32(addr seMem[sbb], 0, SBB_SIZE div 4)

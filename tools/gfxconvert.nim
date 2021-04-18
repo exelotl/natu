@@ -1,5 +1,5 @@
 import strutils, strscans, strformat, parseopt
-import options, math, os, times
+import options, os, times
 import trick
 from ./common import withFile, tsvRows
 
@@ -42,8 +42,8 @@ proc gfxConvert*(tsvPath, script, indir, outdir: string) =
   var newestModifiedIn = getLastModificationTime(indir)
   var oldestModifiedOut = getLastModificationTime(outdir)
   
-  let outputCPath = outdir / "gfx.c"
-  let outputNimPath = outdir / "gfx.nim"
+  let outputCPath = outdir / "graphics.c"
+  let outputNimPath = outdir / "graphics.nim"
   
   # get oldest modification date of all output files
   
@@ -173,20 +173,20 @@ proc gfxConvert*(tsvPath, script, indir, outdir: string) =
       file.writeGraphicsC(imgData, palData)
   
   else:
-    # skip gfx conversion.
-    echo "Nothing to do."
-    discard
-    
-    
+    echo "Skipping graphics."
+
+
+# Command Line Interface
+# ----------------------
 
 proc gfxConvert*(p: var OptParser, progName: static[string] = "gfxconvert") =
   
   const helpMsg = """
 
-Takes intermediate config output in tsv format and uses it to convert graphics.
-
 Usage:
   """ & progName & """ filename.tsv --indir:DIR --outdir:DIR
+
+Takes intermediate config output in tsv format and uses it to convert graphics.
 
 """
   
@@ -196,19 +196,20 @@ Usage:
     outdir: string
     script: string
   
-  for kind, k, v in p.getopt():
-    case kind
+  while true:
+    next(p)
+    case p.kind
     of cmdArgument:
-      filename = k
+      filename = p.key
     of cmdLongOption, cmdShortOption:
-      case k
-      of "script": script = v
-      of "indir": indir = v
-      of "outdir": outdir = v
+      case p.key
+      of "script": script = p.val
+      of "indir": indir = p.val
+      of "outdir": outdir = p.val
       of "h","help": quit(helpMsg, 0)
-      else: quit("Unrecognised option '" & k & "'\n" & helpMsg)
+      else: quit("Unrecognised option '" & p.key & "'\n" & helpMsg)
     of cmdEnd:
-      discard
+      break
   
   if filename == "": quit("Please pass in a .tsv file\n" & helpMsg, 0)
   if script == "": quit("Please specify the gfx script\n" & helpMsg, 0)
@@ -216,8 +217,4 @@ Usage:
   if outdir == "": quit("Please specify the output directory\n" & helpMsg, 0)
   
   gfxconvert(filename, script, indir, outdir)
-  echo "ROM fixed!"
 
-when isMainModule:
-  var p = initOptParser(shortNoVal = {'p', 'h'}, longNoVal = @["pad", "help"])
-  gbafix(p)

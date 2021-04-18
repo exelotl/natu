@@ -1,4 +1,4 @@
-import os, streams, parsecsv
+import streams, parsecsv
 
 template withFile*(filename: string, mode: FileMode, body: untyped) =
   block:
@@ -18,4 +18,3 @@ iterator tsvRows*(filename: string): seq[string] =
       yield tsv.row
   finally:
     close(tsv)
-    

@@ -49,7 +49,7 @@ proc gbaCfg* =
   
   if not exists("natu.ldflags.target"):
     put "natu.ldflags.target", get("natu.cflags.target")
-    
+  
   if not exists("natu.ldflags.debug"):
     put "natu.ldflags.debug", get("natu.cflags.debug")
   
@@ -128,7 +128,7 @@ func toCamelCase(name: string): string =
     else:
       result.add(c.toLowerAscii())
 
-proc createMaxmodSoundbank*(files: seq[string], binFile = "soundbank.bin", nimFile = "soundbank.nim") =
+proc createMaxmodSoundbank*(files: seq[string], binFile = "soundbank.bin", nimFile = "soundbank.nim") {.deprecated.} =
   ## Invoke `mmutil` to create a soundbank file.
   ## Also output a Nim file equivalent to the header file that
   ## mmutil would usually produce when given the -h option.
@@ -166,6 +166,7 @@ converter toMmModuleId*(id: ModuleId): MmModuleId {.inline.} = id.MmModuleId
     modList.join("\n").indent(4),
   ]
 
+
 template doInclude*(path: static string) =
   include `path`
 
@@ -178,7 +179,7 @@ type ObjSize* = enum
   s16x8, s32x8, s32x16, s64x32,
   s8x16, s8x32, s16x32, s32x64
 
-proc gfxConvert*(path: static string) =
+proc gfxConvert*(script: static string) =
   var
     natuOutput: seq[string]
     natuPalCounter: int
@@ -198,13 +199,42 @@ proc gfxConvert*(path: static string) =
       inc natuPalCounter
   
   var
-    indir = "gfx"
-    outdir = "res"
+    indir = "graphics"
+    outdir = "output"
   
-  doInclude(path)
+  doInclude(script)
   
   let tsvFile = outdir/"gfxconvert.tsv"
   mkDir(outdir)
   writeFile(tsvFile, natuOutput.join("\n"))
-  exec natuExe() & " gfxconvert " & tsvFile & " --script:" & path & " --indir:" & indir & " --outdir:" & outdir
+  exec natuExe() & " gfxconvert " & tsvFile & " --script:" & script & " --indir:" & indir & " --outdir:" & outdir
   rmFile(tsvFile)
+
+
+proc mmConvert*(script: static string) =
+  var
+    natuMmList: seq[string]
+  
+  proc sample(name: string) =
+    doAssert({'\t', '\n'} notin name, name & " contains invalid characters.")
+    natuMmList.add name
+  
+  proc module(name: string) =
+    doAssert({'\t', '\n'} notin name, name & " contains invalid characters.")
+    natuMmList.add name
+  
+  var
+    sfxDir = "samples"
+    modDir = "modules"
+    outDir = "output"
+  
+  doInclude(script)
+  
+  mkDir(outdir)
+  exec natuExe() & " mmconvert --script:$# --sfxDir:$# --modDir:$# --outDir:$# $#" % [
+    script,
+    sfxDir,
+    modDir,
+    outDir,
+    natuMmList.join(" ")
+  ]

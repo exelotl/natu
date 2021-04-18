@@ -1,3 +1,5 @@
+import natu/[core, video]
+
 # Implementation of useful graphic operations below:
 
 template data*(g: Graphic): GraphicData = staticGfxData[g]
@@ -40,6 +42,6 @@ template onscreen*(g: Graphic, pos: Vec2i): bool =
   ## Check if a graphic would be onscreen when drawn at a given location
   pos.x + g.w >= 0 and pos.y + g.h >= 0 and pos.x < ScreenWidth and pos.y < ScreenHeight
 
-template onscreen*(r: Rect): bool =
+func onscreen*(r: Rect): bool {.inline.} =
   ## Check if a rectangle is on-screen
   r.right >= 0 and r.bottom >= 0 and r.left < ScreenWidth and r.top < ScreenHeight

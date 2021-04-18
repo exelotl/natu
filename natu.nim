@@ -3,7 +3,7 @@ when not isMainModule:
     "Please import natu/[core, video, oam, input, irq, tte]".}
 
 import parseopt, strutils, strscans
-import tools/[gbafix, gfxconvert]
+import tools/[gbafix, gfxconvert, mmconvert]
 
 const version = static:
   var res = "0.0.0"
@@ -17,13 +17,14 @@ const version = static:
 const helpMsg = """
 Natu """ & version & """ Project Tool
 
-This tool lets you quickly create a new GBA project.
+This tool (eventually will) let you quickly create a new GBA project.
 
 Commands:
-  natu init                Create a GBA project in the current directory
+  natu init                Create a GBA project in the current directory (UNIMPLEMENTED)
 
 Extras:
-  natu gfxconvert          Generate sprite gfx data from a tab-separated data sheet
+  natu gfxconvert          Generate sprite gfx data from a .tsv data sheet
+  natu mmconvert           Generate maxmod soundbank from a list of input files
   natu fix <file.gba>      Fix a GBA ROM's header (logo + checksum)
   natu help                Show this dialogue
   natu help <command>      Show help for a specific command
@@ -63,7 +64,8 @@ proc help(p: var OptParser) =
 # run subcommand
 case cmd
 of "init": quit("Not implemented")
-of "gfxconvert": gfxconvert(p, "natu gfxconvert")
+of "gfxconvert": gfxConvert(p, "natu gfxconvert")
+of "mmconvert": mmConvert(p, "natu mmconvert")
 of "fix": gbafix(p, "natu fix")
 of "help": help(p)
 else: quit(helpMsg, 0)

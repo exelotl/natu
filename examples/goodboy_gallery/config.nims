@@ -1,11 +1,11 @@
 import os, strutils
 import natu/config
 
-const main = "src/spacedog.nim"        # path to project file
-const name = splitFile(main).name      # name of ROM
+const main = "source/goodboy_gallery.nim"  # path to project file
+const name = splitFile(main).name          # name of ROM
 
 put "natu.toolchain", "devkitarm"
-put "natu.gameTitle", "SPACEDOG"       # max 12 chars, uppercase
+put "natu.gameTitle", "GALLERY"        # max 12 chars, uppercase
 put "natu.gameCode", "2NTP"            # 4 chars, see GBATEK for info
 
 if projectPath() == thisDir() / main:
@@ -19,20 +19,27 @@ if projectPath() == thisDir() / main:
   switch "nimcache", "nimcache"        # output C sources to local directory
   switch "cincludes", nimcacheDir()    # allow external C files to include "{project}.h"
 
-task gfx, "convert sprite graphics":
-  gfxConvert "gfx.nims"
+task graphics, "convert spritesheets":
+  gfxConvert "graphics.nims"
+
+task audio, "convert music and sounds":
+  mmConvert "audio.nims"
+
+# task backgrounds, "convert backgrounds/tilemaps":
+#   bgConvert "backgrounds.nims"
 
 task build, "builds the GBA rom":
   let args = commandLineParams()[1..^1].join(" ")
-  gfxTask()
-  echo "c " & args & " -o:" & name & ".elf " & thisDir() / main
+  graphicsTask()
+  audioTask()
+  # backgroundsTask()
   selfExec "c " & args & " -o:" & name & ".elf " & thisDir() / main
-  # gbaStrip name & ".elf", name & ".gba"
-  # gbaFix name & ".gba"
+  gbaStrip name & ".elf", name & ".gba"
+  gbaFix name & ".gba"
 
 task clean, "removes build files":
   rmDir "nimcache"
-  rmDir "res"
+  rmDir "output"
   rmFile name & ".gba"
   rmFile name & ".elf"
   rmFile name & ".elf.map"
