@@ -36,7 +36,7 @@ proc devkitArm*: string =
     doAssert(result != "", "Please set DEVKITARM in your environment.")
 
 proc natuExe*: string =
-  getEnv("NATU_EXE", default="natu")
+  getEnv("NATU_EXE", default = natuDir/"natu".addFileExt(ExeExt))
 
 proc gbaCfg* =
   

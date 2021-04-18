@@ -72,7 +72,7 @@ proc mmConvert*(script, sfxDir, modDir, outDir: string, files: seq[string]) =
     
     # If none was found, try devkitPro tools directory as a fallback?
     if mmutilPath == "" and existsEnv("DEVKITPRO"):
-      mmutilPath = getEnv("DEVKITPRO")/"tools"/"mmutil".addFileExt(ExeExt)
+      mmutilPath = getEnv("DEVKITPRO")/"tools"/"bin"/"mmutil".addFileExt(ExeExt)
     
     proc mmutil(args: string) =
       doAssert(
