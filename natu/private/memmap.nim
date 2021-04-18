@@ -95,13 +95,13 @@ var palObjMem* {.deprecated:"Use objColorMem instead", importc:"pal_obj_mem", he
 
 {.push warning[Deprecated]: off.}
 
-var palBgBank* {.deprecated:"Use bgPalMem instead", importc:"pal_bg_bank", header:"tonc.h".}: array[16, Palbank]
+var palBgBank* {.deprecated:"Use bgPalMem instead", importc:"pal_bg_bank", header:"tonc.h".}: array[16, Palette]
   ## Background palette matrix.
   ## ::
   ##   palBgBank[i] = bank i
   ##   palBgBank[i][j] = color i*16+j
 
-var palObjBank* {.deprecated:"Use objPalMem instead", importc:"pal_obj_bank", header:"tonc.h".}: array[16, Palbank]
+var palObjBank* {.deprecated:"Use objPalMem instead", importc:"pal_obj_bank", header:"tonc.h".}: array[16, Palette]
   ## Object palette matrix.
   ## ::
   ##   palObjBank[i] = bank i
