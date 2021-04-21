@@ -19,7 +19,7 @@ type
     palUnused = 0
     palUsed = 1
 
-var objPals {.noinit, codegenDecl:EWRAM_DATA.}: array[16, PalState]
+var objPals {.codegenDecl:EWRAM_DATA.}: array[16, PalState]
 
 proc allocObjPal*: int =
   ## Allocate a 4bpp palette in Obj PAL RAM.
@@ -41,9 +41,8 @@ proc freeObjPal*(i: int) =
 
 # Graphic palette allocation
 # --------------------------
-# Every graphic gets an associated `palNum`.
-# Graphics defined under a "sharePal" block will share the same `palNum`.
-# This allows us to 
+# Every graphic in your graphics.nims gets an associated palNum.
+# Graphics defined under a `sharePal` block will have the same palNum.
 
 type
   PalUsage {.size: sizeof(uint16).} = object
@@ -56,13 +55,13 @@ proc acquireObjPal(palNum: int, palData: cstring, palHalfwords: int): int {.disc
   var u = palUsages[palNum]
   var count = u.count
   if count == 0:
-    let pal = allocObjPal()
-    u.index = pal.uint
-    memcpy16(addr objPalMem[pal], palData, palHalfwords)
-    result = pal
+    let palId = allocObjPal()
+    u.index = palId.uint
+    memcpy16(addr objPalMem[palId], palData, palHalfwords)
+    result = palId
   else:
     result = u.index.int
-  count += 1
+  inc count
   u.count = count
   palUsages[palNum] = u
 
@@ -86,28 +85,21 @@ template acquireObjPal*(g: Graphic): int =
   ## 
   ## Returns which slot in Obj PAL RAM was used, but you don't have
   ## to use the returned value, as you can always check it later
-  ## with `getObjPal`
+  ## with `getPalId`
   ## 
   acquireObjPal(g.data.palNum, addr palData[g.data.palPos], g.data.palHalfwords)
 
 template releaseObjPal*(g: Graphic) =
-  ## 
   ## Decrease palUsage reference count.
   ## If the count reaches zero, the palette will be freed.
-  ## 
   releaseObjPal(g.data.palNum)
 
-
-proc getObjPal*(palNum: int): int {.inline.} = palUsages[palNum].index.int
-
-template getObjPal*(g: Graphic): int =
+template getPalId*(g: Graphic): int =
   ## Get the current slot in Obj PAL RAM used by a graphic.
-  getObjPal(g.data.palNum)
+  let u = palUsages[g.data.palNum]
+  assert(u.count > 0, "Tried to get palId of graphic whose palette is not in use.")
+  u.index.int
 
-template copyObjPal*(palId: int, palData: cstring, palHalfwords: int) =
-  ## Load palette data into a specified slot in Obj PAL RAM.
-  memcpy16(addr objPalMem[palId], palData, palHalfwords)
-
-template copyObjPal*(palId: int, g: Graphic) =
-  ## Load palette data from a graphic into a specified slot in Obj PAL RAM.
-  memcpy16(addr objPalMem[palId], addr palData[g.data.palPos], g.data.palHalfwords)
+template loadPal*(g: Graphic) =
+  ## Load palette data from a graphic into the correct slot in Obj PAL RAM.
+  memcpy16(addr objPalMem[getPalId(g)], unsafeAddr palData[g.data.palPos], g.data.palHalfwords)

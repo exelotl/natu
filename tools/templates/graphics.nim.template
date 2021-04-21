@@ -18,7 +18,7 @@ type
     frameWords*: int
   Graphic* = enum
     #for g in gfxRows:
-    ${g.name},
+    ${g.name}
     #end for
 
 {.compile:"./graphics.c".}

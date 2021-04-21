@@ -25,17 +25,26 @@ template numFrames*(g: Graphic): int =
   g.data.frames
 
 template copyPal*(dest: ptr Palette, g: Graphic) =
-  # static:
-  #   doAssert(g.bpp == 4, "copyPal is only implemented for 4bpp graphics")
-  #   doAssert(g.data.palHalfwords <= 16, "Exceeded maximum size for a single 4bpp palette")
+  ## Copy palette data from a graphic into some destination, 4bpp version.
+  when g is static:
+    static:
+      doAssert(g.bpp == 4, "Can only copy 4bpp palettes to a ptr Palette")
+      doAssert(g.data.palHalfwords <= 16, "Exceeded maximum size for a single 4bpp palette.")
+  else:
+    assert(g.bpp == 4, "Can only copy 4bpp palettes to a ptr Palette")
+    assert(g.data.palHalfwords <= 16, "Exceeded maximum size for a single 4bpp palette.")
+  memcpy16(dest, unsafeAddr palData[g.data.palPos], g.data.palHalfwords)
+
+template copyPal*(dest: ptr Color, g: Graphic) =
+  ## Copy palette data from a graphic into some destination (unsafe version, works with 8bpp)
   memcpy16(dest, unsafeAddr palData[g.data.palPos], g.data.palHalfwords)
 
 template copyAllFrames*(dest: ptr Tile4 | ptr Tile8, g: Graphic) =
-  ## Copy all frames of animation to a location in object VRAM
+  ## Copy all frames of animation to a location in Object VRAM
   memcpy32(dest, unsafeAddr imgData[g.data.imgPos], g.data.imgWords div sizeof(uint32))
 
 template copyFrame*(dest: ptr Tile4, g: Graphic, frame: int) =
-  ## Copy a single frame of animation to a location in object VRAM
+  ## Copy a single frame of animation to a location in Object VRAM
   memcpy32(dest, unsafeAddr imgData[g.data.imgPos + g.data.frameWords * sizeof(uint32) * frame], g.data.frameWords)
 
 template onscreen*(g: Graphic, pos: Vec2i): bool =
