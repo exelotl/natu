@@ -153,7 +153,7 @@ proc createMaxmodSoundbank*(files: seq[string], binFile = "soundbank.bin", nimFi
   writeFile nimFile, """
 import natu/maxmod
 
-let soundbankBin* = static staticRead("$1").cstring
+let soundbankBin* = static staticRead("$1").MmSoundbankPtr
 
 type
   SampleId* {.size: 4.} = enum

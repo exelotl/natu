@@ -37,6 +37,8 @@ const mmAsmFlags = "-g -x assembler-with-cpp -DSYS_GBA -DUSE_IWRAM -I" & mmPath 
 # -----
 
 type
+  MmSoundbankPtr* = distinct cstring
+    ## Pointer to soundbank data
   MmModuleId* = distinct uint32
     ## ID of a song in the soundbank
   MmSampleId* = distinct uint32
@@ -77,7 +79,7 @@ type
     mixingChannels* {.importc: "mixing_channels".}: pointer
     mixingMemory* {.importc: "mixing_memory".}: pointer
     waveMemory* {.importc: "wave_memory".}: pointer
-    soundbank* {.importc: "soundbank".}: pointer
+    soundbank* {.importc: "soundbank".}: MmSoundbankPtr
   
   MmModLayer* {.importc: "mm_modlayer", header:"mm_types.h", bycopy.} = object
     tick* {.importc: "tick".}: uint8                   ## current tick count
@@ -139,7 +141,7 @@ proc `==`*(a, b: MmModuleId): bool {.borrow.}
 proc `==`*(a, b: MmSampleId): bool {.borrow.}
 proc `==`*(a, b: MmSfxHandle): bool {.borrow.}
 
-proc init*(soundbank: pointer; channels: uint) {.importc:"mmInitDefault", header:"maxmod.h".}
+proc init*(soundbank: MmSoundbankPtr; channels: uint) {.importc:"mmInitDefault", header:"maxmod.h".}
   ## Initialize Maxmod with default settings.
   ## `soundbank` : Memory address of soundbank (in ROM).
   ##               A soundbank file can be created with the Maxmod Utility.
