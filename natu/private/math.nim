@@ -68,9 +68,9 @@ template approach*[T](x: var T, target, step: T) =
     x = max(x - step, target)
 
 const
-  FIX_SHIFT*:int = 8
-  FIX_SCALE*:int = (1 shl FIX_SHIFT)
-  FIX_MASK*:int = (FIX_SCALE - 1)
+  FIX_SHIFT*: int = 8
+  FIX_SCALE*: int = (1 shl FIX_SHIFT)
+  FIX_MASK*: int = (FIX_SCALE - 1)
 
 template fp*(n: int): Fixed = (n shl FIX_SHIFT).Fixed
   ## Convert an integer to fixed-point (shorthand)
@@ -189,40 +189,41 @@ type
     ## Fixed point 24:8 2D vector/point type
     x*, y*: Fixed
 
+{.push noinit, inline.}
 
-proc vec2i*(x, y:int): Vec2i {.noinit, inline.} =
+proc vec2i*(x, y: int): Vec2i =
   ## Initialise an integer vector
   result.x = x
   result.y = y
 
-proc vec2i*(): Vec2i {.noinit, inline.} =
+proc vec2i*(): Vec2i =
   ## Initialise an integer vector to 0,0
   result.x = 0
   result.y = 0
 
 
-proc vec2f*(x, y:Fixed): Vec2f {.noinit, inline.} =
+proc vec2f*(x, y:Fixed): Vec2f =
   ## Initialise a fixed-point vector
   result.x = x
   result.y = y
 
-proc vec2f*(x, y:int|float32): Vec2f {.noinit, inline.} =
+proc vec2f*(x, y: int|float32): Vec2f =
   ## Initialise a fixed-point vector, values converted from int or float
   result.x = fixed(x)
   result.y = fixed(y)
 
-proc vec2f*(): Vec2f {.noinit, inline.} =
+proc vec2f*(): Vec2f =
   ## Initialise a fixed-point vector to 0,0
   result.x = 0.Fixed
   result.y = 0.Fixed
 
 
-proc vec2i*(v: Vec2f): Vec2i {.noinit, inline.} =
+proc vec2i*(v: Vec2f): Vec2i =
   ## Convert an integer vector to a fixed-point vector
   result.x = toInt(v.x)
   result.y = toInt(v.y)
 
-proc vec2f*(v: Vec2i): Vec2f {.noinit, inline.} =
+proc vec2f*(v: Vec2i): Vec2f =
   ## Convert a fixed-point vector to an integer vector
   result.x = fixed(v.x)
   result.y = fixed(v.y)
@@ -231,50 +232,70 @@ proc vec2f*(v: Vec2i): Vec2f {.noinit, inline.} =
 # Integer vector operations
 # -------------------------
 
-proc `+`*(a, b: Vec2i): Vec2i {.noinit, inline.} =
+proc `+`*(a, b: Vec2i): Vec2i =
   ## Add two vectors
   result.x = a.x + b.x
   result.y = a.y + b.y
 
-proc `-`*(a, b: Vec2i): Vec2i {.noinit, inline.} =
+proc `-`*(a, b: Vec2i): Vec2i =
   ## Subtract two vectors
   result.x = a.x - b.x
   result.y = a.y - b.y
 
-proc `*`*(a: Vec2i, n:int): Vec2i {.noinit, inline.} =
+proc `*`*(a, b: Vec2i): Vec2i =
+  ## Component-wise multiplication of two vectors
+  result.x = a.x * b.x
+  result.y = a.y * b.y
+
+proc `/`*(a, b: Vec2i): Vec2i =
+  ## Component-wise division of two vectors
+  result.x = a.x div b.x
+  result.y = a.y div b.y
+
+proc `*`*(a: Vec2i, n: int): Vec2i =
   ## Scale vector by n
   result.x = a.x * n
   result.y = a.y * n
 
-proc `/`*(a: Vec2i, n:int): Vec2i {.noinit, inline.} =
+proc `/`*(a: Vec2i, n: int): Vec2i =
   ## Scale vector by 1/n
   result.x = a.x div n
   result.y = a.y div n
 
-proc `*`*(a, b: Vec2i): int {.inline.} =
+proc dot*(a, b: Vec2i): int =
   ## Dot product of two vectors
   (a.x * b.x) + (a.y * b.y)
 
-proc `-`*(a: Vec2i): Vec2i {.noinit, inline.} =
+proc `-`*(a: Vec2i): Vec2i =
   ## Equivalent to a * -1
   vec2i(-a.x, -a.y)
 
-proc `+=`*(a: var Vec2i, b: Vec2i) {.inline.} =
+proc `+=`*(a: var Vec2i, b: Vec2i) =
   ## Vector compound addition
   a.x += b.x
   a.y += b.y
 
-proc `-=`*(a: var Vec2i, b: Vec2i) {.inline.} =
+proc `-=`*(a: var Vec2i, b: Vec2i) =
   ## Vector compound subtraction
   a.x -= b.x
   a.y -= b.y
 
-proc `*=`*(a: var Vec2i, n: int) {.inline.} =
+proc `*=`*(a: var Vec2i, b: Vec2i) =
+  ## Vector component-wise compound multiplicatoin
+  a.x *= b.x
+  a.y *= b.y
+
+proc `/=`*(a: var Vec2i, b: Vec2i) =
+  ## Vector component-wise compound division
+  a.x = a.x div b.x
+  a.y = a.x div b.y
+
+proc `*=`*(a: var Vec2i, n: int) =
   ## Compound scale a vector by n
   a.x *= n
   a.y *= n
 
-proc `/=`*(a: var Vec2i, n: int) {.inline.} =
+proc `/=`*(a: var Vec2i, n: int) =
   ## Compound scale a vector by 1/n
   a.x = a.x div n
   a.y = a.y div n
@@ -283,50 +304,70 @@ proc `/=`*(a: var Vec2i, n: int) {.inline.} =
 # Fixed point vector operations
 # -----------------------------
 
-proc `+`*(a, b: Vec2f): Vec2f {.noinit, inline.} =
+proc `+`*(a, b: Vec2i|Vec2f): Vec2f =
   ## Add two fixed point vectors
   result.x = a.x + b.x
   result.y = a.y + b.y
 
-proc `-`*(a, b: Vec2f): Vec2f {.noinit, inline.} =
+proc `-`*(a, b: Vec2i|Vec2f): Vec2f =
   ## Subtract two fixed point vectors
   result.x = a.x - b.x
   result.y = a.y - b.y
 
-proc `*`*(a: Vec2f, n: Fixed|int): Vec2f {.noinit, inline.} =
+proc `*`*(a: Vec2f, b: Vec2i|Vec2f): Vec2f =
+  ## Component-wise multiplication of two vectors
+  result.x = a.x * b.x
+  result.y = a.y * b.y
+
+proc `/`*(a: Vec2f, b: Vec2i|Vec2f): Vec2f =
+  ## Component-wise division of two vectors
+  result.x = a.x / b.x
+  result.y = a.y / b.y
+
+proc `*`*(a: Vec2f, n: Fixed|int): Vec2f =
   ## Scale a fixed point vector by n
   result.x = a.x * n
   result.y = a.y * n
 
-proc `/`*(a: Vec2f, n: Fixed|int): Vec2f {.noinit, inline.} =
+proc `/`*(a: Vec2f, n: Fixed|int): Vec2f =
   ## Scale a fixed point vector by 1/n
   result.x = a.x / n
   result.y = a.y / n
 
-proc `*`*(a, b: Vec2f): Fixed {.inline.} =
+proc dot*(a, b: Vec2f): Fixed =
   ## Dot product of two fixed point vectors
   (a.x * b.x) + (a.y * b.y)
 
-proc `-`*(a: Vec2f): Vec2f {.noinit, inline.} =
+proc `-`*(a: Vec2f): Vec2f =
   ## Equivalent to a * -1
   vec2f(-a.x, -a.y)
 
-proc `+=`*(a: var Vec2f, b: Vec2f) {.inline.} =
+proc `+=`*(a: var Vec2f, b: Vec2f) =
   ## Vector compound addition
   a.x += b.x
   a.y += b.y
 
-proc `-=`*(a: var Vec2f, b: Vec2f) {.inline.} =
+proc `-=`*(a: var Vec2f, b: Vec2f) =
   ## Vector compound subtraction
   a.x -= b.x
   a.y -= b.y
 
-proc `*=`*(a: var Vec2f, n: Fixed|int) {.inline.} =
+proc `*=`*(a: var Vec2f, b: Vec2i|Vec2f) =
+  ## Vector component-wise compound multiplicatoin
+  a.x *= b.x
+  a.y *= b.y
+
+proc `/=`*(a: var Vec2f, b: Vec2i|Vec2f) =
+  ## Vector component-wise compound division
+  a.x /= b.x
+  a.y /= b.y
+
+proc `*=`*(a: var Vec2f, n: Fixed|int) =
   ## Compound scale a vector by n
   a.x *= n
   a.y *= n
 
-proc `/=`*(a: var Vec2f, n: Fixed|int) {.inline.} =
+proc `/=`*(a: var Vec2f, n: Fixed|int) =
   ## Compound scale a vector by 1/n
   a.x = a.x / n
   a.y = a.y / n
@@ -335,21 +376,21 @@ proc `/=`*(a: var Vec2f, n: Fixed|int) {.inline.} =
 # Additional conversions
 # ----------------------
 
-proc initBgPoint*(x = 0'i16, y = 0'i16): BgPoint {.noinit, inline.} =
+proc initBgPoint*(x = 0'i16, y = 0'i16): BgPoint =
   ## Create a new pair of values used by the BG scroll registers
   ## e.g. ::
   ##  bgofs[0] = initBgPoint(10, 20)
   result.x = x
   result.y = y
 
-proc toBgPoint*(a: Vec2i): BgPoint {.noinit, inline.} =
+proc toBgPoint*(a: Vec2i): BgPoint =
   ## Convert a vector to a pair of values used by the BG scroll registers
   ## e.g. ::
   ##   bgofs[0] = pos.toBgPoint()
   result.x = a.x.int16
   result.y = a.y.int16
 
-proc toBgPoint*(a: Vec2f): BgPoint {.noinit, inline.} =
+proc toBgPoint*(a: Vec2f): BgPoint =
   ## Convert a fixed point vector to a pair of values used by the BG scroll registers
   ## e.g. ::
   ##   bgofs[0] = pos.toBgPoint()
@@ -365,13 +406,13 @@ type Rect* = object
   ## Ranges from `left..right-1`, `top..bottom-1`
   left*, top*, right*, bottom*: int
 
-proc rectBounds*(left, top, right, bottom:int):Rect {.noinit, inline.} =
+proc rectBounds*(left, top, right, bottom: int): Rect =
   result.left = left
   result.top = top
   result.right = right
   result.bottom = bottom
 
-proc rectAt*(x, y, width, height:int):Rect {.noinit, inline.} =
+proc rectAt*(x, y, width, height: int): Rect =
   result.left = x
   result.top = y
   result.right = x + width
@@ -382,58 +423,60 @@ template y*(r: Rect): int = r.top
 template width*(r: Rect): int = r.right - r.left
 template height*(r: Rect): int = r.bottom - r.top
 
-proc `x=`*(r: var Rect, x: int) {.inline.} =
+proc `x=`*(r: var Rect, x: int) =
   r.right += x - r.left
   r.left = x
 
-proc `y=`*(r: var Rect, y: int) {.inline.} = 
+proc `y=`*(r: var Rect, y: int) = 
   r.bottom += y - r.top
   r.top = y
 
-proc `width=`*(r: var Rect, w: int) {.inline.} =
+proc `width=`*(r: var Rect, w: int) =
   r.right = r.left + w
 
-proc `height=`*(r: var Rect, h: int) {.inline.} = 
+proc `height=`*(r: var Rect, h: int) = 
   r.bottom = r.top + h
 
-proc move*(r: var Rect, dx, dy: int) {.inline.} =
+proc move*(r: var Rect, dx, dy: int) =
   ## Move rectangle by (`dx`, `dy`)
   r.left += dx
   r.top += dy
   r.right += dx
   r.bottom += dy
 
-proc inflate*(r: var Rect, n: int) {.inline.} =
+proc inflate*(r: var Rect, n: int) =
   ## Increase size of rectangle by `n` on all sides
   r.left -= n
   r.top -= n
   r.right += n
   r.bottom += n
   
-proc inflate*(r: var Rect, dw, dh: int) {.inline.} =
+proc inflate*(r: var Rect, dw, dh: int) =
   ## Increase size of rectangle by `dw` horizontally, `dh` vertically
   r.left -= dw
   r.top -= dh
   r.right += dw
   r.bottom += dh
 
-proc center*(r: Rect): Vec2i {.noinit, inline.} =
+proc center*(r: Rect): Vec2i =
   ## Get the center point of a rectangle
   vec2i((r.left + r.right) div 2, (r.top + r.bottom) div 2)
 
-proc `center=`*(r: var Rect, p: Vec2i) {.inline.} =
+proc `center=`*(r: var Rect, p: Vec2i) =
   ## Set the center point of a rectangle
   r.x = p.x - r.width div 2
   r.y = p.y - r.height div 2
 
-proc topLeft*(r: Rect): Vec2i {.noinit, inline.} =
+proc topLeft*(r: Rect): Vec2i =
   vec2i(r.left, r.top)
 
-proc topRight*(r: Rect): Vec2i {.noinit, inline.} =
+proc topRight*(r: Rect): Vec2i =
   vec2i(r.right, r.top)
 
-proc bottomLeft*(r: Rect): Vec2i {.noinit, inline.} =
+proc bottomLeft*(r: Rect): Vec2i =
   vec2i(r.left, r.bottom)
 
-proc bottomRight*(r: Rect): Vec2i {.noinit, inline.} =
+proc bottomRight*(r: Rect): Vec2i =
   vec2i(r.right, r.bottom)
+
+{.pop.}
