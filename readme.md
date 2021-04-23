@@ -7,11 +7,11 @@ Quickstart: After installing [devkitARM](https://devkitpro.org/wiki/Getting_Star
 ```sh
 git clone https://github.com/exelotl/natu
 cd natu
-git checkout devel               # switch to devel branch
-git submodule update --init      # clone libtonc and maxmod submodules
-nimble develop                   # symlink the repo to your ~/.nimble directory
-cd examples/hello_world          # go to an example
-nim build                        # run the build nimscript task
+git checkout devel              # switch to devel branch
+git submodule update --init     # clone libtonc and maxmod submodules
+nimble install                  # install the lib and asset converter to ~/.nimble
+cd examples/hello_world         # go to an example
+nim build                       # run the "build" nimscript task
 ```
 
 ---
