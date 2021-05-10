@@ -31,16 +31,16 @@ type
   SurfaceChr4c* {.borrow:`.`.} = distinct Surface  ## 4bpp tiles, column-major.
   
   Surface* {.importc: "TSurface", header: "tonc.h", bycopy.} = object
-    data* {.importc: "data".}: ptr uint8     ## Surface data pointer.
-    pitch* {.importc: "pitch".}: uint32      ## Scanline pitch in bytes.
-    width* {.importc: "width".}: uint16      ## Image width in pixels.
-    height* {.importc: "height".}: uint16    ## Image width in pixels.
-    bpp* {.importc: "bpp".}: uint8           ## Bits per pixel.
-    kind* {.importc: "type".}: uint8         ## Surface type (not used that much).
-    palSize* {.importc: "palSize".}: uint16  ## Number of colors.
-    palData* {.importc: "palData".}: ptr Color  ## Pointer to palette.
+    data*: ptr uint8     ## Surface data pointer.
+    pitch*: uint32       ## Scanline pitch in bytes.
+    width*: uint16       ## Image width in pixels.
+    height*: uint16      ## Image width in pixels.
+    bpp*: uint8          ## Bits per pixel.
+    kind*: SurfaceKind   ## Surface type (not used that much).
+    palSize*: uint16     ## Number of colors.
+    palData*: ptr Color  ## Pointer to palette.
   
-  SurfaceKind* {.size: 4.} = enum
+  SurfaceKind* {.size: 1.} = enum
     srfNone = 0,          ## No specific type.
     srfBmp16 = 1,         ## 16bpp linear (bitmap/tilemap).
     srfBmp8 = 2,          ## 8bpp linear (bitmap/tilemap).
@@ -48,6 +48,8 @@ type
     srfChr4c = 5,         ## 4bpp tiles, column-major.
     # srfChr8 = 6,        ## 8bpp tiles, row-major. [not implemented]
     # srfAllocated = 0x80
+  
+  SurfaceKind32 {.size: 4.} = SurfaceKind
   
   SomeSurface* = Surface | SurfaceBmp16 | SurfaceBmp8 | SurfaceChr4c | SurfaceChr4r
   
@@ -73,16 +75,16 @@ type
   
   SurfaceProcTab* {.importc: "TSurfaceProcTab", header: "tonc.h", bycopy.} = object
     ## Rendering procedure table
-    name* {.importc: "name".}: cstring
-    getPixel* {.importc: "getPixel".}: FnGetPixel
-    plot* {.importc: "plot".}: FnPlot
-    hline* {.importc: "hline".}: FnHLine
-    vline* {.importc: "vline".}: FnVLine
-    line* {.importc: "line".}: FnLine
-    rect* {.importc: "rect".}: FnRect
-    frame* {.importc: "frame".}: FnFrame
-    blit* {.importc: "blit".}: FnBlit
-    flood* {.importc: "flood".}: FnFlood
+    name*: cstring
+    getPixel*: FnGetPixel
+    plot*: FnPlot
+    hline*: FnHLine
+    vline*: FnVLine
+    line*: FnLine
+    rect*: FnRect
+    frame*: FnFrame
+    blit*: FnBlit
+    flood*: FnFlood
 
 
 # Global Surfaces
@@ -118,7 +120,7 @@ var chr4cTab* {.importc: "chr4c_tab", header: "tonc.h".}: SurfaceProcTab
 # Initialisation
 # --------------
 
-proc init*(srf: SurfacePtr; ty: SurfaceKind; data: pointer; width, height: uint; bpp: uint; pal: ptr Color) {.importc: "srf_init", header: "tonc.h".}
+proc init*(srf: SurfacePtr; ty: SurfaceKind32; data: pointer; width, height: uint; bpp: uint; pal: ptr Color) {.importc: "srf_init", header: "tonc.h".}
   ## Initalize a surface for `type` formatted graphics.
   ## [[ For these bindings, it's just used by typesafe versions below ]]
 

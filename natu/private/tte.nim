@@ -117,46 +117,46 @@ type
     ##  +---+---+
     ##  | 1 | 3 |
     ##  +---+---+
-    data* {.importc: "data".}: pointer            ## Character data.
-    widths* {.importc: "widths".}: ptr uint8      ## Width table for variable width font.
-    heights* {.importc: "heights".}: ptr uint8    ## Height table for variable height font.
-    charOffset* {.importc: "charOffset".}: uint16 ## Character offset
-    charCount* {.importc: "charCount".}: uint16   ## Number of characters in font.
-    charW* {.importc: "charW".}: uint8            ## Character width (fwf).
-    charH* {.importc: "charH".}: uint8            ## Character height.
-    cellW* {.importc: "cellW".}: uint8            ## Glyph cell width.
-    cellH* {.importc: "cellH".}: uint8            ## Glyph cell height.
-    cellSize* {.importc: "cellSize".}: uint16     ## Cell-size (bytes).
-    bpp* {.importc: "bpp".}: uint8                ## Font bitdepth;
-    extra* {.importc: "extra".}: uint8            ## Padding. Free to use.
+    data*: pointer                      ## Character data.
+    widths*: ptr UncheckedArray[uint8]  ## Width table for variable width font.
+    heights*: ptr UncheckedArray[uint8] ## Height table for variable height font.
+    charOffset*: uint16                 ## Character offset
+    charCount*: uint16                  ## Number of characters in font.
+    charW*: uint8                       ## Character width (fwf).
+    charH*: uint8                       ## Character height.
+    cellW*: uint8                       ## Glyph cell width.
+    cellH*: uint8                       ## Glyph cell height.
+    cellSize*: uint16                   ## Cell-size (bytes).
+    bpp*: uint8                         ## Font bitdepth;
+    extra*: uint8                       ## Padding. Free to use.
   
   TextContext* = ptr TextContextObj
   TextContextObj* {.importc: "TTC", header: "tonc.h", bycopy.} = object
     ## TTE context struct.
     
     # Members for renderers
-    dst* {.importc: "dst".}: Surface              ## Destination surface.
-    cursorX* {.importc: "cursorX".}: int16        ## Cursor X-coord.
-    cursorY* {.importc: "cursorY".}: int16        ## Cursor Y-coord.
-    font* {.importc: "font".}: Font               ## Current font.
-    charLut* {.importc: "charLut".}: ptr uint8    ## Character mapping lut. (if any).
-    cattr* {.importc: "cattr".}: array[4, uint16] ## ink, shadow, paper and special color attributes.
+    dst*: Surface                        ## Destination surface.
+    cursorX*: int16                      ## Cursor X-coord.
+    cursorY*: int16                      ## Cursor Y-coord.
+    font*: Font                          ## Current font.
+    charLut*: ptr UncheckedArray[uint8]  ## Character mapping lut. (if any).
+    cattr*: array[4, uint16]             ## ink, shadow, paper and special color attributes.
     
     # Higher-up members
-    flags0* {.importc: "flags0".}: uint16
-    ctrl* {.importc: "ctrl".}: uint16             ## BG control flags
-    marginLeft* {.importc: "marginLeft".}: uint16
-    marginTop* {.importc: "marginTop".}: uint16
-    marginRight* {.importc: "marginRight".}: uint16
-    marginBottom* {.importc: "marginBottom".}: uint16
-    savedX* {.importc: "savedX".}: int16
-    savedY* {.importc: "savedY".}: int16
+    flags0*: uint16
+    ctrl*: uint16                        ## BG control flags
+    marginLeft*: uint16
+    marginTop*: uint16
+    marginRight*: uint16
+    marginBottom*: uint16
+    savedX*: int16
+    savedY*: int16
     
     # Callbacks and table pointers
-    drawgProc* {.importc: "drawgProc".}: FnDrawg          ## Glyph render procedure.
-    eraseProc* {.importc: "eraseProc".}: FnErase          ## Text eraser procedure.
-    fontTable* {.importc: "fontTable".}: ptr Font         ## Pointer to font table for `f`.
-    stringTable* {.importc: "stringTable".}: cstringArray ## Pointer to string table for `s`.
+    drawgProc*: FnDrawg                       ## Glyph render procedure.
+    eraseProc*: FnErase                       ## Text eraser procedure.
+    fontTable*: ptr UncheckedArray[Font]      ## Pointer to font table for `f`.
+    stringTable*: ptr UncheckedArray[cstring] ## Pointer to string table for `s`.
 
 
 # Internal Fonts
@@ -214,11 +214,11 @@ proc getGlyphData*(gid: uint): pointer {.importc: "tte_get_glyph_data", header: 
   ## Get the glyph data of glyph `id`.
 proc setColor*(typ: uint; clr: uint16) {.importc: "tte_set_color", header: "tonc.h".}
   ## Set color of `type` to `cattr`.
-proc setColors*(colors: ptr uint16) {.importc: "tte_set_colors", header: "tonc.h".}
+proc setColors*(colors: ptr UncheckedArray[uint16]) {.importc: "tte_set_colors", header: "tonc.h".}
   ## Load important color data.
 proc setColorAttr*(typ: uint; cattr: uint16) {.importc: "tte_set_color_attr", header: "tonc.h".}
   ## Set color attribute of `type` to `cattr`.
-proc setColorAttrs*(cattrs: ptr uint16) {.importc: "tte_set_color_attrs", header: "tonc.h".}
+proc setColorAttrs*(cattrs: ptr UncheckedArray[uint16]) {.importc: "tte_set_color_attrs", header: "tonc.h".}
   ## Load important color attribute data.
 proc cmdDefault*(str: cstring): cstring {.importc: "tte_cmd_default", header: "tonc.h".}
   ## Text command handler.
@@ -262,10 +262,10 @@ proc write*(text: cstring): int {.importc: "tte_write", header: "tonc.h", discar
   ## `text` String to parse and write.
   ## Returns: Number of parsed characters.
 
-proc writeEx*(x: int; y: int; text: cstring; clrlut: ptr uint16): int {.importc: "tte_write_ex", header: "tonc.h", discardable.}
+proc writeEx*(x: int; y: int; text: cstring; clrlut: ptr UncheckedArray[uint16]): int {.importc: "tte_write_ex", header: "tonc.h", discardable.}
   ## Extended string writer, with positional and color info
 
-proc eraseRect*(left: int; top: int; right: int; bottom: int) {.importc: "tte_erase_rect", header: "tonc.h".}
+proc eraseRect*(left, top, right, bottom: int) {.importc: "tte_erase_rect", header: "tonc.h".}
   ## Erase a porttion of the screen (ignores margins)
 
 proc eraseScreen*() {.importc: "tte_erase_screen", header: "tonc.h".}
@@ -289,7 +289,7 @@ proc initBase*(font: Font; drawProc: FnDrawg; eraseProc: FnErase) {.importc: "tt
 
 proc getPos*(x, y: var int) {.importc: "tte_get_pos", header: "tonc.h".}
   ## Get cursor position (mutates parameters)
-proc getPos*(): Vec2i {.noinit.} = getPos(result.x, result.y)
+proc getPos*(): Vec2i {.inline, noinit.} = getPos(result.x, result.y)
   ## Get cursor position as vector
 proc getInk*(): uint16 {.importc: "tte_get_ink", header: "tonc.h".}
   ## Get ink color attribute.
@@ -307,9 +307,9 @@ proc getDrawg*(): FnDrawg {.importc: "tte_get_drawg", header: "tonc.h".}
   ## Get the active character plotter
 proc getErase*(): FnErase {.importc: "tte_get_erase", header: "tonc.h".}
   ## Get the erase function
-proc getStringTable*(): cstringArray {.importc: "tte_get_string_table", header: "tonc.h".}
+proc getStringTable*(): ptr UncheckedArray[Font] {.importc: "tte_get_string_table", header: "tonc.h".}
   ## Get string table
-proc getFontTable*(): ptr Font {.importc: "tte_get_font_table", header: "tonc.h".}
+proc getFontTable*(): ptr UncheckedArray[Font] {.importc: "tte_get_font_table", header: "tonc.h".}
   ## Get font table
 
 # Setters:
@@ -332,11 +332,11 @@ proc setDrawg*(fn: FnDrawg = nil) {.importc: "tte_set_drawg", header: "tonc.h".}
   ## Set the character plotter
 proc setErase*(fn: FnErase) {.importc: "tte_set_erase", header: "tonc.h".}
   ## Set the erase function
-proc setStringTable*(table: ptr cstring) {.importc: "tte_set_string_table", header: "tonc.h".}
+proc setStringTable*(table: ptr UncheckedArray[cstring]) {.importc: "tte_set_string_table", header: "tonc.h".}
   ## Set string table
-proc setFontTable*(table: ptr Font) {.importc: "tte_set_font_table", header: "tonc.h".}
+proc setFontTable*(table: ptr UncheckedArray[Font]) {.importc: "tte_set_font_table", header: "tonc.h".}
   ## Set font table
-proc setMargins*(left: int; top: int; right: int; bottom: int) {.importc: "tte_set_margins", header: "tonc.h".}
+proc setMargins*(left, top, right, bottom: int) {.importc: "tte_set_margins", header: "tonc.h".}
 
 # Console Functions
 # -----------------
@@ -364,7 +364,7 @@ proc initSe*(bgnr: int; bgcnt: BgCnt; se0: ScrEntry; clrs: uint32; bupofs: uint3
   ## `font`   Font to initialize with.
   ## `fn`     Glyph renderer.
 
-proc seErase*(left: int; top: int; right: int; bottom: int) {.importc: "se_erase", header: "tonc.h".}
+proc seErase*(left, top, right, bottom: int) {.importc: "se_erase", header: "tonc.h".}
   ## Erase part of the regular tilemap canvas.
 proc seDrawgW8H8*(gid: uint) {.importc: "se_drawg_w8h8", header: "tonc.h".}
   ## Character-plot for reg BGs using an 8x8 font.
@@ -379,7 +379,7 @@ proc seDrawgS*(gid: uint) {.importc: "se_drawg_s", header: "tonc.h".}
 # ---------------
 proc initAse*(bgnr: int; bgcnt: BgCnt; ase0: uint8; clrs: uint32; bupofs: uint32; font: Font = fntSys8; fn: FnDrawg = nil) {.importc: "tte_init_ase", header: "tonc.h".}
   ## 
-proc aseErase*(left: int; top: int; right: int; bottom: int) {.importc: "ase_erase", header: "tonc.h".}
+proc aseErase*(left, top, right, bottom: int) {.importc: "ase_erase", header: "tonc.h".}
   ## Erase part of the affine tilemap canvas.
 proc aseDrawgW8H8*(gid: uint) {.importc: "ase_drawg_w8h8", header: "tonc.h".}
   ## Character-plot for affine BGs using an 8x16 font.
