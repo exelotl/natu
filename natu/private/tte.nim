@@ -144,7 +144,7 @@ type
     
     # Higher-up members
     flags0*: uint16
-    ctrl*: uint16                        ## BG control flags
+    ctrl*: BgCnt                         ## BG control flags
     marginLeft*: uint16
     marginTop*: uint16
     marginRight*: uint16
