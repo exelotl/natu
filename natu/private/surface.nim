@@ -31,14 +31,14 @@ type
   SurfaceChr4c* {.borrow:`.`.} = distinct Surface  ## 4bpp tiles, column-major.
   
   Surface* {.importc: "TSurface", header: "tonc.h", bycopy.} = object
-    data*: ptr uint8     ## Surface data pointer.
-    pitch*: uint32       ## Scanline pitch in bytes.
-    width*: uint16       ## Image width in pixels.
-    height*: uint16      ## Image width in pixels.
-    bpp*: uint8          ## Bits per pixel.
-    kind*: SurfaceKind   ## Surface type (not used that much).
-    palSize*: uint16     ## Number of colors.
-    palData*: ptr Color  ## Pointer to palette.
+    data*: ptr uint8                       ## Surface data pointer.
+    pitch*: uint32                         ## Scanline pitch in bytes.
+    width*: uint16                         ## Image width in pixels.
+    height*: uint16                        ## Image width in pixels.
+    bpp*: uint8                            ## Bits per pixel.
+    kind* {.importc:"type".}: SurfaceKind  ## Surface type (not used that much).
+    palSize*: uint16                       ## Number of colors.
+    palData*: ptr Palette                  ## Pointer to palette.
   
   SurfaceKind* {.size: 1.} = enum
     srfNone = 0,          ## No specific type.
@@ -120,11 +120,11 @@ var chr4cTab* {.importc: "chr4c_tab", header: "tonc.h".}: SurfaceProcTab
 # Initialisation
 # --------------
 
-proc init*(srf: SurfacePtr; ty: SurfaceKind32; data: pointer; width, height: uint; bpp: uint; pal: ptr Color) {.importc: "srf_init", header: "tonc.h".}
+proc init*(srf: SurfacePtr; ty: SurfaceKind32; data: pointer; width, height: uint; bpp: uint; pal: ptr Palette) {.importc: "srf_init", header: "tonc.h".}
   ## Initalize a surface for `type` formatted graphics.
   ## [[ For these bindings, it's just used by typesafe versions below ]]
 
-proc init*(srf: SurfaceChr4cPtr; data: pointer; width, height: uint; pal: ptr Color) =
+proc init*(srf: SurfaceChr4cPtr; data: pointer; width, height: uint; pal: ptr Palette) =
   ## Initalize a surface for 4bpp column-major tiles
   ## `srf`     Surface to initialize.
   ## `data`    Pointer to the surface memory.
@@ -133,7 +133,7 @@ proc init*(srf: SurfaceChr4cPtr; data: pointer; width, height: uint; pal: ptr Co
   ## `pal`     Pointer to the surface's palette.
   init(srf.SurfacePtr, srfChr4c, data, width, height, bpp=4, pal)
 
-proc init*(srf: SurfaceChr4rPtr; data: pointer; width, height: uint; pal: ptr Color) =
+proc init*(srf: SurfaceChr4rPtr; data: pointer; width, height: uint; pal: ptr Palette) =
   ## Initalize a surface for 4bpp row-major tiles
   ## `srf`     Surface to initialize.
   ## `data`    Pointer to the surface memory.
@@ -142,7 +142,7 @@ proc init*(srf: SurfaceChr4rPtr; data: pointer; width, height: uint; pal: ptr Co
   ## `pal`     Pointer to the surface's palette.
   init(srf.SurfacePtr, srfChr4r, data, width, height, bpp=4, pal)
 
-proc init*(srf: SurfaceBmp16Ptr; data: pointer; width, height: uint; pal: ptr Color) =
+proc init*(srf: SurfaceBmp16Ptr; data: pointer; width, height: uint; pal: ptr Palette) =
   ## Initalize a 16bpp bitmap surface
   ## `srf`     Surface to initialize.
   ## `data`    Pointer to the surface memory.
@@ -151,7 +151,7 @@ proc init*(srf: SurfaceBmp16Ptr; data: pointer; width, height: uint; pal: ptr Co
   ## `pal`     Pointer to the surface's palette.
   init(srf.SurfacePtr, srfBmp16, data, width, height, bpp=16, pal)
 
-proc init*(srf: SurfaceBmp8Ptr; data: pointer; width, height: uint; pal: ptr Color) =
+proc init*(srf: SurfaceBmp8Ptr; data: pointer; width, height: uint; pal: ptr Palette) =
   ## Initalize an 8bpp bitmap surface
   ## `srf`     Surface to initialize.
   ## `data`    Pointer to the surface memory.
@@ -178,7 +178,7 @@ proc align*(width: uint; bpp: uint): uint {.importc: "srf_align", header: "tonc.
 proc setPtr*(srf: SomeSurfacePtr; `ptr`: pointer) {.importc: "srf_set_ptr", header: "tonc.h".}
   ## Set Data-pointer surface for `srf`.
   
-proc setPal*(srf: SomeSurfacePtr; pal: ptr Color; size: uint) {.importc: "srf_set_pal", header: "tonc.h".}
+proc setPal*(srf: SomeSurfacePtr; pal: ptr Palette; size: uint) {.importc: "srf_set_pal", header: "tonc.h".}
   ## Set the palette pointer and its size.
 
 proc getPtr*(srf: SomeSurfacePtr; x: uint; y: uint; stride: uint): pointer {.importc: "_srf_get_ptr", header: "tonc.h".}
