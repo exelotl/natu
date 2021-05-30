@@ -1,6 +1,6 @@
 [submodule "vendor/libtonc"]
 	path = vendor/libtonc
-	url = https://github.com/devkitPro/libtonc
+	url = https://github.com/exelotl/libtonc
 [submodule "vendor/maxmod"]
 	path = vendor/maxmod
 	url = https://github.com/devkitPro/maxmod
