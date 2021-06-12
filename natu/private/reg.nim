@@ -539,7 +539,7 @@ template edit*[T:ReadWriteRegister](r: T, args: varargs[untyped]) =
   ##   dispcnt = tmp
   ##
   var tmp = r
-  writeRegister(r, args)
+  writeRegister(tmp, args)
   r = tmp
 
 
