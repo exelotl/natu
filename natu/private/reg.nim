@@ -176,19 +176,29 @@ template `vcountTrigger=`*(dstat: DispStat, v: uint8) =
 # Background Control Registers
 # ----------------------------
 
-type BgCnt* = distinct uint16
+type
+  BgCnt* = distinct uint16
+  BgSize* = distinct uint16
+  
+  RegBgSize* {.size:2.} = enum
+    ## Size of a regular background in tiles.
+    ## Implicitly convertible to type `BgSize`.
+    reg32x32
+    reg64x32
+    reg32x64
+    reg64x64
+  
+  AffBgSize* {.size:2.} = enum
+    ## Size of an affine background in tiles.
+    ## Implicitly convertible to type `BgSize`.
+    aff16x16
+    aff32x32
+    aff64x64
+    aff128x128
 
-type BgSizeFlag* = distinct uint16
-const
-  reg32x32* = 0x0000.BgSizeFlag
-  reg64x32* = 0x4000.BgSizeFlag
-  reg32x64* = 0x8000.BgSizeFlag
-  reg64x64* = 0xC000.BgSizeFlag
-const
-  aff16x16* = 0x0000.BgSizeFlag
-  aff32x32* = 0x4000.BgSizeFlag
-  aff64x64* = 0x8000.BgSizeFlag
-  aff128x128* = 0xC000.BgSizeFlag
+converter toBgSize*(r: RegBgSize): BgSize {.inline.} = r.BgSize
+converter toBgSize*(a: AffBgSize): BgSize {.inline.} = a.BgSize
+
 
 # getters
 
@@ -222,10 +232,10 @@ template wrap*(bg: BgCnt): bool =
   ## Has no effect on regular backgrounds as they wrap around by default. 
   (bg.uint16 and BG_WRAP) != 0
 
-template size*(bg: BgCnt): BgSizeFlag =
+template size*(bg: BgCnt): BgSize =
   ## Value representing the size of the background in tiles.
   ## Regular and affine backgrounds have different sizes available to them, hence the two groups of constants (``regXXX``, ``affXXX``)
-  (bg.uint16 and BG_SIZE_MASK).BgSizeFlag
+  ((bg.uint16 and BG_SIZE_MASK) shr 14).BgSize
 
 # setters
 
@@ -247,8 +257,8 @@ template `is8bpp=`*(bg: BgCnt, v: bool) =
 template `wrap=`*(bg: BgCnt, v: bool) =
   bg = ((v.uint16 shl 13) or (bg.uint16 and not BG_WRAP)).BgCnt
 
-template `size=`*(bg: BgCnt, v: BgSizeFlag) =
-  bg = (v.uint16 or (bg.uint16 and not BG_SIZE_MASK)).BgCnt
+template `size=`*(bg: BgCnt, v: BgSize) =
+  bg = ((v.uint16 shl 14) or (bg.uint16 and not BG_SIZE_MASK)).BgCnt
 
 
 # Window Registers
@@ -542,6 +552,16 @@ template edit*[T:ReadWriteRegister](r: T, args: varargs[untyped]) =
   writeRegister(tmp, args)
   r = tmp
 
+template dup*[T:ReadWriteRegister](r: T, args: varargs[untyped]): T =
+  ## Copy the value of a register, modifying and returning the copy.
+  ## 
+  ## E.g.
+  ## ::
+  ##   # Make BG1 use the same tiles as BG0, but different map data.
+  ##   bgcnt[1] = bgcnt[0].dup(sbb = 29)
+  var res = r
+  writeRegister(res, args)
+  res
 
 template initDispCnt*(args: varargs[untyped]): DispCnt =
   ## Create a new display control register value.
