@@ -1,4 +1,4 @@
-import streams, parsecsv
+import os, times, streams, parsecsv
 
 template withFile*(filename: string, mode: FileMode, body: untyped) =
   block:
@@ -18,3 +18,19 @@ iterator tsvRows*(filename: string): seq[string] =
       yield tsv.row
   finally:
     close(tsv)
+
+proc toTime*(t: Time): Time = t
+
+proc toTime*(f: string): Time =
+  if fileExists(f): getLastModificationTime(f)
+  else: fromUnix(0)
+
+proc newest*(times: varargs[Time, toTime]): Time =
+  result = times[0]
+  for t in times[1..^1]:
+    if t > result: result = t
+
+proc oldest*(times: varargs[Time, toTime]): Time =
+  result = times[0]
+  for t in times[1..^1]:
+    if t < result: result = t

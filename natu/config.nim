@@ -175,6 +175,10 @@ template doInclude*(path: static string) =
   include `path`
 
 
+proc row(items: varargs[string, `$`]): string =
+  items.join("\t")
+
+
 # Graphics
 # --------
 
@@ -198,7 +202,7 @@ proc gfxConvert*(script: static string) =
   
   proc graphic(name: string, size: ObjSize, bpp = 4) =
     doAssert({'\t', '\n'} notin name, name & " contains invalid characters.")
-    natuOutput.add name & '\t' & $size & '\t' & $bpp & '\t' & $natuPalCounter
+    natuOutput.add row(name, size, bpp, natuPalCounter)
     if not natuIsSharingPal:
       inc natuPalCounter
   
@@ -214,6 +218,67 @@ proc gfxConvert*(script: static string) =
   exec natuExe() & " gfxconvert " & tsvFile & " --script:" & script & " --indir:" & indir & " --outdir:" & outdir
   rmFile(tsvFile)
 
+
+# Backgrounds
+# -----------
+
+type
+  BgKind* = enum
+    bkReg4bpp  ## Regular background, 16 colors per-tile
+    bkReg8bpp  ## Regular background, 256 colors
+    bkAff      ## Affine background, 256 colors
+  
+  BgFlag* = enum
+    bfScreenblock
+      ## For non-affine BGs, arrange the map data into blocks of 32x32 tiles.
+    bfBlankTile
+      ## First tile in the tileset will be empty - recommended for transparent BGs.
+    bfAutoPal
+      ## For 4bpp BGs, attempt to build a set of 16-color palettes from the image.
+      ## If this flag is omitted, the PNG's own palette will be strictly followed, and
+      ## each 8x8 tile in the image must only refer to colors from a single group of 16.
+
+
+proc toUInt[T](s: set[T]): uint =
+  ## Get internal representation of a (<= 32 bits) set in Nimscript.
+  for n in s:
+    result = result or (1'u shl ord(n))
+
+proc bgConvert*(script: static string) =
+  var
+    natuOutput: seq[string]
+  
+  proc background(
+    name: string,
+    kind: BgKind,
+    palOffset = 0,
+    tileOffset = 0,
+    flags: set[BgFlag] = {},
+  ) =
+    doAssert({'\t', '\n'} notin name, name & " contains invalid characters.")
+    natuOutput.add row(name, kind, palOffset, tileOffset, flags.toUInt())
+  
+  var
+    indir = "backgrounds"
+    outdir = "output"
+  
+  doInclude(script)
+  
+  let tsvFile = outdir/"bgconvert.tsv"
+  mkDir(outdir)
+  writeFile(tsvFile, natuOutput.join("\n"))
+  
+  exec natuExe() & " bgconvert $# --script:$# --indir:$# --outdir:$#" % [
+    tsvFile,
+    script,
+    inDir,
+    outDir,
+  ]
+  rmFile(tsvFile)
+
+
+# Audio
+# -----
 
 proc mmConvert*(script: static string) =
   var
