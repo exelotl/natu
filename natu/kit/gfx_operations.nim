@@ -1,5 +1,9 @@
 import natu/[core, video]
-import natu/kit/[types, obj_pal_manager]
+import natu/private/utils
+import natu/kit/[types, obj_pal_manager, obj_tile_manager]
+
+export obj_pal_manager
+export obj_tile_manager
 
 type Graphic = concept g
   ## Support any user-defined Graphic type.
@@ -74,7 +78,7 @@ type
     index {.bitsize: 4.}: uint    ## Which slot in Obj PAL RAM is this palNum assigned to?
     count {.bitsize: 12.}: uint   ## How many times is it used?
 
-proc acquireObjPal(u: var PalUsage, palData: cstring, palHalfwords: int): int {.discardable.} =
+proc acquireObjPal(u: var PalUsage, palData: pointer, palHalfwords: int): int {.discardable.} =
   if u.count == 0:
     let palId = allocObjPal()
     u.index = palId.uint
@@ -124,3 +128,15 @@ template getPalId*(g: Graphic): int =
 template loadPal*(g: Graphic) =
   ## Load palette data from a graphic into the correct slot in Obj PAL RAM.
   memcpy16(addr objPalMem[getPalId(g)], g.palDataPtr, g.data.palHalfwords)
+
+
+# Graphic tile allocation
+# -----------------------
+
+template allocObjTiles*(g: Graphic): int =
+  ## Allocate tiles for 1 frame of animation with the ideal snap amount
+  when g is static:
+    const snap = logPowerOfTwo(g.frameTiles.uint).int
+  else:
+    let snap = logPowerOfTwo(g.frameTiles.uint).int
+  allocObjTiles(g.frameTiles, snap)

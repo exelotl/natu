@@ -1,9 +1,11 @@
-import natu/kit/[obj_pal_manager, gfx_operations]
+import natu/kit/gfx_operations
 
-
-# Generated types
+# Generated data
 include ../output/graphics
 
-export
-  obj_pal_manager,
-  gfx_operations
+# Graphic API, including
+# Accessors & utils:  w, h, bpp, size, onscreen()
+# Direct operations:  copyPal(), copyFrame()
+# Tile allocator:     allocObjTiles(), freeObjTiles()
+# Palette manager:    acquireObjPal(), releaseObjPal()
+export gfx_operations

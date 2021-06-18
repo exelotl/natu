@@ -1,29 +1,21 @@
+## Gallery Demo
+## ------------
+## This example demonstrates the use of Natu's asset system.
+## 
+## A `Graphic` enum is generated based on the "graphics.nims" config file.
+## Graphics can be used at compile time and at runtime.
+## 
+## While this example is still rather direct and low-level, it uses allocators
+## to make managing sprite tiles and palettes easier. The Graphic enum is set
+## up to work with these allocators directly.
+
 import natu/[core, irq, oam, input]
-import graphics, audio
-
-# Simple looping animation:
-type
-  AnimData = object
-    first, len, speed: int
-  Anim = object
-    data: AnimData
-    frame, timer: int
-
-proc initAnim(data: AnimData): Anim
-proc update(a: var Anim)
-proc dirty(a: Anim): bool
-
-
-# The Graphic enum is generated based on the "gfx.nims" config file.
-# Graphics can be used at compile time or at runtime
-
-var graphic: Graphic
-var anim: Anim
+import graphics, audio, simple_anim
 
 const anims: array[Graphic, AnimData] = [
-  gfxBarrier: AnimData(first: 0, len: 10, speed: 3),
-  gfxGem:     AnimData(first: 0, len: 8, speed: 4),
-  gfxPlayer:  AnimData(first: 0, len: 8, speed: 5),
+  gfxBarrier:   AnimData(first: 0, len: 10, speed: 3),
+  gfxGem:       AnimData(first: 0, len: 8, speed: 4),
+  gfxPlayer:    AnimData(first: 0, len: 8, speed: 5),
   gfxSacrificedItems: AnimData(first: 0, len: 8, speed: 3),
   gfxBullet:    AnimData(first: 0, len: 4, speed: 3),
   gfxMuzzle:    AnimData(first: 0, len: 8, speed: 2),
@@ -31,19 +23,25 @@ const anims: array[Graphic, AnimData] = [
   gfxShield:    AnimData(first: 0, len: 4, speed: 2),
 ]
 
-let s = addr objMem[0]  # pointer to some sprite
+var graphic: Graphic     # Current image to show
+var anim: Anim           # Animation state
+var obj: ObjAttr         # Sprite fields
+var dirty = false        # True if palette and tiles need to be updated on next VBlank
 
-proc setCurrentGraphic(g: Graphic) =
+proc initCurrentSprite(g: Graphic) =
   graphic = g
   anim = initAnim(anims[g])
-  s[].init(
+  obj.init(
     pos = vec2i(120, 80) - vec2i(g.w, g.h) / 2,
     size = g.size,
-    tid = 0,  # we're lacking a tile or palette allocator
-    pal = 0,  # so let's just use index 0.
+    tid = allocObjTiles(g),  # Reserve enough tiles in VRAM for 1 frame of animation.
+    pal = acquireObjPal(g),  # Use a slot in PAL RAM.
   )
-  copyPal(addr objPalMem[s[].pal], g)
-  copyFrame(addr objTileMem[s[].tid], g, frame = 0)
+  dirty = true
+
+proc destroyCurrentSprite() =
+  freeObjTiles(obj.tid)    # Free the tiles.
+  releaseObjPal(graphic)   # Palette will also be freed only if nobody else is using it.
 
 
 proc update =
@@ -52,14 +50,16 @@ proc update =
   if keyHit(kiLeft):
     if graphic > Graphic.low:
       playSound(sfxChanged)
-      setCurrentGraphic(graphic.pred)
+      destroyCurrentSprite()
+      initCurrentSprite(graphic.pred)
     else:
       playSound(sfxBlocked)
   
   if keyHit(kiRight):
     if graphic < Graphic.high:
       playSound(sfxChanged)
-      setCurrentGraphic(graphic.succ)
+      destroyCurrentSprite()
+      initCurrentSprite(graphic.succ)
     else:
       playSound(sfxBlocked)
   
@@ -69,10 +69,20 @@ proc update =
 proc draw =
   ## Do graphical updates
   
-  if anim.dirty:
+  # update OAM entry
+  # note: unlike in C, we can do this assignment without clobbering the affine data.
+  objMem[0] = obj
+  
+  if dirty:
+    # copy palette & frame into VRAM
+    copyPal(addr objPalMem[obj.pal], graphic)
+    copyFrame(addr objTileMem[obj.tid], graphic, anim.frame)
+    dirty = false
+  
+  elif anim.dirty:
     # copy a new frame into VRAM only if we're on a different
     # frame of animation than previously.
-    copyFrame(addr objTileMem[s[].tid], graphic, anim.frame)
+    copyFrame(addr objTileMem[obj.tid], graphic, anim.frame)
 
 
 proc onVBlank =
@@ -97,30 +107,12 @@ proc main =
     obj.hide()
   
   playSong(modSubway)
-  setCurrentGraphic(gfxPlayer)
+  initCurrentSprite(gfxPlayer)
 
   while true:
     keyPoll()
     update()
     VBlankIntrWait()
-
-# Anim logic:
-
-proc initAnim(data: AnimData): Anim =
-  result.data = data
-  result.frame = 0
-  result.timer = data.speed + 1
-
-proc update(a: var Anim) =
-  dec a.timer
-  if a.timer < 0:
-    a.timer = a.data.speed
-    inc a.frame
-    if a.frame >= a.data.first + a.data.len:
-      a.frame = 0
-
-proc dirty(a: Anim): bool =
-  a.timer == a.data.speed
 
 
 main()
