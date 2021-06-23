@@ -10,7 +10,8 @@
 ## up to work with these allocators directly.
 
 import natu/[core, irq, oam, input]
-import graphics, audio, simple_anim
+import natu/kit/[pal_manager]
+import assets, audio, simple_anim
 
 const anims: array[Graphic, AnimData] = [
   gfxBarrier:   AnimData(first: 0, len: 10, speed: 3),
@@ -26,18 +27,16 @@ const anims: array[Graphic, AnimData] = [
 var graphic: Graphic     # Current image to show
 var anim: Anim           # Animation state
 var obj: ObjAttr         # Sprite fields
-var dirty = false        # True if palette and tiles need to be updated on next VBlank
 
 proc initCurrentSprite(g: Graphic) =
   graphic = g
   anim = initAnim(anims[g])
   obj.init(
-    pos = vec2i(120, 80) - vec2i(g.w, g.h) / 2,
+    pos = vec2i(120, 80) - vec2i(g.width, g.height) / 2,
     size = g.size,
     tid = allocObjTiles(g),  # Reserve enough tiles in VRAM for 1 frame of animation.
-    pal = acquireObjPal(g),  # Use a slot in PAL RAM.
+    pal = acquireObjPal(g),  # Load the palette into a slot in the PAL RAM buffer
   )
-  dirty = true
 
 proc destroyCurrentSprite() =
   freeObjTiles(obj.tid)    # Free the tiles.
@@ -73,16 +72,13 @@ proc draw =
   # note: unlike in C, we can do this assignment without clobbering the affine data.
   objMem[0] = obj
   
-  if dirty:
-    # copy palette & frame into VRAM
-    copyPal(addr objPalMem[obj.pal], graphic)
-    copyFrame(addr objTileMem[obj.tid], graphic, anim.frame)
-    dirty = false
-  
-  elif anim.dirty:
+  if anim.dirty:
     # copy a new frame into VRAM only if we're on a different
     # frame of animation than previously.
     copyFrame(addr objTileMem[obj.tid], graphic, anim.frame)
+  
+  # Copy palette buffers into PAL RAM.
+  flushPals()
 
 
 proc onVBlank =
@@ -101,8 +97,15 @@ proc main =
   
   audio.init()
   
-  dispcnt.init(obj = true, obj1d = true)
+  dispcnt.init(layers = { lBg0, lObj }, obj1d = true)
   
+  # Init BG0
+  bgcnt[0].init(cbb = 0, sbb = 31)
+  
+  # Copy the tiles, map and palette
+  bgcnt[0].load(bgDarkClouds)
+  
+  # Hide all sprites
   for obj in mitems(objMem):
     obj.hide()
   

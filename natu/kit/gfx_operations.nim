@@ -1,12 +1,13 @@
 import natu/[core, video]
 import natu/private/utils
-import natu/kit/[types, obj_pal_manager, obj_tile_manager]
+import natu/kit/[types, pal_manager, obj_tile_manager]
 
-export obj_pal_manager
+export pal_manager
 export obj_tile_manager
 
 type Graphic = concept g
   ## Support any user-defined Graphic type.
+  g is enum
   data(g) is GraphicData
   palUsage(g) is var uint16
   palDataPtr(g) is pointer
@@ -14,29 +15,37 @@ type Graphic = concept g
 
 # Implementation of useful graphic operations below:
 
-template w*(g: Graphic): int = g.data.w
-template h*(g: Graphic): int = g.data.h
+template width*(g: Graphic): int = g.data.w
+template height*(g: Graphic): int = g.data.h
 template bpp*(g: Graphic): int = g.data.bpp
 template size*(g: Graphic): ObjSize = g.data.size
 
 const tileWords = (sizeof(Tile4) div sizeof(uint32))
 
 template frameTiles*(g: Graphic): int =
+  ## 
   ## How many 4bpp tiles does a single frame of animation occupy in VRAM?
   ## Note, 8bpp graphics take up twice as many tiles.
+  ## 
   g.data.frameWords div tileWords
 
 template allTiles*(g: Graphic): int =
+  ## 
   ## How many 4bpp tiles does the entire spritesheet occupy in VRAM?
   ## Note, 8bpp graphics take up twice as many tiles.
+  ## 
   g.data.imgWords div tileWords
 
 template numFrames*(g: Graphic): int =
+  ## 
   ## How many frames exist in the sprite sheet?
+  ## 
   g.data.frames
 
 template copyPal*(dest: ptr Palette, g: Graphic) =
+  ## 
   ## Copy palette data from a graphic into some destination, 4bpp version.
+  ## 
   when g is static:
     static:
       doAssert(g.bpp == 4, "Can only copy 4bpp palettes to a ptr Palette")
@@ -47,24 +56,34 @@ template copyPal*(dest: ptr Palette, g: Graphic) =
   memcpy16(dest, g.palDataPtr, g.data.palHalfwords)
 
 template copyPal*(dest: ptr Color, g: Graphic) =
+  ## 
   ## Copy palette data from a graphic into some destination (unsafe version, works with 8bpp)
+  ## 
   memcpy16(dest, g.palDataPtr, g.data.palHalfwords)
 
 template copyAllFrames*(dest: ptr Tile4 | ptr Tile8, g: Graphic) =
+  ## 
   ## Copy all frames of animation to a location in Object VRAM
+  ## 
   memcpy32(dest, g.imgDataPtr, g.data.imgWords)
 
 template copyFrame*(dest: ptr Tile4, g: Graphic, frame: int) =
+  ## 
   ## Copy a single frame of animation to a location in Object VRAM
+  ## 
   let img = cast[ptr UncheckedArray[uint32]](g.imgDataPtr)
   memcpy32(dest, addr img[g.data.frameWords * frame], g.data.frameWords)
 
 template onscreen*(g: Graphic, pos: Vec2i): bool =
+  ## 
   ## Check if a graphic would be onscreen when drawn at a given location
+  ## 
   pos.x + g.w >= 0 and pos.y + g.h >= 0 and pos.x < ScreenWidth and pos.y < ScreenHeight
 
 func onscreen*(r: Rect): bool {.inline.} =
+  ## 
   ## Check if a rectangle is on-screen
+  ## 
   r.right >= 0 and r.bottom >= 0 and r.left < ScreenWidth and r.top < ScreenHeight
 
 
@@ -82,7 +101,7 @@ proc acquireObjPal(u: var PalUsage, palData: pointer, palHalfwords: int): int {.
   if u.count == 0:
     let palId = allocObjPal()
     u.index = palId.uint
-    memcpy16(addr objPalMem[palId], palData, palHalfwords)
+    memcpy16(addr objPalBuf[palId], palData, palHalfwords)
     result = palId
   else:
     result = u.index.int
@@ -120,14 +139,18 @@ template releaseObjPal*(g: Graphic) =
   releaseObjPal(u[])
 
 template getPalId*(g: Graphic): int =
+  ## 
   ## Get the current slot in Obj PAL RAM used by a graphic.
+  ## 
   let u = cast[PalUsage](palUsage(g))
   assert(u.count > 0, "Tried to get palId of graphic whose palette is not in use.")
   u.index.int
 
 template loadPal*(g: Graphic) =
-  ## Load palette data from a graphic into the correct slot in Obj PAL RAM.
-  memcpy16(addr objPalMem[getPalId(g)], g.palDataPtr, g.data.palHalfwords)
+  ## 
+  ## Load palette data from a graphic into the correct slot in the Obj PAL RAM buffer.
+  ## 
+  memcpy16(addr objPalBuf[getPalId(g)], g.palDataPtr, g.data.palHalfwords)
 
 
 # Graphic tile allocation

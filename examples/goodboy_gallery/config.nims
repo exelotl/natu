@@ -25,14 +25,14 @@ task graphics, "convert spritesheets":
 task audio, "convert music and sounds":
   mmConvert "audio.nims"
 
-# task backgrounds, "convert backgrounds/tilemaps":
-#   bgConvert "backgrounds.nims"
+task backgrounds, "convert background tilemaps":
+  bgConvert "backgrounds.nims"
 
 task build, "builds the GBA rom":
   let args = commandLineParams()[1..^1].join(" ")
   graphicsTask()
   audioTask()
-  # backgroundsTask()
+  backgroundsTask()
   selfExec "c " & args & " -o:" & name & ".elf " & thisDir() / main
   gbaStrip name & ".elf", name & ".gba"
   gbaFix name & ".gba"

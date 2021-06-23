@@ -16,13 +16,17 @@ type
 #end for
 {.compile:"./backgrounds.c".}
 
-let bgImgData {.importc:"natuBgImgData", codegenDecl:"extern const $$# $$#".}: array[Background, cstring]
-let bgMapData {.importc:"natuBgMapData", codegenDecl:"extern const $$# $$#".}: array[Background, cstring]
-let bgPalData {.importc:"natuBgPalData", codegenDecl:"extern const $$# $$#".}: array[Background, cstring]
-
+let natuBgImgData {.importc, codegenDecl:"extern const $$# $$#".}: array[Background, cstring]
+let natuBgMapData {.importc, codegenDecl:"extern const $$# $$#".}: array[Background, cstring]
+let natuBgPalData {.importc, codegenDecl:"extern const $$# $$#".}: array[Background, cstring]
 
 const staticBgData: array[Background, BgData] = [
   #for i,b in bgRows:
   ${b.name}: BgData${bgDatas[i]},
   #end for
 ]
+
+template data*(bg: Background): BgData = staticBgData[bg]
+template palDataPtr*(bg: Background): pointer = natuBgPalData[bg]
+template mapDataPtr*(bg: Background): pointer = natuBgMapData[bg]
+template imgDataPtr*(bg: Background): pointer = natuBgImgData[bg]

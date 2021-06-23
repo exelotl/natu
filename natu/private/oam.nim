@@ -287,6 +287,12 @@ template edit*(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
   writeObj(obj, args)
 
 
+template dup*(obj: ObjAttr, args: varargs[untyped]): ObjAttr =
+  var tmp = obj
+  tmp.edit(args)
+  tmp
+
+
 # Size helpers:
 
 func getSize*(size: ObjSize): tuple[w, h: int] {.inline.} =
