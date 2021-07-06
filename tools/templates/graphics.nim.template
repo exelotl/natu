@@ -6,6 +6,8 @@ import natu/[core, oam]
 
 from natu/kit/types import GraphicData
 
+#if gfxRows.len > 0:
+
 type
   Graphic* = enum
     #for g in gfxRows:
@@ -29,3 +31,16 @@ template data*(g: Graphic): GraphicData = staticGfxData[g]
 template palUsage*(g: Graphic): var uint16 = palUsages[g.data.palNum]
 template palDataPtr*(g: Graphic): pointer = unsafeAddr palData[g.data.palPos]
 template imgDataPtr*(g: Graphic): pointer = unsafeAddr imgData[g.data.imgPos]
+
+#else:
+
+## There were no graphics defined, create a dummy interface.
+
+type Graphic* = distinct uint
+var dummyPalUsage: uint16
+template data*(g: Graphic): GraphicData = GraphicData()
+template palUsage*(g: Graphic): var uint16 = dummyPalUsage
+template palDataPtr*(g: Graphic): pointer = nil
+template imgDataPtr*(g: Graphic): pointer = nil
+
+#end if
