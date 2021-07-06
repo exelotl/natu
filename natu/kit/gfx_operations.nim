@@ -42,7 +42,7 @@ template numFrames*(g: Graphic): int =
   ## 
   g.data.frames
 
-template copyPal*(dest: ptr Palette, g: Graphic) =
+template copyPal*(dest: var Palette, g: Graphic) =
   ## 
   ## Copy palette data from a graphic into some destination, 4bpp version.
   ## 
@@ -53,9 +53,9 @@ template copyPal*(dest: ptr Palette, g: Graphic) =
   else:
     assert(g.bpp == 4, "Can only copy 4bpp palettes to a ptr Palette")
     assert(g.data.palHalfwords <= 16, "Exceeded maximum size for a single 4bpp palette.")
-  memcpy16(dest, g.palDataPtr, g.data.palHalfwords)
+  memcpy16(addr dest, g.palDataPtr, g.data.palHalfwords)
 
-template copyPal*(dest: ptr Color, g: Graphic) =
+template copyPal*(dest: ptr Color | ptr Palette, g: Graphic) =
   ## 
   ## Copy palette data from a graphic into some destination (unsafe version, works with 8bpp)
   ## 
