@@ -366,6 +366,39 @@ proc `pal=`*(se: var ScrEntry, val: int) = se = ((val.uint16 shl SE_PALBANK_SHIF
 {.pop.}
 
 
+# Color component getters and setters
+
+{.push inline.}
+
+func r*(color: Color): int =
+  ## Get the red component of a 15-bit color.
+  color.int and 0x001F
+
+func `r=`*(color: var Color, r: int) =
+  ## Set the red component of a 15-bit color.
+  uint16(color) = (color.uint16 and 0b1_11111_11111_00000) or (r.uint16 and 0x001F)
+
+
+func g*(color: Color): int =
+  ## Get the green component of a 15-bit color.
+  (color.int shr 5) and 0x001F
+
+func `g=`*(color: var Color, g: int) =
+  ## Set the green component of a 15-bit color.
+  uint16(color) = (color.uint16 and 0b1_11111_00000_11111) or (g.uint16 and 0x001F) shl 5
+
+
+func b*(color: Color): int =
+  ## Get the blue component of a 15-bit color.
+  (color.int shr 10) and 0x001F
+
+func `b=`*(color: var Color, b: int) =
+  ## Set the blue component of a 15-bit color.
+  uint16(color) = (color.uint16 and 0b1_00000_11111_11111) or (b.uint16 and 0x001F) shl 10
+
+{.pop.}
+
+
 proc cbbClear*(cbb: int) {.inline, deprecated:"Use e.g. bgTileMem[i].clear() instead.".} =
   memset32(addr bgTileMem[cbb], 0, CBB_SIZE div 4)
 
