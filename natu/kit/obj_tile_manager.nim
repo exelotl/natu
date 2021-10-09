@@ -5,7 +5,12 @@ type ObjTileState {.size: 1.} = enum
   otUsed
   otContinue
 
-var objTiles {.codegenDecl:EWRAM_DATA.}: array[1024, ObjTileState]
+const MaxObjTiles = 1024
+
+var objTiles {.codegenDecl:EWRAM_DATA.}: array[MaxObjTiles+1, ObjTileState]  # length+1 for "null terminator"
+
+# Potential optimisation - keep track of the lowest guaranteed 'free' tile and only begin searching from there.
+# If some memory is freed that is lower than that tile, set it to be equal to that
 
 proc allocObjTiles*(tiles: range[1..1024], snap: range[0..9] = 0): int =
   ## 
@@ -22,7 +27,7 @@ proc allocObjTiles*(tiles: range[1..1024], snap: range[0..9] = 0): int =
   ## 
   var start = 0
   var n = 0
-  while n < objTiles.len:
+  while n < MaxObjTiles:
     if objTiles[n] == otUnused:
       if (n-start)+1 == tiles:     # do we have enough consecutive unused blocks?
         objTiles[start] = otUsed   # mark the first block as used
@@ -38,16 +43,32 @@ proc allocObjTiles*(tiles: range[1..1024], snap: range[0..9] = 0): int =
       n = n shl snap
       start = n
   
-  assert(false, "Ran out of obj tiles")
-  0
+  when defined(natuPanicWhenOutOfObjTiles):
+    doAssert(false, "Ran out of obj tiles")
+  else:
+    MaxObjTiles - tiles
 
+proc paintUnused(i: int, len = 1) =
+  when defined(natuShowUnusedObjTiles):
+    memset32(
+      dst = addr objTileMem[i],
+      wd = 0x10101010,
+      wcount = (len * sizeof(Tile)) div 4
+    )
 
 proc freeObjTiles*(tileId: int) =
   ## 
   ## Free tiles from Obj VRAM
   ## 
   objTiles[tileId] = otUnused
+  paintUnused(tileId)
   var i = tileId + 1
   while objTiles[i] == otContinue:
     objTiles[i] = otUnused
+    paintUnused(i)
     inc(i)
+
+
+# initialise OBJ VRAM (if we're rendering unused tiles for debug purposes.)
+
+paintUnused(0, MaxObjTiles)
