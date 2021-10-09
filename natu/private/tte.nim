@@ -307,7 +307,7 @@ proc getDrawg*(): FnDrawg {.importc: "tte_get_drawg", header: "tonc.h".}
   ## Get the active character plotter
 proc getErase*(): FnErase {.importc: "tte_get_erase", header: "tonc.h".}
   ## Get the erase function
-proc getStringTable*(): ptr UncheckedArray[Font] {.importc: "tte_get_string_table", header: "tonc.h".}
+proc getStringTable*(): ptr UncheckedArray[cstring] {.importc: "tte_get_string_table", header: "tonc.h".}
   ## Get string table
 proc getFontTable*(): ptr UncheckedArray[Font] {.importc: "tte_get_font_table", header: "tonc.h".}
   ## Get font table
