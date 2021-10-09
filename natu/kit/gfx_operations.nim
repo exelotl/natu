@@ -48,10 +48,10 @@ template copyPal*(dest: var Palette, g: Graphic) =
   ## 
   when g is static:
     static:
-      doAssert(g.bpp == 4, "Can only copy 4bpp palettes to a ptr Palette")
+      doAssert(g.bpp != 8, "Can't copy 8bpp palettes to a `var Palette`")
       doAssert(g.data.palHalfwords <= 16, "Exceeded maximum size for a single 4bpp palette.")
   else:
-    assert(g.bpp == 4, "Can only copy 4bpp palettes to a ptr Palette")
+    assert(g.bpp != 8, "Can't copy 8bpp palettes to a `var Palette`")
     assert(g.data.palHalfwords <= 16, "Exceeded maximum size for a single 4bpp palette.")
   memcpy16(addr dest, g.palDataPtr, g.data.palHalfwords)
 
@@ -78,7 +78,7 @@ template onscreen*(g: Graphic, pos: Vec2i): bool =
   ## 
   ## Check if a graphic would be onscreen when drawn at a given location
   ## 
-  pos.x + g.w >= 0 and pos.y + g.h >= 0 and pos.x < ScreenWidth and pos.y < ScreenHeight
+  pos.x + g.width >= 0 and pos.y + g.height >= 0 and pos.x < ScreenWidth and pos.y < ScreenHeight
 
 func onscreen*(r: Rect): bool {.inline.} =
   ## 
