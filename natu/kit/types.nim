@@ -20,6 +20,11 @@ type
     bkReg8bpp  ## Regular background, 256 colors
     bkAff      ## Affine background, 256 colors
   
+  BgFlag* = enum
+    bfScreenblock
+    bfBlankTile
+    bfAutoPal
+  
   BgData* = object
     kind*: BgKind
     w*, h*: int
@@ -28,3 +33,4 @@ type
     palHalfwords*: uint16
     palOffset*: uint16
     tileOffset*: uint16
+    flags*: set[BgFlag]

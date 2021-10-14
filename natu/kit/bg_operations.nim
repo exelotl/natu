@@ -9,6 +9,9 @@ type Background = concept b
   mapDataPtr(b) is pointer
   palDataPtr(b) is pointer
 
+template is8bpp*(bg: Background): bool =
+  bg.data.kind in {bkReg8bpp, bkAff}
+
 proc loadTiles*(bg: Background, cbb: range[0..3]) {.inline.} =
   ## 
   ## Copy a background's tile image data into memory.
@@ -21,7 +24,8 @@ proc loadTiles*(bg: Background, cbb: range[0..3]) {.inline.} =
   ## cbb
   ##   Character Base Block: The tileset will be copied to this location.
   ## 
-  memcpy32(addr bgTileMem[cbb][bg.data.tileOffset.int], bg.imgDataPtr, bg.data.imgWords)
+  let tileOffset = bg.data.tileOffset.int * (if bg.is8bpp: 2 else: 1)
+  memcpy32(addr bgTileMem[cbb][tileOffset], bg.imgDataPtr, bg.data.imgWords)
 
 proc loadMap*(bg: Background, sbb: range[0..31]) {.inline.} =
   ## 

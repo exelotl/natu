@@ -1,4 +1,4 @@
-import strutils, strformat, parseopt
+import strutils, strformat, parseopt, marshal
 import options, os, times
 import trick
 import ./common
@@ -31,6 +31,7 @@ type
     palHalfwords: uint16
     palOffset: uint16
     tileOffset: uint16
+    flags: set[BgFlag]
 
 
 proc applyOffsets(bg4: var Bg4, palOffset, tileOffset: int) =
@@ -41,6 +42,15 @@ proc applyOffsets(bg4: var Bg4, palOffset, tileOffset: int) =
     for se in mitems(bg4.map):
       se.tid = se.tid + tileOffset
 
+proc applyOffsets(bg8: var Bg8, palOffset, tileOffset: int) =
+  if palOffset > 0:
+    for tile in mitems(bg8.img):
+      for pixel in mitems(tile):
+        if pixel != 0:
+          pixel += (palOffset * 16).uint8
+  if tileOffset > 0:
+    for se in mitems(bg8.map):
+      se.tid = se.tid + tileOffset
 
 include "templates/background.c.template"
 include "templates/backgrounds.c.template"
@@ -95,12 +105,36 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
     var bgDatas: seq[BgData]
     
     for row in bgRows:
-      echo row.pngPath
       
-      let modified = true
+      let bgCPath = outputBgDir / row.name & ".c"
       
-      if modified:
-        # convert the bg
+      var data: BgData
+      var convert = false
+      
+      if fileExists(bgCPath):
+        if getLastModificationTime(row.pngPath) > getLastModificationTime(bgCPath):
+          convert = true
+        else:
+          # re-read properties from last time we converted this BG
+          withFile bgCPath, fmRead:
+            file.setFilePos(3)
+            data = file.readLine().to[:BgData]()
+            convert =
+              row.kind != data.kind or
+              row.flags != data.flags or
+              row.palOffset != data.palOffset.int or
+              row.tileOffset != data.tileOffset.int
+      else:
+        convert = true
+      
+      if convert:
+        echo row.pngPath
+
+        # convert the BG
+      
+        var w, h: int
+        var img, map, pal: string
+        
         case row.kind
         of bkReg4bpp:
           var bg4 = loadBg4(
@@ -109,45 +143,57 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
             firstBlank = (bfBlankTile in row.flags),
           )
           bg4.applyOffsets(row.palOffset, row.tileOffset)
-          
-          let img = bg4.img.toBytes()
-          let pal = joinPalettes(bg4.pals).toBytes()
-          let map = if bfScreenblock in row.flags:
-                      bg4.map.toScreenblocks(bg4.w).toBytes()
-                    else:
-                      bg4.map.toBytes()
-          
-          withFile outputBgDir / row.name & ".c", fmWrite:
-            file.writeBackgroundC(row.name, img, map, pal)
-          
-          bgDatas.add BgData(
-            kind: row.kind,
-            w: bg4.w,
-            h: bg4.h,
-            imgWords: (img.len div 4).uint16,
-            mapWords: (map.len div 4).uint16,
-            palHalfwords: (pal.len div 2).uint16,
-            palOffset: row.palOffset.uint16,
-            tileOffset: row.tileOffset.uint16,
-          )
-          
+          (w, h) = (bg4.w, bg4.h)
+          img = bg4.img.toBytes()
+          pal = joinPalettes(bg4.pals).toBytes()
+          map = if bfScreenblock in row.flags:
+                  bg4.map.toScreenblocks(bg4.w).toBytes()
+                else:
+                  bg4.map.toBytes()
+        
         of bkReg8bpp:
-          var bg8 = loadBg8(row.pngPath, firstBlank = (bfBlankTile in row.flags))
-          # TODO: decide offsets for bg8?
-          #       tileOffset is fine...
-          #       palOffset doesn't make much sense but we may wish to shift by individual colors?
-          # bg4.applyOffsets(row.palOffset, row.tileOffset)
-          raiseAssert("TODO.")
           
+          doAssert(bfAutoPal notin row.flags, "Auto palette reduction is for 4bpp backgrounds only.")
+          
+          var bg8 = loadBg8(
+            row.pngPath,
+            firstBlank = (bfBlankTile in row.flags),
+          )
+          bg8.applyOffsets(row.palOffset, row.tileOffset)
+          (w, h) = (bg8.w, bg8.h)
+          img = bg8.img.toBytes()
+          pal = bg8.pal.toBytes()
+          map = if bfScreenblock in row.flags:
+                  bg8.map.toScreenblocks(bg8.w).toBytes()
+                else:
+                  bg8.map.toBytes()
+        
         of bkAff:
-          doAssert(bfScreenblock notin row.flags, "Affine bgs don't use screenblocks.")
+          doAssert(bfScreenblock notin row.flags, "Affine BGs don't use screenblocks.")
           raiseAssert("Affine not supported for now.")
+        
+        # update and write data
+        data = BgData(
+          kind: row.kind,
+          w: w, h: h,
+          imgWords: (img.len div 4).uint16,
+          mapWords: (map.len div 4).uint16,
+          palHalfwords: (pal.len div 2).uint16,
+          palOffset: row.palOffset.uint16,
+          tileOffset: row.tileOffset.uint16,
+          flags: row.flags,
+        )
+        withFile bgCPath, fmWrite:
+          file.writeBackgroundC(row.name, img, map, pal, data)
+      
+      # push to list
+      bgDatas.add(data)
     
     withFile outputCPath, fmWrite:
       file.writeBackgroundsC(bgRows)
     withFile outputNimPath, fmWrite:
       file.writeBackgroundsNim(bgRows, bgDatas)
-    
+  
   else:
     echo "Skipping backgrounds."
 
