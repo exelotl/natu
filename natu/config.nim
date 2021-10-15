@@ -188,6 +188,8 @@ type ObjSize* = enum
   s8x16, s8x32, s16x32, s32x64
 
 proc gfxConvert*(script: static string) =
+  let
+    natuCurrentDir = getCurrentDir()
   var
     natuOutput: seq[string]
     natuPalCounter: int
@@ -201,22 +203,24 @@ proc gfxConvert*(script: static string) =
     inc natuPalCounter
   
   proc graphic(name: string, size: ObjSize, bpp = 4) =
-    doAssert({'\t', '\n'} notin name, name & " contains invalid characters.")
-    natuOutput.add row(name, size, bpp, natuPalCounter)
+    let path = name.absolutePath.relativePath(natuCurrentDir)
+    doAssert({'\t', '\n'} notin path, path & " contains invalid characters.")
+    natuOutput.add row(path, size, bpp, natuPalCounter)
     if not natuIsSharingPal:
       inc natuPalCounter
   
-  var
-    indir = "graphics"
-    outdir = "output"
-  
+  var outdir = "output"
   doInclude(script)
+  cd natuCurrentDir
   
   let tsvFile = outdir/"gfxconvert.tsv"
   mkDir(outdir)
   writeFile(tsvFile, natuOutput.join("\n"))
-  exec natuExe() & " gfxconvert " & tsvFile & " --script:" & script & " --indir:" & indir & " --outdir:" & outdir
-  rmFile(tsvFile)
+  exec natuExe() & " gfxconvert $# --script:$# --indir:. --outdir:$#" % [
+    tsvFile,
+    script,
+    outdir,
+  ]
 
 
 # Backgrounds
@@ -245,8 +249,9 @@ proc toUInt[T](s: set[T]): uint =
     result = result or (1'u shl ord(n))
 
 proc bgConvert*(script: static string) =
-  var
-    natuOutput: seq[string]
+  
+  let natuCurrentDir = getCurrentDir()
+  var natuOutput: seq[string]
   
   proc background(
     name: string,
@@ -255,24 +260,22 @@ proc bgConvert*(script: static string) =
     tileOffset = 0,
     flags: set[BgFlag] = {},
   ) =
-    doAssert({'\t', '\n'} notin name, name & " contains invalid characters.")
-    natuOutput.add row(name, kind, palOffset, tileOffset, flags.toUInt())
+    let path = name.absolutePath.relativePath(natuCurrentDir)
+    doAssert({'\t', '\n'} notin path, path & " contains invalid characters.")
+    natuOutput.add row(path, kind, palOffset, tileOffset, flags.toUInt())
   
-  var
-    indir = "backgrounds"
-    outdir = "output"
-  
+  var outdir = "output"
   doInclude(script)
+  cd natuCurrentDir
   
   let tsvFile = outdir/"bgconvert.tsv"
   mkDir(outdir)
   writeFile(tsvFile, natuOutput.join("\n"))
   
-  exec natuExe() & " bgconvert $# --script:$# --indir:$# --outdir:$#" % [
+  exec natuExe() & " bgconvert $# --script:$# --indir:. --outdir:$#" % [
     tsvFile,
     script,
-    inDir,
-    outDir,
+    outdir,
   ]
   rmFile(tsvFile)
 
@@ -281,29 +284,26 @@ proc bgConvert*(script: static string) =
 # -----
 
 proc mmConvert*(script: static string) =
-  var
-    natuMmList: seq[string]
+  let natuCurrentDir = getCurrentDir()
+  var natuMmList: seq[string]
   
   proc sample(name: string) =
-    doAssert({'\t', '\n'} notin name, name & " contains invalid characters.")
-    natuMmList.add name
+    let path = name.absolutePath.relativePath(natuCurrentDir)
+    doAssert({'\t', '\n'} notin path, path & " contains invalid characters.")
+    natuMmList.add path
   
   proc module(name: string) =
-    doAssert({'\t', '\n'} notin name, name & " contains invalid characters.")
-    natuMmList.add name
+    let path = name.absolutePath.relativePath(natuCurrentDir)
+    doAssert({'\t', '\n'} notin path, path & " contains invalid characters.")
+    natuMmList.add path
   
-  var
-    sfxDir = "samples"
-    modDir = "modules"
-    outDir = "output"
-  
+  var outdir = "output"
   doInclude(script)
+  cd natuCurrentDir
   
   mkDir(outdir)
-  exec natuExe() & " mmconvert --script:$# --sfxDir:$# --modDir:$# --outDir:$# $#" % [
+  exec natuExe() & " mmconvert --script:$# --sfxDir:. --modDir:. --outdir:$# $#" % [
     script,
-    sfxDir,
-    modDir,
-    outDir,
+    outdir,
     natuMmList.join(" ")
   ]

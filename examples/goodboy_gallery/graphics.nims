@@ -1,6 +1,8 @@
 # Config file for sprite graphics to be converted
 # as part of the build process.
 
+cd "graphics"
+
 graphic "barrier.png", size=s32x64
 graphic "gem.png", size=s32x32
 graphic "player.png", size=s32x32
