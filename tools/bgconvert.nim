@@ -34,15 +34,16 @@ type
     flags: set[BgFlag]
 
 
-proc applyOffsets(bg4: var Bg4, palOffset, tileOffset: int) =
+proc applyOffsets(bg4: var Bg4; flags: set[BgFlag]; palOffset, tileOffset: int) =
   if palOffset > 0:
     for se in mitems(bg4.map):
       se.palbank = se.palbank + palOffset
   if tileOffset > 0:
     for se in mitems(bg4.map):
-      se.tid = se.tid + tileOffset
+      if (se.tid > 0) or (bfBlankTile notin flags):
+        se.tid = se.tid + tileOffset
 
-proc applyOffsets(bg8: var Bg8, palOffset, tileOffset: int) =
+proc applyOffsets(bg8: var Bg8; flags: set[BgFlag]; palOffset, tileOffset: int) =
   if palOffset > 0:
     for tile in mitems(bg8.img):
       for pixel in mitems(tile):
@@ -50,7 +51,8 @@ proc applyOffsets(bg8: var Bg8, palOffset, tileOffset: int) =
           pixel += (palOffset * 16).uint8
   if tileOffset > 0:
     for se in mitems(bg8.map):
-      se.tid = se.tid + tileOffset
+      if (se.tid > 0) or (bfBlankTile notin flags):
+        se.tid = se.tid + tileOffset
 
 include "templates/background.c.template"
 include "templates/backgrounds.c.template"
@@ -142,7 +144,7 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
             indexed = (bfAutoPal notin row.flags),
             firstBlank = (bfBlankTile in row.flags),
           )
-          bg4.applyOffsets(row.palOffset, row.tileOffset)
+          bg4.applyOffsets(row.flags, row.palOffset, row.tileOffset)
           (w, h) = (bg4.w, bg4.h)
           img = bg4.img.toBytes()
           pal = joinPalettes(bg4.pals).toBytes()
@@ -159,7 +161,7 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
             row.pngPath,
             firstBlank = (bfBlankTile in row.flags),
           )
-          bg8.applyOffsets(row.palOffset, row.tileOffset)
+          bg8.applyOffsets(row.flags, row.palOffset, row.tileOffset)
           (w, h) = (bg8.w, bg8.h)
           img = bg8.img.toBytes()
           pal = bg8.pal.toBytes()
