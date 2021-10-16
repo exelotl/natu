@@ -1,7 +1,7 @@
 import strutils, strscans, strformat, parseopt
 import options, os, times
 import trick
-from ./common import withFile, tsvRows
+import ./common
 
 type
   GraphicRow = object
@@ -38,32 +38,11 @@ include "templates/graphics.nim.template"
 proc gfxConvert*(tsvPath, script, indir, outdir: string) =
   var gfxRows: seq[GraphicRow]
   
-  # input and output locations are assumed to exist
-  var newestModifiedIn = getLastModificationTime(indir)
-  var oldestModifiedOut = getLastModificationTime(outdir)
-  
   let outputCPath = outdir / "graphics.c"
   let outputNimPath = outdir / "graphics.nim"
   
-  # get oldest modification date of all output files
-  
-  if fileExists(outputCPath):
-    let t = getLastModificationTime(outputCPath)
-    if t < oldestModifiedOut: oldestModifiedOut = t
-  else:
-    oldestModifiedOut = fromUnix(0)
-  
-  if fileExists(outputNimPath):
-    let t = getLastModificationTime(outputNimPath)
-    if t < oldestModifiedOut: oldestModifiedOut = t
-  else:
-    oldestModifiedOut = fromUnix(0)
-  
-  # account for the script itself possibly having changed
-  
-  if fileExists(script):
-    let t = getLastModificationTime(script)
-    if t > newestModifiedIn: newestModifiedIn = t
+  var newestModifiedIn = getLastModificationTime(script)
+  var oldestModifiedOut = oldest(outdir, outputCPath, outputNimPath)
   
   # parse graphics from .tsv and check their modification dates
   
@@ -73,11 +52,8 @@ proc gfxConvert*(tsvPath, script, indir, outdir: string) =
     doAssert ext in ["", ".png"], "Only PNG files accepted (" & name & ext & ")"
     
     let pngPath = indir / dir / name & ".png"
-    if fileExists(pngPath):
-      let t = getLastModificationTime(pngPath)
-      if t > newestModifiedIn: newestModifiedIn = t
-    else:
-      raiseAssert "No such file " & pngPath
+    doAssert(fileExists(pngPath), "No such file " & pngPath)
+    newestModifiedIn = newest(newestModifiedIn, pngPath, pngPath.parentDir)
     
     var w, h: int
     let scanned = scanf(row[1], "s$ix$i", w, h)

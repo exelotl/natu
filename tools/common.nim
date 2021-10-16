@@ -22,7 +22,7 @@ iterator tsvRows*(filename: string): seq[string] =
 proc toTime*(t: Time): Time = t
 
 proc toTime*(f: string): Time =
-  if fileExists(f): getLastModificationTime(f)
+  if fileExists(f) or dirExists(f): getLastModificationTime(f)
   else: fromUnix(0)
 
 proc newest*(times: varargs[Time, toTime]): Time =

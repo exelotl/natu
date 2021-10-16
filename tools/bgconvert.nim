@@ -67,8 +67,8 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
   let outputCPath = outdir / "backgrounds.c"
   let outputNimPath = outdir / "backgrounds.nim"
   
+  var newestModifiedIn = getLastModificationTime(script)
   var oldestModifiedOut = oldest(outdir, outputCPath, outputNimPath, outputBgDir)
-  var newestModifiedIn = newest(indir, script)
   
   createDir(outputBgDir)
   
@@ -80,13 +80,10 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
     doAssert ext in ["", ".png"], "Only PNG files accepted (" & name & ext & ")"
     
     let pngPath = indir / dir / name & ".png"
-    if fileExists(pngPath):
-      newestModifiedIn = newest(newestModifiedIn, pngPath)
-    else:
-      raiseAssert "No such file " & pngPath
+    doAssert(fileExists(pngPath), "No such file " & pngPath)
+    newestModifiedIn = newest(newestModifiedIn, pngPath, pngPath.parentDir)
     
     let bgName = "bg" & name.toCamelCase(firstUpper=true)
-    
     bgRows.add BgRow(
       pngPath: pngPath,
       name: bgName,
@@ -95,7 +92,6 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
       tileOffset: parseInt(row[3]),
       flags: cast[set[BgFlag]](parseUInt(row[4])),
     )
-    
     oldestModifiedOut = oldest(oldestModifiedOut, outputBgDir / bgName & ".c")
   
   # regenerate the output files if any input files have changed:

@@ -1,43 +1,18 @@
 import strutils, strformat, parseopt
 import options, os, osproc, times
 import trick
-from ./common import withFile
+import ./common
 
 include "templates/soundbank.nim.template"
 
-proc mmConvert*(script, sfxDir, modDir, outDir: string, files: seq[string]) =
+proc mmConvert*(script, sfxdir, moddir, outdir: string, files: seq[string]) =
   var filePaths, sfxList, modList: seq[string]
-  
-  var newestModifiedIn = max(
-    if dirExists(sfxDir): getLastModificationTime(sfxDir) else: fromUnix(0),
-    if dirExists(modDir): getLastModificationTime(modDir) else: fromUnix(0)
-  )
-  
-  # output location is assumed to exist
-  var oldestModifiedOut = getLastModificationTime(outdir)
   
   let outputBinPath = outdir / "soundbank.bin"
   let outputNimPath = outdir / "soundbank.nim"
   
-  # get oldest modification date of all output files
-  
-  if fileExists(outputBinPath):
-    let t = getLastModificationTime(outputBinPath)
-    if t < oldestModifiedOut: oldestModifiedOut = t
-  else:
-    oldestModifiedOut = fromUnix(0)
-  
-  if fileExists(outputNimPath):
-    let t = getLastModificationTime(outputNimPath)
-    if t < oldestModifiedOut: oldestModifiedOut = t
-  else:
-    oldestModifiedOut = fromUnix(0)
-  
-  # account for the script itself possibly having changed
-  
-  if fileExists(script):
-    let t = getLastModificationTime(script)
-    if t > newestModifiedIn: newestModifiedIn = t
+  var newestModifiedIn = getLastModificationTime(script)
+  var oldestModifiedOut = oldest(outdir, outputBinPath, outputNimPath)
   
   # collate and check modification dates of input files
   
@@ -48,22 +23,18 @@ proc mmConvert*(script, sfxDir, modDir, outDir: string, files: seq[string]) =
     var inPath: string
     
     if ext == ".wav":
-      inPath = sfxDir / f
+      inPath = sfxdir / f
       sfxList.add toCamelCase("sfx_" & name)
     elif ext in [".mod", ".xm", ".s3m", ".it"]:
-      inPath = modDir / f
+      inPath = moddir / f
       modList.add toCamelCase("mod_" & name)
     else:
       raiseAssert("Unrecognised audio asset " & name & ext & ", only the following formats are accepted: .wav .mod .xm .s3m .it")
     
-    if fileExists(inPath):
-      let t = getLastModificationTime(inPath)
-      if t > newestModifiedIn: newestModifiedIn = t
-    else:
-      raiseAssert "No such file " & inPath
-    
+    doAssert(fileExists(inPath), "No such file " & inPath)
+    newestModifiedIn = newest(newestModifiedIn, inPath, inPath.parentDir)
     filePaths.add inPath
-    
+  
   
   # regenerate the output files if any input files have changed
   
@@ -106,7 +77,7 @@ proc mmConvert*(p: var OptParser, progName: static[string] = "gfxconvert") =
   const helpMsg = """
 
 Usage:
-  """ & progName & """ --script:FILE --sfxDir:DIR --modDir:DIR --outDir:DIR <input files>
+  """ & progName & """ --script:FILE --sfxdir:DIR --moddir:DIR --outdir:DIR <input files>
 
 Invokes the maxmod utility program to generate a soundbank, and produces Nim-friendly output.
 
@@ -114,9 +85,9 @@ Invokes the maxmod utility program to generate a soundbank, and produces Nim-fri
   var
     files: seq[string]
     script: string
-    sfxDir: string
-    modDir: string
-    outDir: string
+    sfxdir: string
+    moddir: string
+    outdir: string
   
   while true:
     next(p)
@@ -126,9 +97,9 @@ Invokes the maxmod utility program to generate a soundbank, and produces Nim-fri
     of cmdLongOption, cmdShortOption:
       case p.key
       of "script": script = p.val
-      of "sfxDir": sfxDir = p.val
-      of "modDir": modDir = p.val
-      of "outDir": outdir = p.val
+      of "sfxdir": sfxdir = p.val
+      of "moddir": moddir = p.val
+      of "outdir": outdir = p.val
       of "h","help": quit(helpMsg, 0)
       else: quit("Unrecognised option '" & p.key & "'\n" & helpMsg)
     of cmdEnd:
@@ -136,9 +107,9 @@ Invokes the maxmod utility program to generate a soundbank, and produces Nim-fri
   
   if files.len == 0: quit("Please pass one or more input files.\n" & helpMsg, 0)
   if script == "": quit("Please specify --script\n" & helpMsg, 0)
-  if sfxDir == "": quit("Please specify --sfxDir\n" & helpMsg, 0)
-  if modDir == "": quit("Please specify --modDir\n" & helpMsg, 0)
-  if outDir == "": quit("Please specify --outDir\n" & helpMsg, 0)
+  if sfxdir == "": quit("Please specify --sfxdir\n" & helpMsg, 0)
+  if moddir == "": quit("Please specify --moddir\n" & helpMsg, 0)
+  if outdir == "": quit("Please specify --outdir\n" & helpMsg, 0)
   
-  mmConvert(script, sfxDir, modDir, outDir, files)
+  mmConvert(script, sfxdir, moddir, outdir, files)
 

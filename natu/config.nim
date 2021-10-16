@@ -302,7 +302,7 @@ proc mmConvert*(script: static string) =
   cd natuCurrentDir
   
   mkDir(outdir)
-  exec natuExe() & " mmconvert --script:$# --sfxDir:. --modDir:. --outdir:$# $#" % [
+  exec natuExe() & " mmconvert --script:$# --sfxdir:. --moddir:. --outdir:$# $#" % [
     script,
     outdir,
     natuMmList.join(" ")
