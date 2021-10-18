@@ -122,61 +122,25 @@ proc gbaFix*(gbaFile: string) =
     " -t" & get("natu.gameTitle").toUpperAscii()
 
 
-func toCamelCase(name: string): string =
-  var upper = false
-  for c in name:
-    if c == '_': upper = true
-    elif upper:
-      result.add(c.toUpperAscii())
-      upper = false
-    else:
-      result.add(c.toLowerAscii())
-
-proc createMaxmodSoundbank*(files: seq[string], binFile = "soundbank.bin", nimFile = "soundbank.nim") {.deprecated.} =
-  ## Invoke `mmutil` to create a soundbank file.
-  ## Also output a Nim file equivalent to the header file that
-  ## mmutil would usually produce when given the -h option.
-  
-  exec devkitPro() / "tools/bin/mmutil -o" & binFile & " " & files.join(" ")
-  
-  var sfxList, modList: seq[string]
-  
-  for f in files:
-    let (_, name, ext) = splitFile(f)
-    
-    if ext == ".wav":
-      sfxList.add toCamelCase("sfx_" & name)
-    
-    elif ext in [".mod", ".xm", ".s3m", ".it"]:
-      modList.add toCamelCase("mod_" & name)
-  
-  writeFile nimFile, """
-import natu/maxmod
-
-let soundbankBin* = static staticRead("$1").MmSoundbankPtr
-
-type
-  SampleId* {.size: 4.} = enum
-$2
-  ModuleId* {.size: 4.} = enum
-$3
-
-# Allow implicit conversion:
-converter toMmSampleId*(id: SampleId): MmSampleId {.inline.} = id.MmSampleId
-converter toMmModuleId*(id: ModuleId): MmModuleId {.inline.} = id.MmModuleId
-""" % [
-    relativePath(binFile, nimFile.parentDir).replace('\\', '/'),
-    sfxList.join("\n").indent(4),
-    modList.join("\n").indent(4),
-  ]
-
+# Asset conversion
+# ----------------
 
 template doInclude*(path: static string) =
   include `path`
 
-
-proc row(items: varargs[string, `$`]): string =
+proc row*(items: varargs[string, `$`]): string =
   items.join("\t")
+
+func toCamelCase*(str: string, firstUpper = false): string =
+  var makeUpper = firstUpper
+  for i, c in str:
+    if c notin Letters+Digits:
+      makeUpper = true
+    elif makeUpper:
+      result.add(c.toUpperAscii())
+      makeUpper = false
+    else:
+      result.add(c)
 
 
 # Graphics
@@ -187,13 +151,15 @@ type ObjSize* = enum
   s16x8, s32x8, s32x16, s64x32,
   s8x16, s8x32, s16x32, s32x64
 
-proc gfxConvert*(script: static string) =
-  let
-    natuCurrentDir = getCurrentDir()
-  var
-    natuOutput: seq[string]
-    natuPalCounter: int
-    natuIsSharingPal: bool
+var natuGraphics*: seq[string]
+
+proc readGraphics*(script: static string) =
+  
+  natuGraphics = @[]
+  
+  let natuCurrentDir = getCurrentDir()
+  var natuPalCounter: int
+  var natuIsSharingPal: bool
   
   template sharePal(body: untyped) =
     doAssert(not natuIsSharingPal, "sharePal cannot be nested.")
@@ -205,22 +171,20 @@ proc gfxConvert*(script: static string) =
   proc graphic(name: string, size: ObjSize, bpp = 4) =
     let path = name.absolutePath.relativePath(natuCurrentDir)
     doAssert({'\t', '\n'} notin path, path & " contains invalid characters.")
-    natuOutput.add row(path, size, bpp, natuPalCounter)
+    natuGraphics.add row(path, size, bpp, natuPalCounter)
     if not natuIsSharingPal:
       inc natuPalCounter
   
-  var outdir = "output"
   doInclude(script)
   cd natuCurrentDir
-  
-  let tsvFile = outdir/"gfxconvert.tsv"
-  mkDir(outdir)
-  writeFile(tsvFile, natuOutput.join("\n"))
-  exec natuExe() & " gfxconvert $# --script:$# --indir:. --outdir:$#" % [
-    tsvFile,
-    script,
-    outdir,
-  ]
+
+
+proc gfxConvert*(script: static string) =
+  readGraphics(script)
+  let tsvFile = "output/graphics.tsv"
+  mkDir(tsvFile.parentDir)
+  writeFile(tsvFile, natuGraphics.join("\n"))
+  exec natuExe() & " gfxconvert " & tsvFile & " --script:" & script & " --indir:. --outdir:output"
 
 
 # Backgrounds
@@ -242,16 +206,18 @@ type
       ## If this flag is omitted, the PNG's own palette will be strictly followed, and
       ## each 8x8 tile in the image must only refer to colors from a single group of 16.
 
-
 proc toUInt[T](s: set[T]): uint =
   ## Get internal representation of a (<= 32 bits) set in Nimscript.
   for n in s:
     result = result or (1'u shl ord(n))
 
-proc bgConvert*(script: static string) =
+var natuBackgrounds*: seq[string]
+
+proc readBackgrounds*(script: static string) =
+  
+  natuBackgrounds = @[]
   
   let natuCurrentDir = getCurrentDir()
-  var natuOutput: seq[string]
   
   proc background(
     name: string,
@@ -262,48 +228,54 @@ proc bgConvert*(script: static string) =
   ) =
     let path = name.absolutePath.relativePath(natuCurrentDir)
     doAssert({'\t', '\n'} notin path, path & " contains invalid characters.")
-    natuOutput.add row(path, kind, palOffset, tileOffset, flags.toUInt())
+    natuBackgrounds.add row(path, kind, palOffset, tileOffset, flags.toUInt())
   
-  var outdir = "output"
   doInclude(script)
   cd natuCurrentDir
+
+
+proc bgConvert*(script: static string) =
   
-  let tsvFile = outdir/"bgconvert.tsv"
-  mkDir(outdir)
-  writeFile(tsvFile, natuOutput.join("\n"))
-  
-  exec natuExe() & " bgconvert $# --script:$# --indir:. --outdir:$#" % [
-    tsvFile,
-    script,
-    outdir,
-  ]
-  rmFile(tsvFile)
+  readBackgrounds(script)
+  let tsvFile = "output/backgrounds.tsv"
+  mkDir(tsvFile.parentDir)
+  writeFile(tsvFile, natuBackgrounds.join("\n"))
+  exec natuExe() & " bgconvert " & tsvFile & " --script:" & script & " --indir:. --outdir:output"
 
 
 # Audio
 # -----
 
-proc mmConvert*(script: static string) =
+var
+  natuSamples*: seq[string]
+  natuModules*: seq[string]
+
+proc readAudio*(script: static string) =
+  
+  natuSamples = @[]
+  natuModules = @[]
+  
   let natuCurrentDir = getCurrentDir()
-  var natuMmList: seq[string]
   
   proc sample(name: string) =
     let path = name.absolutePath.relativePath(natuCurrentDir)
     doAssert({'\t', '\n'} notin path, path & " contains invalid characters.")
-    natuMmList.add path
+    natuSamples.add path
   
   proc module(name: string) =
     let path = name.absolutePath.relativePath(natuCurrentDir)
     doAssert({'\t', '\n'} notin path, path & " contains invalid characters.")
-    natuMmList.add path
+    natuModules.add path
   
-  var outdir = "output"
   doInclude(script)
   cd natuCurrentDir
-  
-  mkDir(outdir)
-  exec natuExe() & " mmconvert --script:$# --sfxdir:. --moddir:. --outdir:$# $#" % [
+
+
+proc mmConvert*(script: static string) =
+  readAudio(script)
+  mkDir("output")
+  exec natuExe() & " mmconvert --script:$# --sfxdir:. --moddir:. --outdir:output $# $#" % [
     script,
-    outdir,
-    natuMmList.join(" ")
+    natuSamples.join(" "),
+    natuModules.join(" "),
   ]
