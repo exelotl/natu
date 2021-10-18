@@ -15,7 +15,6 @@ template `as`[T](a: typed; t: typedesc[T]): T =
 
 type  
   DisplayMode* {.size:4.} = enum
-    ## Example usage:
     dm0 = 0x0000     ## Tile mode - BG0:text, BG1:text, BG2:text,   BG3:text
     dm1 = 0x0001     ## Tile mode - BG0:text, BG1:text, BG2:affine, BG3:off
     dm2 = 0x0002     ## Tile mode - BG0:off,  BG1:off,  BG2:affine, BG3:affine
@@ -146,9 +145,6 @@ type
     aff64x64
     aff128x128
   
-  BgCntU16* = distinct uint16
-    ## Allows you to implicitly pass a `BgCnt` to a C library that expects an unsigned integer.
-  
   BgCnt* {.exportc.} = object
     ## Background control register value.
     
@@ -177,6 +173,9 @@ type
       ## Value representing the size of the background in tiles.
       ## Regular and affine backgrounds have different sizes available to them, hence
       ## the two different types assignable to this field (`RegBgSize`, `AffBgSize`)
+
+  BgCntU16* = distinct uint16
+    ## Allows you to implicitly pass a `BgCnt` to a C library that expects an unsigned integer.
 
 converter toBgSize*(r: RegBgSize): BgSize = (r.BgSize)
 converter toBgSize*(a: AffBgSize): BgSize = (a.BgSize)

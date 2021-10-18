@@ -3,7 +3,7 @@ when not isMainModule:
     "Please import natu/[core, video, oam, input, irq, tte]".}
 
 import parseopt, strutils, strscans
-import tools/[gbafix, gfxconvert, bgconvert, mmconvert]
+import natu/tools/[gbafix, gfxconvert, bgconvert, mmconvert]
 
 const version = static:
   var res = "0.0.0"

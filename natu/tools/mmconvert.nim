@@ -12,7 +12,7 @@ proc mmConvert*(script, sfxdir, moddir, outdir: string, files: seq[string]) =
   let outputNimPath = outdir / "soundbank.nim"
   
   var newestModifiedIn = getLastModificationTime(script)
-  var oldestModifiedOut = oldest(outdir, outputBinPath, outputNimPath)
+  var oldestModifiedOut = oldest(outputBinPath, outputNimPath)
   
   # collate and check modification dates of input files
   
@@ -38,7 +38,7 @@ proc mmConvert*(script, sfxdir, moddir, outdir: string, files: seq[string]) =
   
   # regenerate the output files if any input files have changed
   
-  if newestModifiedIn >= oldestModifiedOut:
+  if newestModifiedIn > oldestModifiedOut:
     
     echo "Building soundbank:"
     
