@@ -42,7 +42,7 @@ proc gfxConvert*(tsvPath, script, indir, outdir: string) =
   let outputNimPath = outdir / "graphics.nim"
   
   var newestModifiedIn = getLastModificationTime(script)
-  var oldestModifiedOut = oldest(outdir, outputCPath, outputNimPath)
+  var oldestModifiedOut = oldest(outputCPath, outputNimPath)
   
   # parse graphics from .tsv and check their modification dates
   

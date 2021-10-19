@@ -68,7 +68,7 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
   let outputNimPath = outdir / "backgrounds.nim"
   
   var newestModifiedIn = getLastModificationTime(script)
-  var oldestModifiedOut = oldest(outdir, outputCPath, outputNimPath, outputBgDir)
+  var oldestModifiedOut = oldest(outputCPath, outputNimPath, outputBgDir)
   
   createDir(outputBgDir)
   
