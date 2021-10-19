@@ -64,7 +64,7 @@ proc gfxConvert*(tsvPath, script, indir, outdir: string) =
       name: "gfx" & name.toCamelCase(firstUpper=true),
       w: w,
       h: h,
-      bpp: parseInt(row[2]).GfxBpp,
+      bpp: parseEnum[GfxBpp](fmt"gfx{row[2]}bpp"),
       palNum: parseInt(row[3])
     )
   

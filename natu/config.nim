@@ -15,15 +15,9 @@ put "natu.cflags.cpu", "-mcpu=arm7tdmi -mtune=arm7tdmi"
 put "natu.cflags.perf", "-O2 -ffast-math"
 put "natu.cflags.debug", "-g"
 
-# TODO: check how much these two are actually needed nowadays:
-
 # silence some warnings that may occur in the generated C code,
 # but are out of your control.
 put "natu.cflags.noWarn", "-Wno-unused-variable -Wno-unused-but-set-variable -Wno-discarded-qualifiers"
-
-# Nim compiler used to hang on too many warnings/errors (https://github.com/nim-lang/Nim/issues/8648)
-# so I'm keeping this around just in case.
-put "natu.cflags.limitErrors", "-fmax-errors=1"
 
 proc devkitPro*: string =
   result = getEnv("DEVKITPRO")
@@ -71,7 +65,6 @@ proc gbaCfg* =
     get("natu.cflags.debug"),
     get("natu.cflags.perf"),
     get("natu.cflags.noWarn"),
-    get("natu.cflags.limitErrors"),
   ].join(" ")
   
   let ldflags = [
@@ -80,6 +73,11 @@ proc gbaCfg* =
     get("natu.ldflags.debug"),
     get("natu.ldflags.map"),
   ].join(" ")
+  
+  # Remove default GCC flags
+  
+  put "gcc.options.linker", ""
+  put "gcc.options.always", ""
   
   # Work with --gc:arc --os:any
   
