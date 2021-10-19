@@ -13,10 +13,11 @@ type
     ${b.name}
     #end for
 
-#for b in bgRows:
-{.compile:"./backgrounds/${b.name}.c".}
-#end for
-{.compile:"./backgrounds.c".}
+block:
+  #for b in bgRows:
+  {.compile:"./backgrounds/${b.name}.c".}
+  #end for
+  {.compile:"./backgrounds.c".}
 
 let natuBgImgData {.importc, codegenDecl:"extern const $$# $$#".}: array[Background, cstring]
 let natuBgMapData {.importc, codegenDecl:"extern const $$# $$#".}: array[Background, cstring]

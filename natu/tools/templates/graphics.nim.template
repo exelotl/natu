@@ -14,7 +14,8 @@ type
     ${g.name}
     #end for
 
-{.compile:"./graphics.c".}
+block:
+  {.compile:"./graphics.c".}
 
 let palData {.importc:"natuGfxPalData", extern:"natuGfxPalData", codegenDecl:"extern const $$# $$#".}: array[${palDataLen+1}, char]
 let imgData {.importc:"natuGfxImgData", extern:"natuGfxImgData", codegenDecl:"extern const $$# $$#".}: array[${imgDataLen+1}, char]
