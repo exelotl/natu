@@ -34,15 +34,10 @@ template toInt32*(a: Fixed): int32 = a.int32 div FIX_SCALE.int32
 template toFloat32*(a: Fixed): float32 = a.float32 / FIX_SCALE.float32
   ## Convert a fixed point value to floating point.
 
-macro `'fp`*(s: static string): Fixed =
-  ## Suffix for fixed point numeric literal, e.g: `22.5'fp` is equivalent to `fixed(22.5)`
-  ## 
-  ## Requires Nim >= 1.6.0.
-  var f: float
-  if parseFloat(s, f) == 0:
-    error(s & "'fp is not a fixed point literal.")
-  newCall(bindSym("fixed"), newFloatLitNode(f))
-
+when (NimMajor, NimMinor) >= (1, 6):
+  # Enable fixed point numeric literal, e.g: 22.5'fp
+  # (Relegated to external file to keep the parser happy)
+  include fp_literals
 
 template sgn*[T: SomeInteger](x: T): T =
   ## Get the sign of `x`
