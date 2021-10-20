@@ -36,6 +36,8 @@ template toFloat32*(a: Fixed): float32 = a.float32 / FIX_SCALE.float32
 
 macro `'fp`*(s: static string): Fixed =
   ## Suffix for fixed point numeric literal, e.g: `22.5'fp` is equivalent to `fixed(22.5)`
+  ## 
+  ## Requires Nim >= 1.6.0.
   var f: float
   if parseFloat(s, f) == 0:
     error(s & "'fp is not a fixed point literal.")
@@ -55,13 +57,13 @@ template sgn3*[T: SomeInteger](x: T): T =
 
 template sgn*(x: Fixed): int =
   ## Get the sign of `x`
-  if x >= 0'fp: 1
+  if x >= fp(0): 1
   else: -1
 
 template sgn3*(x: Fixed): int =
   ## Tri-state sign: -1 for negative, 0 for 0, +1 for positive.  
-  if x > 0'fp: 1
-  elif x < 0'fp: -1
+  if x > fp(0): 1
+  elif x < fp(0): -1
   else: 0
 
 template reflect*[T](x, min, max: T): T =
