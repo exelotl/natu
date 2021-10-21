@@ -5,7 +5,7 @@
 
 import common
 import types, core
-import std/[macros, parseutils]
+import std/[math, macros, parseutils]
 
 {.compile(toncPath & "/src/tonc_math.c", toncCFlags).}
 {.compile(toncPath & "/asm/div_lut.s", toncAsmFlags).}
@@ -39,51 +39,32 @@ when (NimMajor, NimMinor) >= (1, 6):
   # (Relegated to external file to keep the parser happy)
   include fp_literals
 
-template sgn*[T: SomeInteger](x: T): T =
-  ## Get the sign of `x`
+{.push inline.}
+
+export math.sgn
+
+func sgn*(x: Fixed): int {.borrow.}
+  ## Get the sign of a fixed-point number.
+  ## 
+  ## Returns `-1` when `x` is negative, `1` when `x` is positive, or `0` when x is `0`.
+
+func sign*(x: SomeNumber|Fixed): int =
+  ## Returns `1` or `-1` depending on the sign of `x`.
+  ##
+  ## Note: This never returns `0`. Use `sgn` if you want something that does.
   if x >= 0: 1
   else: -1
 
-template sgn3*[T: SomeInteger](x: T): T =
-  ## Tri-state sign: -1 for negative, 0 for 0, +1 for positive.  
-  if x > 0: 1
-  elif x < 0: -1
-  else: 0
-
-template sgn*(x: Fixed): int =
-  ## Get the sign of `x`
-  if x >= fp(0): 1
-  else: -1
-
-template sgn3*(x: Fixed): int =
-  ## Tri-state sign: -1 for negative, 0 for 0, +1 for positive.  
-  if x > fp(0): 1
-  elif x < fp(0): -1
-  else: 0
-
-template reflect*[T](x, min, max: T): T =
-  ## Reflects `x` at boundaries `min` and `max`
-  ## If `x` is outside the range ``min ..< max``, it'll be placed inside again with the same distance
-  ##  to the 'wall', but on the other side. Example for lower border: `y` = ``min - (x - min)`` = ``2 * min + x``.
-  ## Returns: Reflected value of `x`.
-  ## Note: `max` is exclusive!
-  if x >= max: 2 * (max - 1) - x
-  elif x < min: 2 * min - x
-  else: x
-
-template wrap*[T](x, min, max: T): T =
-  ## Wraps `x` to stay in range ``min ..< max``
-  if x >= max: x + min - max
-  elif x < min: x + max - min
-  else: x
-
-template approach*[T](x: var T, target, step: T) =
+func approach*[T: SomeNumber|Fixed](x: var T, target, step: T) =
   ## Move `x` towards `target` by `step` without exceeding target.
-  ## Step should be a positive number.
+  ## 
+  ## `step` should be a positive number.
   if x < target:
     x = min(x + step, target)
   else:
     x = max(x - step, target)
+
+{.pop.}
 
 
 proc `$`*(a: Fixed): string {.borrow.} # TODO: better implementation?
