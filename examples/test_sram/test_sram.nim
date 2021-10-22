@@ -6,19 +6,19 @@
 ## - Power off the console
 ## - Next time you launch the game, the sprite should be where you left it
 
-import natu
+import natu/[core, tte, video, irq, input, oam]
 
 # position of the sprite on the screen
 var pos = vec2i(0, 0)
 
-# Note: Emulators and flashcarts will try to guess what kind of storage a game uses by
+# Note: Some emulators and flashcarts try to guess what kind of storage a game uses by
 #  searching for a magic string inside the ROM image.
 # See http://problemkaputt.de/gbatek.htm#gbacartbackupids for more info.
 # The string should begin on a word boundary.
 # Inline ASM appears to be a good way to achieve this:
 asm """
 .balign 4
-.string \"SRAM_Vnnn\"
+.string "SRAM_V111"
 """
 
 # Validation:
@@ -54,28 +54,21 @@ proc writeSave() =
 
 proc main() =
   
-  # Recommended waitstate configuration
-  # (To ensure access to cart memory takes the correct number of CPU cycles?)
-  REG_WAITCNT = WS_STANDARD
-  
   # Initialise save
   if not validateSave():
     newSave()
   readSave()
   
   # Enable VBlank interrupt so we can wait for the next frame
-  irqInit()
-  irqEnable(II_VBLANK)
+  irq.init()
+  irq.enable(iiVBlank)
   
   # Show background 0 and sprites
-  dispcnt.init:
-    bg0 = true
-    obj = true
-    obj1d = true
+  dispcnt.init(bg0 = true, obj = true, obj1d = true)
   
   # Initialise text
-  tteInitChr4cDefault(bgnr = 0, initBgCnt(cbb = 0, sbb = 31))
-  tteWrite("""
+  tte.initChr4c(bgnr = 0, initBgCnt(cbb = 0, sbb = 31))
+  tte.write("""
   Natu Save Example
   ---------------------
   Arrows to move.
@@ -85,7 +78,7 @@ proc main() =
   """)
   
   # Hide all sprites
-  for obj in mitems(oamMem):
+  for obj in mitems(objMem):
     obj.hide()
   
   # Fill a tile with white
@@ -94,25 +87,26 @@ proc main() =
   memset32(addr tileMemObj[0][0], octup(1), numBytes div sizeof(uint32))
   
   # Initialise a sprite to display our white tile
-  oamMem[0].init:
-    pos = pos
-    size = s8x8
-    tid = 0
-    pal = 0
+  oamMem[0].init(
+    pos = pos,
+    size = s8x8,
+    tid = 0,
+    pal = 0,
+  )
   
   while true:
     # Update key states
     keyPoll()
     
     # Move the sprite
-    if keyIsDown(KEY_LEFT): pos.x -= 1
-    if keyIsDown(KEY_RIGHT): pos.x += 1
-    if keyIsDown(KEY_UP): pos.y -= 1
-    if keyIsDown(KEY_DOWN): pos.y += 1
+    if keyIsDown(kiLeft): pos.x -= 1
+    if keyIsDown(kiRight): pos.x += 1
+    if keyIsDown(kiUp): pos.y -= 1
+    if keyIsDown(kiDown): pos.y += 1
     
     # Save/load on button press
-    if keyHit(KEY_START): writeSave()
-    if keyHit(KEY_SELECT): readSave()
+    if keyHit(kiStart): writeSave()
+    if keyHit(kiSelect): readSave()
     
     # Wait for next frame
     VBlankIntrWait()
