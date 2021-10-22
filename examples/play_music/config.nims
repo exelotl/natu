@@ -1,4 +1,4 @@
-import os, strutils
+import os, strutils, algorithm
 import natu/config
 
 const main = "play_music.nim"         # path to project file
@@ -19,8 +19,12 @@ if projectPath() == thisDir() / main:
   switch "nimcache", "nimcache"        # output C sources to local directory
   switch "cincludes", nimcacheDir()    # allow external C files to include "{project}.h"
 
+task audio, "convert music and sounds":
+  mmConvert "audio.nims"
+
 task build, "builds the GBA rom":
   let args = commandLineParams()[1..^1].join(" ")
+  audioTask()
   selfExec "c " & args & " -o:" & name & ".elf " & thisDir() / main
   gbaStrip name & ".elf", name & ".gba"
   gbaFix name & ".gba"
@@ -30,7 +34,3 @@ task clean, "removes build files":
   rmFile name & ".gba"
   rmFile name & ".elf"
   rmFile name & ".elf.map"
-
-task audio, "create soundbank via mmutil":
-  let files = listFiles("audio")
-  createMaxmodSoundbank(files)

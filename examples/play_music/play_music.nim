@@ -1,21 +1,9 @@
 ## Maxmod Example
 ## ==============
 ## This example demonstrates playing music and sfx with maxmod.
-## 
-## NOTE: Before building, you should run
-## ::
-##   $ nim audio
-## 
-## to generate the soundbank. The generated files should ideally be
-## gitignored in your project.
-## 
-## If you need something smarter (e.g. always rebuilding the soundbank
-## if a file was added or changed), the best choice for now is to make
-## your own project helper tool. I hope to provide something better in
-## the future (which could handle graphics too).
 
 import natu/[core, irq, tte, input, maxmod]
-import ./soundbank
+include ./output/soundbank
 
 proc main() =
   
@@ -24,7 +12,6 @@ proc main() =
   tte.initChr4c(bgnr = 0, initBgCnt(cbb = 0, sbb = 31))
   
   tte.write """
-
     Maxmod Demo
     Press A for sfx
 """

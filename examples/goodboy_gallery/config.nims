@@ -1,4 +1,4 @@
-import os, strutils
+import os, strutils, algorithm
 import natu/config
 
 const main = "source/goodboy_gallery.nim"  # path to project file
