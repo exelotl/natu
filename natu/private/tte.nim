@@ -44,19 +44,16 @@ import common
 import types, surface, reg, math
 from video import clrOrange, clrYellow
 
-{.compile(toncPath & "/src/font/sys8.s", toncAsmFlags).}
 {.compile(toncPath & "/src/font/verdana10.s", toncAsmFlags).}
 {.compile(toncPath & "/src/font/verdana9_b4.s", toncAsmFlags).}
 {.compile(toncPath & "/src/font/verdana9b.s", toncAsmFlags).}
 {.compile(toncPath & "/src/font/verdana9i.s", toncAsmFlags).}
-{.compile(toncPath & "/src/font/verdana9.s", toncAsmFlags).}
 {.compile(toncPath & "/src/tte/ase_drawg.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/bmp16_drawg_b1cs.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/bmp16_drawg.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/bmp8_drawg_b1cs.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/bmp8_drawg_b1cts_fast.s", toncAsmFlags).}
 {.compile(toncPath & "/src/tte/bmp8_drawg.c", toncCFlags).}
-{.compile(toncPath & "/src/tte/chr4c_drawg_b1cts.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/chr4c_drawg_b1cts_fast.s", toncAsmFlags).}
 {.compile(toncPath & "/src/tte/chr4c_drawg_b4cts.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/chr4c_drawg_b4cts_fast.s", toncAsmFlags).}
@@ -66,13 +63,10 @@ from video import clrOrange, clrYellow
 {.compile(toncPath & "/src/tte/se_drawg.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/tte_init_ase.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/tte_init_bmp.c", toncCFlags).}
-{.compile(toncPath & "/src/tte/tte_init_chr4c.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/tte_init_chr4r.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/tte_init_obj.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/tte_init_se.c", toncCFlags).}
 # {.compile(toncPath & "/src/tte/tte_iohook.c", toncCFlags).}  # Natu doesn't support stdio.
-{.compile(toncPath & "/src/tte/tte_main.c", toncCFlags).}
-{.compile(toncPath & "/src/tte/tte_types.s", toncAsmFlags).}
 
 
 # Constants

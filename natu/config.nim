@@ -17,7 +17,7 @@ put "natu.cflags.debug", "-g"
 
 # silence some warnings that may occur in the generated C code,
 # but are out of your control.
-put "natu.cflags.noWarn", "-Wno-unused-variable -Wno-unused-but-set-variable -Wno-discarded-qualifiers"
+put "natu.cflags.noWarn", "-Wno-unused-variable -Wno-unused-but-set-variable -Wno-discarded-qualifiers -Wno-incompatible-pointer-types"
 
 proc devkitPro*: string =
   result = getEnv("DEVKITPRO")
@@ -101,8 +101,12 @@ proc gbaCfg* =
   switch "cc", "gcc"
   switch "lineTrace", "off"
   switch "stackTrace", "off"
+  switch "excessiveStackTrace", "off"
   switch "cincludes", natuDir/"vendor/libtonc/include"
   switch "cincludes", natuDir/"vendor/maxmod/include"
+  
+  # Natu panic handler
+  patchFile("stdlib", "fatal", natuDir/"natu/private/fatal")
   
   # Ensure subprocesses can see the DLLs in tools/bin
   putEnv "PATH", devkitPro()/"tools"/"bin" & PathSep & getEnv("PATH")

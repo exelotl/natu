@@ -18,10 +18,8 @@
 import common
 import types, video
 
-{.compile(toncPath & "/src/tonc_surface.c", toncCFlags).}
 {.compile(toncPath & "/src/tonc_sbmp16.c", toncCFlags).}
 {.compile(toncPath & "/src/tonc_sbmp8.c", toncCFlags).}
-{.compile(toncPath & "/src/tonc_schr4c.c", toncCFlags).}
 {.compile(toncPath & "/src/tonc_schr4r.c", toncCFlags).}
 
 type
