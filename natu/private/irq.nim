@@ -23,7 +23,7 @@ type
 
 # TODO: clean up below?
 
-# Options for ``irq.put``
+# Options for `irq.put`
 # const ISR_LAST:uint32 = 0x0040      ## Last isr in line (Lowest priority)
 const ISR_REPLACE:uint32 = 0x0080   ## Replace old isr if existing (prio ignored)
 
@@ -54,7 +54,7 @@ proc init*(isr: FnPtr = nil) {.importc: "irq_init", header: "tonc.h".}
   ## **Parameters:**
   ## 
   ## isr
-  ##   Master ISR. If nil, ``isrMaster`` is used
+  ##   Master ISR. If nil, `isrMaster` is used
   ## 
 
 proc setMaster*(isr: FnPtr = nil): FnPtr {.importc: "irq_set_master", header: "tonc.h", discardable.}
@@ -63,13 +63,15 @@ proc setMaster*(isr: FnPtr = nil): FnPtr {.importc: "irq_set_master", header: "t
   ## **Parameters:**
   ## 
   ## isr
-  ##   Master ISR. If nil, ``isrMaster`` is used
+  ##   Master ISR. If nil, `isrMaster` is used
   ## 
   ## Returns: Previous master ISR
 
-proc add*(irqId: IrqIndex; isr: FnPtr = nil): FnPtr {.importc: "irq_add", header: "tonc.h", discardable.}
-  ## Add a specific ISR
-  ## Special case of ``irq.set``. If the interrupt has an ISR already it'll be replaced; if not it will add it in the back.
+proc add*(irqId: IrqIndex; isr: FnPtr): FnPtr {.importc: "irq_add", header: "tonc.h", discardable.}
+  ## 
+  ## Enable an interrupt, and register a handler for it.
+  ## 
+  ## If the interrupt already has a handler it will be replaced.
   ## 
   ## **Parameters:**
   ## 
@@ -79,24 +81,24 @@ proc add*(irqId: IrqIndex; isr: FnPtr = nil): FnPtr {.importc: "irq_add", header
   ## isr
   ##   Interrupt service routine for this irq; can be nil
   ## 
-  ## Returns: Previous ISR
+  ## Returns: The previous handler, if any.
 
 proc delete*(irqId: IrqIndex): FnPtr {.importc: "irq_delete", header: "tonc.h", discardable.}
-  ## Remove an ISR
+  ## 
+  ## Disalble an interrupt, and remove its handler.
   ## 
   ## **Parameters:**
   ## 
   ## irqId
   ##   Index of irq.
   ## 
-  ## Returns: Previous ISR
+  ## Returns: The handler that was removed.
 
 
 proc irqSet(irqId: IrqIndex; isr: FnPtr; opts: uint32): FnPtr {.importc: "irq_set", header: "tonc.h", discardable.}
 
 
-template put*(irqId: IrqIndex; isr: FnPtr = nil; prio: range[0..64] = 64; replace = false): FnPtr =
-  {.warning:"put() is potentially buggy, recommend to instead use irq.add, irq.delete, irq.enable, irq.disable".}
+template put*(irqId: IrqIndex; isr: FnPtr; prio: range[0..64] = 64; replace = false): FnPtr =
   ## 
   ## Insert or replace a handler for an interrupt.
   ## 
@@ -120,8 +122,9 @@ template put*(irqId: IrqIndex; isr: FnPtr = nil; prio: range[0..64] = 64; replac
   ##   Replace old isr if existing (prio ignored)
   ##   TODO: check that this works? (implementation looks buggy...)
   ## 
-  ## Returns: previous specific ISR    # TODO what does this mean?
+  ## Returns: The previous handler, if any.
   ## 
+  {.warning:"put() is potentially buggy, recommend to use irq.add and irq.delete instead.".}
   var opts = cast[uint32](prio)
   if replace:
     opts = opts or ISR_REPLACE
