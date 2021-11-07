@@ -76,6 +76,8 @@ proc `layers=`*(dcnt: var DispCnt, layers: DisplayLayers) =
   v = ((v and not DCNT_LAYER_MASK) or (cast[uint32](layers) shl DCNT_LAYER_SHIFT))
   dcnt = v as DispCnt
 
+const allDisplayLayers* = { lBg0, lBg1, lBg2, lBg3, lObj }
+
 
 # Display Status Register
 # -----------------------
@@ -187,14 +189,14 @@ converter toBgCnt*(b: BgCntU16): BgCnt = (b as BgCnt)
 # ----------------
 
 type
-  WinBoundsH* {.exportc:"WinBoundsH".} = object
+  WinH* {.exportc:"WinH".} = object
     ## Defines the horizontal bounds of a window (left ..< right)
     right* {.bitsize:8.}: uint8
     left* {.bitsize:8.}: uint8
-  WinBoundsV* {.exportc:"WinBoundsV".} = object
+  WinV* {.exportc:"WinV".} = object
     ## Defines the vertical bounds of a window (top ..< bottom)
-    top* {.bitsize:8.}: uint8
     bottom* {.bitsize:8.}: uint8
+    top* {.bitsize:8.}: uint8
   
   WindowLayer* {.size:1.} = enum
     wlBg0, wlBg1, wlBg2, wlBg3, wlObj, wlBlend
@@ -202,6 +204,8 @@ type
   WinCnt* = set[WindowLayer]
     ## Allows to make changes to one half of a window control register.
 
+const
+  allWindowLayers* = { wlBg0, wlBg1, wlBg2, wlBg3, wlObj, wlBlend }
 
 # Mosaic
 # ------
@@ -239,7 +243,7 @@ type
   
   BlendLayers* {.size:2.} = set[BlendLayer]
 
-const blAll* = { blBg0, blBg1, blBg2, blBg3, blObj, blBd }
+const allBlendLayers* = { blBg0, blBg1, blBg2, blBg3, blObj, blBd }
 
 proc a*(bld: BldCnt): BlendLayers =
   ## Upper layer of color special effects.
@@ -338,17 +342,17 @@ proc state*(keyinput: InvertedKeyState): KeyState =
   ## Flip the `keyinput` register to obtain the set of keys which are currently pressed.
   {KeyIndex.low .. KeyIndex.high} - cast[KeyState](keyinput)
 
-var dispcnt*  {.importc:"(*(volatile DispCnt*)(0x04000000))", nodecl.}: DispCnt             ## Display control register
+var dispcnt* {.importc:"(*(volatile DispCnt*)(0x04000000))", nodecl.}: DispCnt              ## Display control register
 var dispstat* {.importc:"(*(volatile DispStat*)(0x04000004))", nodecl.}: DispStat           ## Display status register
 let vcount* {.importc:"(*(volatile NU16*)(0x04000006))", nodecl.}: uint16                   ## Scanline count (read only)
 var bgcnt* {.importc:"((volatile BgCnt*)(0x04000008))", nodecl.}: array[4, BgCnt]           ## BG control registers
 var bgofs* {.importc:"((volatile BG_POINT*)(0x04000010))", nodecl.}: array[4, BgOfs]        ## [Write only!] BG scroll registers
 var bgaff* {.importc:"((volatile BG_AFFINE*)(0x04000020))", nodecl.}: array[2..3, BgAffine] ## [Write only!] Affine parameters (matrix and scroll offset) for BG2 and BG3, depending on display mode.
 
-var win0h* {.importc:"(*(volatile WinBoundsH*)(0x04000040))", nodecl.}: WinBoundsH  ## [Write only!] Sets the left and right bounds of window 0
-var win1h* {.importc:"(*(volatile WinBoundsH*)(0x04000042))", nodecl.}: WinBoundsH  ## [Write only!] Sets the left and right bounds of window 1 
-var win0v* {.importc:"(*(volatile WinBoundsV*)(0x04000044))", nodecl.}: WinBoundsV  ## [Write only!] Sets the upper and lower bounds of window 0
-var win1v* {.importc:"(*(volatile WinBoundsV*)(0x04000046))", nodecl.}: WinBoundsV  ## [Write only!] Sets the upper and lower bounds of window 1
+var win0h* {.importc:"(*(volatile WinH*)(0x04000040))", nodecl.}: WinH  ## [Write only!] Sets the left and right bounds of window 0
+var win1h* {.importc:"(*(volatile WinH*)(0x04000042))", nodecl.}: WinH  ## [Write only!] Sets the left and right bounds of window 1 
+var win0v* {.importc:"(*(volatile WinV*)(0x04000044))", nodecl.}: WinV  ## [Write only!] Sets the upper and lower bounds of window 0
+var win1v* {.importc:"(*(volatile WinV*)(0x04000046))", nodecl.}: WinV  ## [Write only!] Sets the upper and lower bounds of window 1
 
 var win0cnt* {.importc:"REG_WIN0CNT", header:"tonc.h".}: WinCnt  ## Window 0 control
 var win1cnt* {.importc:"REG_WIN1CNT", header:"tonc.h".}: WinCnt  ## Window 1 control
@@ -368,7 +372,7 @@ import macros
 
 type
   ReadWriteRegister = DispCnt | DispStat | BgCnt | WinCnt | BldCnt | BlendAlpha
-  WriteOnlyRegister = BgOfs | BgAffine | WinBoundsH | WinBoundsV | BlendBrightness
+  WriteOnlyRegister = BgOfs | BgAffine | WinH | WinV | BlendBrightness
   WritableRegister = ReadWriteRegister | WriteOnlyRegister
 
 macro writeRegister(register: WritableRegister, args: varargs[untyped]) =
