@@ -12,6 +12,13 @@ const
   IWRAM_CODE* = "__attribute__((section(\".iwram\"), target(\"arm\"), long_call)) $# $#$#"  ## Put procedure in IWRAM.
   EWRAM_CODE* = "__attribute__((section(\".ewram\"), long_call)) $# $#$#"  ## Put procedure in EWRAM.
 
+const
+  DataInIwram* = "__attribute__((section(\".iwram\"))) $# $#"    ## Put variable in IWRAM (default).
+  DataInEwram* = "__attribute__((section(\".ewram\"))) $# $#"    ## Put variable in EWRAM.
+  DataInEwramBss* = "__attribute__((section(\".sbss\"))) $# $#"      ## Put non-initialized variable in EWRAM.
+  ArmCodeInIwram* = "__attribute__((section(\".iwram\"), target(\"arm\"), long_call)) $# $#$#"  ## Put procedure in IWRAM.
+  ThumbCodeInEwram* = "__attribute__((section(\".ewram\"), long_call)) $# $#$#"  ## Put procedure in EWRAM.
+
 
 type
   Block* {.importc: "BLOCK", header: "tonc.h", bycopy, completeStruct.} = object

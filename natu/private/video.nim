@@ -407,3 +407,7 @@ proc sbbClear*(sbb: int) {.inline, deprecated:"Use seMem[i].clear() instead.".} 
 
 proc sbbClearRow*(sbb, row: int) {.inline, deprecated:"Use seMem[i].clearRow(n) instead.".} =
   memset32(addr seMem[sbb][row*32], 0, 32 div 2)
+
+# proc setWindow*(id: range[0..1], bounds: Rect) {.inline.} =
+#   winh[id] = WinBoundsH(left: bounds.left.uint8, right: bounds.right.uint8)
+#   winv[id] = WinBoundsV(top: bounds.top.uint8, bottom: bounds.bottom.uint8)
