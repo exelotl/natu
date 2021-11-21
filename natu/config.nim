@@ -11,7 +11,7 @@ put "natu.gameCode", "2NTP"
 # C compiler options, may be overidden
 
 put "natu.cflags.target", "-mthumb -mthumb-interwork"
-put "natu.cflags.cpu", "-mcpu=arm7tdmi -mtune=arm7tdmi"
+put "natu.cflags.cpu", "-mcpu=arm7tdmi"
 put "natu.cflags.perf", "-O2 -ffast-math"
 put "natu.cflags.debug", "-g"
 
