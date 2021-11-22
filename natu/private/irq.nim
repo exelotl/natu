@@ -9,40 +9,11 @@
 import common
 import types, core
 
+export types.IrqIndex
+
 {.compile(toncPath & "/src/tonc_irq.c", toncCFlags).}
 {.compile(toncPath & "/asm/tonc_isr_master.s", toncAsmFlags).}
 {.compile(toncPath & "/asm/tonc_isr_nest.s", toncAsmFlags).}
-
-type
-  IrqIndex* {.size: sizeof(cint).} = enum
-    ## IRQ indices, used to enable/disable and register handlers for interrupts.
-    iiVBlank=0, iiHBlank,  iiVCount,  iiTimer0,
-    iiTimer1,   iiTimer2,  iiTimer3,  iiSerial,
-    iiDma0,     iiDma1,    iiDma2,    iiDma3,
-    iiKeypad,   iiGamepak
-
-# TODO: clean up below?
-
-# Options for `irq.put`
-# const ISR_LAST:uint32 = 0x0040      ## Last isr in line (Lowest priority)
-const ISR_REPLACE:uint32 = 0x0080   ## Replace old isr if existing (prio ignored)
-
-# const
-#   ISR_PRIO_MASK*:uint32 = 0x003F
-#   ISR_PRIO_SHIFT*:uint32 = 0
-
-# template ISR_PRIO*(n: uint32): uint32 =
-#   ((n) shl ISR_PRIO_SHIFT)
-
-# const
-#   ISR_DEF*:uint32 = (ISR_LAST or ISR_REPLACE)
-
-# type
-#   IRQ_REC* {.importc: "struct IRQ_REC", header: "tonc.h", bycopy.} = object
-#     ## Struct for prioritized irq table
-#     flag* {.importc: "flag".}: uint32  ## Flag for interrupt in REG_IF, etc
-#     isr* {.importc: "isr".}: FnPtr     ## Pointer to interrupt routine
-
 
 proc isrMaster*() {.importc: "isr_master", header: "tonc.h".}
 proc isrMasterNest*() {.importc: "isr_master_nest", header: "tonc.h".}
@@ -125,9 +96,12 @@ template put*(irqId: IrqIndex; isr: FnPtr; prio: range[0..64] = 64; replace = fa
   ## Returns: The previous handler, if any.
   ## 
   {.warning:"put() is potentially buggy, recommend to use irq.add and irq.delete instead.".}
+  
+  const IsrReplace = 0x0080'u32   # Replace old isr if existing (prio ignored)
+  
   var opts = cast[uint32](prio)
   if replace:
-    opts = opts or ISR_REPLACE
+    opts = opts or IsrReplace
   irqSet(irqId, isr, opts)
   
 

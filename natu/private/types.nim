@@ -1,6 +1,9 @@
 # Basic structs and typedefs
 # ==========================
 
+static:
+  doAssert(sizeof(int) == 4)
+  
 type
   FnPtr* = proc () {.nimcall.}    ## Function pointer, used for interrupt handlers etc.
 
@@ -92,15 +95,14 @@ type
     dx* {.importc: "dx".}: int32
     dy* {.importc: "dy".}: int32
 
+# Memory map structs
+# ==================
 
-## Memory map structs
-## ==================
+# Tertiary types
+# These types are used for memory mapping of VRAM, affine registers 
+#  and other areas that would benefit from logical memory mapping.
 
-## Tertiary types
-## These types are used for memory mapping of VRAM, affine registers 
-##  and other areas that would benefit from logical memory mapping.
-
-## Regular bg points; range: :0010 - :001F
+# Regular bg points; range: :0010 - :001F
 
 type
   BgPoint* = Point16
@@ -234,6 +236,9 @@ proc `=sink`*(dst: var ObjAffine, src: ObjAffine) =
 {.pop.}
 
 
+# Input
+# -----
+
 type
   KeyIndex* = enum
     ## Bit positions for `reg.keyinput` and `reg.keycnt`.
@@ -250,3 +255,16 @@ type
     kiL            ## Shoulder L
   
   KeyState* {.size:2.} = set[KeyIndex]
+
+
+# Interrupts
+# ----------
+
+type
+  IrqIndex* {.size: 4.} = enum
+    ## IRQ indices, used to enable/disable and register handlers for interrupts.
+    iiVBlank,   iiHBlank,  iiVCount,  iiTimer0,
+    iiTimer1,   iiTimer2,  iiTimer3,  iiSerial,
+    iiDma0,     iiDma1,    iiDma2,    iiDma3,
+    iiKeypad,   iiGamepak
+

@@ -10,7 +10,12 @@ import ./common
 #include "tonc_bios.h"
 """.}
 
-proc panic*(msg1: cstring; msg2: cstring = nil) {.noreturn.} =
+# TODO:
+# rewrite this in pure Nim
+# make it available to fatal.nim via importc
+# put the "common" {.compile.} pragmas back in their relevant modules.
+
+proc panic*(msg1: cstring; msg2: cstring = nil) {.exportc: "natuPanic", noreturn.} =
   {.emit:"""
     REG_IME = 0;
     RegisterRamReset(RESET_VRAM | RESET_REG_SOUND | RESET_REG);

@@ -4,7 +4,7 @@
 {.warning[UnusedImport]: off.}
 
 import common
-import types, memdef, bios, math
+import types, memdef, math
 from core import oamSizes
 
 {.compile(toncPath & "/src/tonc_oam.c", toncCFlags).}

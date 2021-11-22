@@ -1,5 +1,5 @@
-import private/[acsl, types, memmap, core, math, bios, reg]
-export types, core, math, bios, reg
+import private/[acsl, types, memmap, core, math, reg]
+export types, core, math, reg
 
 # Exporting memmap arrays.
 # (size constants are unnecessary because you can do e.g. sizeof(sramMem))

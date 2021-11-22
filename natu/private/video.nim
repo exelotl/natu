@@ -5,7 +5,7 @@
 {.warning[UnusedImport]: off.}
 
 import common
-import types, core, math, bios, memmap, memdef
+import types, core, math, memmap, memdef
 
 {.compile(toncPath & "/src/tonc_video.c", toncCFlags).}
 {.compile(toncPath & "/src/tonc_bg_affine.c", toncCFlags).}

@@ -1,4 +1,3 @@
-
 # Constants needed to compile individual source files from libtonc
 
 const toncPath* = "../../vendor/libtonc"
