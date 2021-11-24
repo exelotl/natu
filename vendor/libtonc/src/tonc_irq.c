@@ -131,11 +131,11 @@ fnptr irq_set(enum eIrqIndex irq_id, fnptr isr, u32 opts)
 	
 	prio= opts&(ISR_LAST|ISR_PRIO_MASK);
 
-	// IRS already exists; replace?
+	// ISR already exists; replace?
 	if(pir[slot].flag == irq_flag)
 	{
 		// Replace desired -> do so
-		if((prio & ISR_REPLACE) || slot == prio)
+		if((opts & ISR_REPLACE) || slot == prio)
 		{
 			old_isr= pir[slot].isr;
 			pir[slot].isr= isr;
