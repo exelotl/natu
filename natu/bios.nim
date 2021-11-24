@@ -3,7 +3,8 @@
 ## 
 ## Interfaces to the GBA system calls (software interrupts).
 ## 
-## These functions use PascalCase as that is the convention used by Tonc, GBATek and others.
+## These functions use PascalCase as that is the convention used by Tonc, GBATek and others,
+## which also helps to avoid conflicts for `div` and `mod` which are reserved words in Nim.
 ## 
 
 import ./private/types

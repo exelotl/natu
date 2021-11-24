@@ -240,28 +240,11 @@ func `size=`*(obj: var ObjAttr, size: ObjSize) {.inline.} = (addr obj).size = si
 func `aff=`*(obj: var ObjAttr, aff: int) {.inline.} = (addr obj).aff = aff
 func `prio=`*(obj: var ObjAttr, prio: int) {.inline.} = (addr obj).prio = prio
 
-import macros
-
-macro writeObj(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
-  result = newStmtList()
-  if args.len == 1 and args[0].kind == nnkStmtList:
-    for i, node in args[0]:
-      if node.kind != nnkAsgn:
-        error("Expected assignment, got " & repr(node))
-      let (key, val) = (node[0], node[1])
-      result.add quote do:
-        `obj`.`key` = `val`
-  else:
-    for i, node in args:
-      if node.kind != nnkExprEqExpr:
-        error("Expected assignment, got " & repr(node))
-      let (key, val) = (node[0], node[1])
-      result.add quote do:
-        `obj`.`key` = `val`
+from ./utils import writeFields
 
 template initObj*(args: varargs[untyped]): ObjAttr =
   var obj: ObjAttr
-  writeObj(obj, args)
+  writeFields(obj, args)
   obj
 
 template init*(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
@@ -278,18 +261,19 @@ template init*(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
   ##     tid = 0
   ##     pal = 3
   obj.setAttr(0, 0, 0)
-  writeObj(obj, args)
+  writeFields(obj, args)
 
 template edit*(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
   ## Update some fields of an object.
   ## 
   ## Like `obj.init`, but omitted fields will be left unchanged.
-  writeObj(obj, args)
+  ## 
+  writeFields(obj, args)
 
 
 template dup*(obj: ObjAttr, args: varargs[untyped]): ObjAttr =
   var tmp = obj
-  tmp.edit(args)
+  writeFields(tmp, args)
   tmp
 
 

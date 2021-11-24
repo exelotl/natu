@@ -1,7 +1,9 @@
 
 ## High level wrappers over register definitions from memmap.nim
 
-import types, memdef
+import ./types
+import ./memdef
+from ./utils import writeFields
 
 {.push inline.}
 
@@ -375,38 +377,6 @@ type
   WriteOnlyRegister = BgOfs | BgAffine | WinH | WinV | BlendBrightness
   WritableRegister = ReadWriteRegister | WriteOnlyRegister
 
-macro writeRegister(register: WritableRegister, args: varargs[untyped]) =
-  ## Common implementation of `init` and `edit` templates below
-  result = newStmtList()
-  if args.len == 1 and args[0].kind == nnkStmtList:
-    for i, node in args[0]:
-      case node.kind
-      of nnkCall, nnkCommand:
-        node.insert(1, register)
-        result.add(node)
-      of nnkAsgn:
-        let (key, val) = (node[0], node[1])
-        result.add quote do:
-          `register`.`key` = `val`
-      else:
-        error("Expected assignment, got " & repr(node))
-  else:
-    for i, node in args:
-      case node.kind
-      of nnkCall, nnkCommand:
-        node.insert(1, register)
-        result.add(node)
-      of nnkExprEqExpr:
-        let (key, val) = (node[0], node[1])
-        result.add quote do:
-          `register`.`key` = `val`
-      else:
-        error("Expected assignment, got " & repr(node))
-        
-
-template clear*[T:WritableRegister](r: T) =
-  ## Set all bits in a register to zero.
-  r = 0.T
 
 template init*[T:WritableRegister](r: T, args: varargs[untyped]) =
   ## Initialise an IO register to some combination of flags/values.
@@ -436,8 +406,12 @@ template init*[T:WritableRegister](r: T, args: varargs[untyped]) =
   ## But this would be slower because `dispcnt` is _volatile_, so the C compiler can't optimise these lines into a single assignment.
   ## 
   var tmp: T
-  writeRegister(tmp, args)
+  writeFields(tmp, args)
   r = tmp
+
+template clear*[T:WritableRegister](r: T) =
+  ## Set all bits in a register to zero.
+  r = default(T)
 
 template edit*[T:ReadWriteRegister](r: T, args: varargs[untyped]) =
   ## Update the value of some fields in a register.
@@ -459,7 +433,7 @@ template edit*[T:ReadWriteRegister](r: T, args: varargs[untyped]) =
   ##   dispcnt = tmp
   ##
   var tmp = r
-  writeRegister(tmp, args)
+  writeFields(tmp, args)
   r = tmp
 
 template dup*[T:ReadWriteRegister](r: T, args: varargs[untyped]): T =
@@ -470,21 +444,21 @@ template dup*[T:ReadWriteRegister](r: T, args: varargs[untyped]): T =
   ##   # Make BG1 use the same tiles as BG0, but different map data.
   ##   bgcnt[1] = bgcnt[0].dup(sbb = 29)
   var res = r
-  writeRegister(res, args)
+  writeFields(res, args)
   res
 
 template initDispCnt*(args: varargs[untyped]): DispCnt =
   ## Create a new display control register value.
   ## Omitted fields default to zero.
   var dcnt: DispCnt
-  writeRegister(dcnt, args)
+  writeFields(dcnt, args)
   dcnt
 
 template initBgCnt*(args: varargs[untyped]): BgCnt =
   ## Create a new background control register value.
   ## Omitted fields default to zero.
   var bg: BgCnt
-  writeRegister(bg, args)
+  writeFields(bg, args)
   bg
 
 

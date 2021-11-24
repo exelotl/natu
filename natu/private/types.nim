@@ -2,10 +2,11 @@
 # ==========================
 
 static:
+  # Make sure we're actually compiling for a 32-bit system.
   doAssert(sizeof(int) == 4)
-  
+
 type
-  FnPtr* = proc () {.nimcall.}    ## Function pointer, used for interrupt handlers etc.
+  FnPtr* {.exportc.} = proc () {.nimcall.}    ## Function pointer, used for interrupt handlers etc.
 
 # To be used with codegenDecl pragma:
 const
@@ -15,12 +16,17 @@ const
   IWRAM_CODE* = "__attribute__((section(\".iwram\"), target(\"arm\"), long_call)) $# $#$#"  ## Put procedure in IWRAM.
   EWRAM_CODE* = "__attribute__((section(\".ewram\"), long_call)) $# $#$#"  ## Put procedure in EWRAM.
 
+# Newer alternatives:
 const
-  DataInIwram* = "__attribute__((section(\".iwram\"))) $# $#"    ## Put variable in IWRAM (default).
-  DataInEwram* = "__attribute__((section(\".ewram\"))) $# $#"    ## Put variable in EWRAM.
-  DataInEwramBss* = "__attribute__((section(\".sbss\"))) $# $#"      ## Put non-initialized variable in EWRAM.
-  ArmCodeInIwram* = "__attribute__((section(\".iwram\"), target(\"arm\"), long_call)) $# $#$#"  ## Put procedure in IWRAM.
-  ThumbCodeInEwram* = "__attribute__((section(\".ewram\"), long_call)) $# $#$#"  ## Put procedure in EWRAM.
+  DataInIwram* = "__attribute__((section(\".data\"))) $# $#"    ## Put variable in IWRAM (default).
+  DataInEwram* = "__attribute__((section(\".sbss\"))) $# $#"    ## Put variable in EWRAM
+  ArmCodeInIwram* = "__attribute__((section(\".iwram\"), target(\"arm\"), long_call)) $# $#$#"      ## Put procedure in IWRAM.
+  ThumbCodeInEwram* = "__attribute__((section(\".ewram\"), target(\"thumb\"), long_call)) $# $#$#"  ## Put procedure in EWRAM.
+
+# Note:
+#
+# `DataInEwram` uses the `.sbss` section to avoid section conflicts
+# when used with `ThumbCodeInEwram` in the same file.
 
 
 type
