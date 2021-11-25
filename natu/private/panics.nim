@@ -1,39 +1,21 @@
-{.warning[UnusedImport]: off.}
-import ./common
-
-{.emit:"""/*INCLUDESECTION*/
-#include "tonc_memmap.h"
-#include "tonc_memdef.h"
-#include "tonc_core.h"
-#include "tonc_video.h"
-#include "tonc_tte.h"
-#include "tonc_bios.h"
-""".}
-
-# TODO:
-# rewrite this in pure Nim
-# make it available to fatal.nim via importc
-# put the "common" {.compile.} pragmas back in their relevant modules.
+import natu/[core, bios, irq, tte, video]
 
 proc panic*(msg1: cstring; msg2: cstring = nil) {.exportc: "natuPanic", noreturn.} =
-  {.emit:"""
-    REG_IME = 0;
-    RegisterRamReset(RESET_VRAM | RESET_REG_SOUND | RESET_REG);
-    REG_DISPCNT = DCNT_BG0;
-    
-    int bgnr = 0;
-    u16 bgcnt = BG_CBB(0) | BG_SBB(31);
-    tte_init_chr4c(bgnr, bgcnt, 0xF000, 0x0201, CLR_ORANGE<<16|CLR_WHITE, &verdana9Font, NULL);
-    
-    pal_bg_bank[0][0] = RGB15(0,0,4);
-    tte_set_pos(8, 8);
-    tte_set_margins(8, 8, 232, 152);
-    tte_write("AN ERROR OCCURRED:\n\n");
-    tte_write(msg1);
-    if (msg2) {
-      tte_write(msg2);
-    }
-    while (1) {
-      ASM_NOP();
-    }
-  """.}
+  
+  ime = false
+  
+  RegisterRamReset({ rsVram, rsSound, rsRegisters })
+  
+  dispcnt.init(bg0 = true)
+  
+  tte.initChr4c(bgnr = 0, bgcnt = initBgCnt(cbb=0, sbb=31))
+  bgColorMem[0] = rgb5(0,0,4)
+  tte.setPos(8, 8)
+  tte.setMargins(8, 8, 232, 152)
+  tte.write("AN ERROR OCCURRED:\n\n")
+  tte.write(msg1)
+  if msg2 != nil:
+    tte.write(msg2)
+  
+  while true:
+    asm "nop"

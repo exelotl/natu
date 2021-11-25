@@ -7,32 +7,32 @@
 ## which also helps to avoid conflicts for `div` and `mod` which are reserved words in Nim.
 ## 
 
-import ./private/types
+import ./private/[types, common]
 
-{.warning[UnusedImport]: off.}
-import ./private/common
+{.compile(toncPath & "/asm/tonc_bios.s", toncAsmFlags).}
+{.compile(toncPath & "/asm/tonc_bios_ex.s", toncAsmFlags).}
 
 type
   ResetFlag* = enum
-    ResetEwram      ## Clear 256K on-board WRAM.
-    ResetIwram      ## Clear 32K in-chip WRAM, except for the last 0x200 bytes
-    ResetPalette    ## Clear Palette
-    ResetVram       ## Clear VRAM
-    ResetOam        ## Clear OAM. (does not disable OBJs!)
-    ResetSio        ## Reset serial registers (switches to general purpose mode)
-    ResetSound      ## Reset sound registers
-    ResetRegisters  ## Reset all other registers
+    rsEwram      ## Clear 256K on-board RAM.
+    rsIwram      ## Clear 32K in-chip RAM, except for the last 0x200 bytes
+    rsPalette    ## Clear palette
+    rsVram       ## Clear VRAM
+    rsOam        ## Clear OAM (does not disable OBJs!)
+    rsSio        ## Reset serial registers (switches to general purpose mode)
+    rsSound      ## Reset sound registers
+    rsRegisters  ## Reset all other registers
   
   ResetFlags* {.size:4.} = set[ResetFlag]
     ## A bitset of flags to be passed to `RegisterRamReset`
   
   CpuSetMode* = enum
-    cmCopy   ## Copy data
-    cmFill   ## Fill data (source pointer remains fixed)
+    csmCopy   ## Copy data
+    csmFill   ## Fill data (source pointer remains fixed)
   
   CpuSetStride* = enum
-    csHalfwords  ## Copy/fill by 2 bytes at a time
-    csWords      ## Copy/fill by 4 bytes at a time
+    cssHalfwords  ## Copy/fill by 2 bytes at a time
+    cssWords      ## Copy/fill by 4 bytes at a time
   
   CpuSetOptions* {.bycopy.} = object
     count* {.bitsize:24.}: uint          ## Number of words/halfwords to process.
@@ -65,11 +65,11 @@ type
 
 type
   BitUnpackOptions* {.byref.} = object
-    srcLen*: uint16  ## source length (bytes)
-    srcBpp*: uint8   ## source bitdepth (1,2,4,8)
-    dstBpp*: uint8   ## destination bitdepth (1,2,4,8,16,32)
-    dstOffset* {.bitsize:31.}: uint   ## Value added to all non-zero elements.
-    offsetZeros* {.bitsize:1.}: bool  ## If true, `dstOffset` will also be added to zero elements.
+    srcLen*: uint16  ## Source length (bytes)
+    srcBpp*: uint8   ## Source bitdepth (1,2,4,8)
+    dstBpp*: uint8   ## Destination bitdepth (1,2,4,8,16,32)
+    dstOffset* {.bitsize:31.}: uint  ## Value added to all non-zero elements.
+    incZeros* {.bitsize:1.}: bool    ## If true, `dstOffset` will also be added to zero elements.
   
   MultibootOptions* {.byref.} = object
     reserved1*: array[5, uint32]
