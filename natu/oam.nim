@@ -3,9 +3,13 @@
 
 {.warning[UnusedImport]: off.}
 
-import common
-import types, memdef, math
-from core import oamSizes
+import private/[common, types, memdef, math]
+from private/core import oamSizes
+from private/memmap import objMem, objAffMem
+from private/utils import writeFields
+
+export objMem, objAffMem
+export ObjAttr, ObjAffine, ObjAttrPtr, ObjAffinePtr
 
 {.compile(toncPath & "/src/tonc_oam.c", toncCFlags).}
 {.compile(toncPath & "/src/tonc_obj_affine.c", toncCFlags).}
@@ -239,8 +243,6 @@ func `is8bpp=`*(obj: var ObjAttr, is8bpp: bool) {.inline.} = (addr obj).is8bpp =
 func `size=`*(obj: var ObjAttr, size: ObjSize) {.inline.} = (addr obj).size = size
 func `aff=`*(obj: var ObjAttr, aff: int) {.inline.} = (addr obj).aff = aff
 func `prio=`*(obj: var ObjAttr, prio: int) {.inline.} = (addr obj).prio = prio
-
-from ./utils import writeFields
 
 template initObj*(args: varargs[untyped]): ObjAttr =
   var obj: ObjAttr

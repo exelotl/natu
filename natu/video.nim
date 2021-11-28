@@ -4,8 +4,7 @@
 
 {.warning[UnusedImport]: off.}
 
-import common
-import types, core, math, memmap, memdef
+import private/[common, types, core, math, memmap, memdef]
 
 {.compile(toncPath & "/src/tonc_video.c", toncCFlags).}
 {.compile(toncPath & "/src/tonc_bg_affine.c", toncCFlags).}

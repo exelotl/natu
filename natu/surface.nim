@@ -15,8 +15,8 @@
 
 {.warning[UnusedImport]: off.}
 
-import common
-import types, video
+import ./video
+import private/[common, types]
 
 {.compile(toncPath & "/src/tonc_surface.c", toncCFlags).}
 {.compile(toncPath & "/src/tonc_sbmp16.c", toncCFlags).}
