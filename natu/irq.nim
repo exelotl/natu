@@ -15,10 +15,10 @@
 
 {.warning[UnusedImport]: off.}
 
+import std/volatile
 import private/[common, types]
 import ./core
 
-{.compile(toncPath & "/src/tonc_irq.c", toncCFlags).}
 {.compile(toncPath & "/asm/tonc_isr_master.s", toncAsmFlags).}
 {.compile(toncPath & "/asm/tonc_isr_nest.s", toncAsmFlags).}
 
@@ -35,7 +35,17 @@ type
     ## 
     ## Earlier handlers take less time to resolve, and will be resolved first
     ## in the event that two interrupts are both waiting to be acknowledged.
-
+  
+  IrqSender = object
+    ## Address of register (relative to 0x04000000) along with the bit that
+    ## should be set in order for the desired interrupt to be fired.
+    ofs, bit: uint16
+  
+  IrqIndexes32 {.size: 4.} = set[IrqIndex]
+  
+  IrqRecord {.importc:"IRQ_REC", header:"tonc_irq.h".} = object
+    flag {.importc:"flag".}: IrqIndexes32
+    handler {.importc:"isr".}: FnPtr
 
 # Register definitions
 # --------------------
@@ -93,7 +103,42 @@ proc isrMasterNest* {.importc: "isr_master_nest", codegenDecl: ArmCodeInIwram.}
 # Interrupt management procedures
 # -------------------------------
 
-proc init*(isr: FnPtr = isrMaster) {.importc: "irq_init".}
+var records {.exportc:"__isr_table".}: array[ord(IrqIndex.high) + 2, IrqRecord]
+
+const senders: array[IrqIndex, IrqSender] = [
+  iiVBlank:  IrqSender(ofs: 0x0004, bit: 0x0008),
+  iiHBlank:  IrqSender(ofs: 0x0004, bit: 0x0010),
+  iiVCount:  IrqSender(ofs: 0x0004, bit: 0x0020),
+  iiTimer0:  IrqSender(ofs: 0x0102, bit: 0x0040),
+  iiTimer1:  IrqSender(ofs: 0x0106, bit: 0x0040),
+  iiTimer2:  IrqSender(ofs: 0x010A, bit: 0x0040),
+  iiTimer3:  IrqSender(ofs: 0x010E, bit: 0x0040),
+  iiSerial:  IrqSender(ofs: 0x0128, bit: 0x4000),
+  iiDma0:    IrqSender(ofs: 0x00BA, bit: 0x4000),
+  iiDma1:    IrqSender(ofs: 0x00C6, bit: 0x4000),
+  iiDma2:    IrqSender(ofs: 0x00D2, bit: 0x4000),
+  iiDma3:    IrqSender(ofs: 0x00DE, bit: 0x4000),
+  iiKeypad:  IrqSender(ofs: 0x0132, bit: 0x4000),
+  iiGamepak: IrqSender(), # N/A
+]
+
+# TODO: move into some utils module
+proc peek[T](address: ptr T): T {.inline.} = volatileLoad(address)
+proc poke[T](address: ptr T, value: T) {.inline.} = volatileStore(address, value)
+
+template doEnable(i: IrqIndex) =
+  let sender = senders[i]
+  let reg = cast[ptr uint16](0x4000000'u32 + sender.ofs.uint32)
+  poke(reg, peek(reg) or sender.bit)
+  ie.incl(i)
+
+template doDisable(i: IrqIndex) =
+  let sender = senders[i]
+  let reg = cast[ptr uint16](0x4000000'u32 + sender.ofs.uint32)
+  poke(reg, peek(reg) and not sender.bit)
+  ie.excl(i)
+
+proc init*(isr: FnPtr = isrMaster) =
   ## Initialize the interrupt manager.
   ## 
   ## Clears the list of handlers, and sets up a master ISR.
@@ -102,18 +147,33 @@ proc init*(isr: FnPtr = isrMaster) {.importc: "irq_init".}
   ## 
   ## isr
   ##   Master interrupt service routine.
+  ## 
+  ime = false
+  
+  # Clear interrupt table (just in case)
+  memset32(addr records, 0, sizeof(records) div sizeof(uint32))
+  
+  assert(isr != nil)
+  irq.isr = isr
+  ime = true
 
-proc setMasterIsr*(isr: FnPtr = isrMaster): FnPtr {.importc: "irq_set_master", header: "tonc.h", discardable.}
+proc setMasterIsr*(isr: FnPtr = isrMaster) =
   ## Set a master ISR
   ## 
   ## **Parameters:**
   ## 
   ## isr
   ##   Master interrupt service routine.
-  ## 
-  ## Returns: Previous master ISR
+  ##
+  let tmp = ime
+  ime = false
+  
+  assert(isr != nil)
+  irq.isr = isr
+  
+  ime = tmp
 
-proc put*(irqId: IrqIndex; handler: FnPtr): FnPtr {.importc: "irq_add", header: "tonc.h", discardable.} =
+proc put*(irqId: IrqIndex; handler: FnPtr) =
   ## 
   ## Enable an interrupt, and register a handler for it.
   ## 
@@ -129,14 +189,66 @@ proc put*(irqId: IrqIndex; handler: FnPtr): FnPtr {.importc: "irq_add", header: 
   ##   The specific interrupt service routine to be registered for the given interrupt.
   ##   Can be `nil`, which is equivalent to adding a handler that does nothing.
   ## 
-  ## Returns: The previous handler, if any.
-  ## 
+  let tmp = ime
+  ime = false
+  
+  doEnable(irqId)
+  
+  for r in mitems(records):
+    if r.flag == {} or r.flag == {irqId}:
+      r.flag = {irqId}
+      r.handler = handler
+      break
+  
+  ime = tmp
 
-proc add*(irqId: IrqIndex; handler: FnPtr): FnPtr {.
-  importc: "irq_add", header: "tonc.h", discardable, deprecated:"irq.add has been renamed to irq.put".}
+proc add*(irqId: IrqIndex; handler: FnPtr) {.error:"irq.add has been renamed to irq.put".}
 
-
-proc irqSet(irqId: IrqIndex; handler: FnPtr; opts: uint32): FnPtr {.importc: "irq_set", header: "tonc.h".}
+proc putImpl(irqId: IrqIndex; handler: FnPtr; opts: uint32) =
+  let tmp = ime
+  ime = false
+  
+  let desiredPos = (opts and 0x7f).int
+  let keepOldPos = (opts and 0x80).bool
+  let flag = {irqId}
+  
+  doEnable(irqId)
+  
+  var i = 0
+  
+  # find a record which is empty *or* already using this irq
+  while records[i].flag - flag != {}:
+    inc i
+  
+  if records[i].flag == flag:
+    # irq already in use
+    
+    if i == desiredPos or keepOldPos:
+      # replace existing handler
+      records[i].handler = handler
+      ime = tmp
+      # nothing more to do.
+      return
+    
+    else:
+      # remove existing handler by shifting the rest left.
+      while true:
+        records[i] = records[i+1]
+        if records[i].flag == {}:
+          break
+        inc i
+  
+  # now we have an index to an empty record.
+  # if the desired position is earlier in the list,
+  # shift everything right to make room.
+  while i > desiredPos:
+    records[i] = records[i-1]
+    dec i
+  
+  records[i].flag = flag
+  records[i].handler = handler
+  
+  ime = tmp
 
 proc put*(irqId: IrqIndex; handler: FnPtr; prio: IrqPriority; keepOldPrio = false): FnPtr {.inline, discardable.} =
   ## 
@@ -160,14 +272,12 @@ proc put*(irqId: IrqIndex; handler: FnPtr; prio: IrqPriority; keepOldPrio = fals
   ## keepOldPrio
   ##   If true and we're replacing an existing handler, then `prio` will be ignored.
   ## 
-  ## Returns: The previous handler, if any.
-  ## 
   var opts = cast[uint32](prio)
   if keepOldPrio:
     opts = opts or 0x0080'u32  # Set flag to directly replace old ISR if existing (prio ignored)
-  irqSet(irqId, handler, opts)
+  putImpl(irqId, handler, opts)
 
-proc delete*(irqId: IrqIndex): FnPtr {.importc: "irq_delete", header: "tonc.h", discardable.}
+proc delete*(irqId: IrqIndex) =
   ## 
   ## Disable an interrupt, and remove its handler.
   ## 
@@ -176,11 +286,36 @@ proc delete*(irqId: IrqIndex): FnPtr {.importc: "irq_delete", header: "tonc.h", 
   ## irqId
   ##   Interrupt request index.
   ## 
-  ## Returns: The handler that was removed.
+  let tmp = ime
+  ime = false
+  
+  let flag = {irqId}
+  
+  doDisable(irqId)
+  
+  # find a record which is using this irq (or is empty)
+  var i = 0
+  while records[i].flag - flag != {}:
+    inc i
+  
+  # remove record by shifting the rest left
+  while records[i].flag != {}:
+    records[i] = records[i+1]
+    inc i
+  
+  ime = tmp
 
 
-proc enable*(irqId: IrqIndex) {.importc: "irq_enable", header: "tonc.h".}
+proc enable*(irqId: IrqIndex) =
   ## Enable an interrupt.
+  let tmp = ime
+  ime = false
+  doEnable(irqId)
+  ime = tmp
 
-proc disable*(irqId: IrqIndex) {.importc: "irq_disable", header: "tonc.h".}
+proc disable*(irqId: IrqIndex) =
   ## Disable an interrupt.
+  let tmp = ime
+  ime = false
+  doDisable(irqId)
+  ime = tmp
