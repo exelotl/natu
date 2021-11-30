@@ -112,11 +112,10 @@ type
     ##  procedure. The default renderers use 1bpp 8x8 tiled graphics,
     ##  where for multi-tiled cells the tiles are in a *vertical*
     ##  'strip' format. In a 16x16 cell, the 4 tiles would be arranged as:
-    ##  +---+---+
-    ##  | 0 | 2 |
-    ##  +---+---+
-    ##  | 1 | 3 |
-    ##  +---+---+
+    ##  === ===
+    ##   0   2
+    ##   1   3
+    ##  === ===
     data*: pointer                      ## Character data.
     widths*: ptr UncheckedArray[uint8]  ## Width table for variable width font.
     heights*: ptr UncheckedArray[uint8] ## Height table for variable height font.

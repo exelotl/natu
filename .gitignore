@@ -1,6 +1,7 @@
 .vscode/
 .sync/
 wip/
+docs/
 examples/*/output/
 examples/*/build/
 examples/*/nimcache/

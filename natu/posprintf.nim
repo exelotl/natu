@@ -4,8 +4,6 @@
 
 proc posprintf*(dest: cstring, src: cstring) {.importc, varargs.}
   ##[
-  To call: posprintf(char *dest, const char *src[, param1[, param2[, ... paramN]]]);
-  
   - src must be a valid zero-terminated C string.
   - dest must point to a sufficiently large block of memory to contain the result string.
   

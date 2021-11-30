@@ -1,11 +1,10 @@
-## BIOS Routines
-## =============
+## This module exposes the GBA system calls (aka. BIOS functions).
 ## 
-## Interfaces to the GBA system calls (software interrupts).
+## The function names are `PascalCase` as is the convention used by Tonc, GBATek and others,
+## which also helps to avoid clashing with Nim's reserved keywords such as `div` and `mod`.
 ## 
-## These functions use PascalCase as that is the convention used by Tonc, GBATek and others,
-## which also helps to avoid conflicts for `div` and `mod` which are reserved words in Nim.
-## 
+## .. attention::
+##   These aren't fully documented yet - please refer to `GBATek <https://rust-console.github.io/gbatek-gbaonly/#biosfunctions>`_ in the meantime.
 
 import ./private/[types, common]
 
@@ -99,8 +98,8 @@ type
 
 
 
-## BASIC BIOS ROUTINES
-## -------------------
+# BASIC BIOS ROUTINES
+# -------------------
 
 # Reset Functions
 
@@ -145,7 +144,7 @@ proc Div*(num, den: int): int {.importc.}
   ## 
   ## Returns num / den
   ## 
-  ## .. note:: Dividing by 0 results in an infinite loop. Try `DivSafe` instead
+  ## .. note:: Dividing by zero results in an infinite loop. Try `DivSafe <#DivSafe,int,int>`_ instead.
 
 proc DivArm*(den, num: int): int {.importc.}
   ## Basic integer division, but with switched arguments (swi 0x07).
@@ -158,7 +157,7 @@ proc DivArm*(den, num: int): int {.importc.}
   ## num
   ##   Numerator.
   ## 
-  ## Returns num / den
+  ## Returns `num / den`
   ## 
   ## .. note:: Dividing by 0 results in an infinite loop.
 
@@ -257,11 +256,13 @@ proc ObjAffineSet*(src: ptr ObjAffineSource; dst: pointer; num: int; offset: int
   ## matrices (either BG or Object) with a certain transformation. The
   ## matrix created is:
   ## 
+  ## ```
   ## +-----------+------------+
   ## | sx·cos(α) | -sx·sin(α) |
   ## +-----------+------------+
   ## | sy·sin(α) | sy·cos(α)  |
   ## +-----------+------------+
+  ## ```
   ## 
   ## **Parameters:**
   ##
@@ -277,8 +278,9 @@ proc ObjAffineSet*(src: ptr ObjAffineSource; dst: pointer; num: int; offset: int
   ## offset
   ##   Offset between affine elements. Use 2 for BG and 8 for object matrices.
   ## 
-  ## .. note:: Each element in `src` needs to be word aligned, which
-  ##    devkitPro doesn't do anymore by itself.
+  ## .. note::
+  ##   Each element in `src` needs to be word aligned, which
+  ##   devkitPro doesn't do anymore by itself.
 
 proc BgAffineSet*(src: ptr BgAffineSource; dst: ptr BgAffineDest; num: int) {.importc.}
   ## Sets up a simple scale-then-rotate affine transformation (swi 0x0F).
@@ -373,8 +375,8 @@ proc VBlankIntrDelay*(count: uint) {.importc.}
 proc DivSafe*(num, den: int): int {.importc.}
   ## Divide-by-zero safe division.
   ## 
-  ## The standard `Div` hangs when `den == 0`. This version will return `int.high` or `int.low` 
-  ## in that case, depending on the sign of `num`, or just `num/den` if `den` is not 0.
+  ## The standard `Div <#Div,int,int>`_ hangs when `den == 0`. This version will return `int.high` or `int.low`,
+  ## depending on the sign of `num`.
   ## 
   ## **Parameters:**
   ## 
@@ -383,6 +385,8 @@ proc DivSafe*(num, den: int): int {.importc.}
   ## 
   ## den
   ##   Denominator.
+  ## 
+  ## Returns `num / den`
 
 proc Mod*(num, den: int): int {.importc.}
   ## Modulo: `num % den`.
@@ -400,7 +404,8 @@ proc DivArmAbs*(den, num: int): uint {.importc.}
   ## Absolute value of `num / den`
 
 proc CpuFastFill*(wd: uint32; dst: pointer; words: uint) {.importc.}
-  ## A fast word fill
+  ## A fast word fill.
+  ## 
   ## While you can perform fills with `CpuFastSet()`, the fact that
   ## swi 0x01 requires a source address makes it awkward to use.
   ## This function is more like the traditional memset formulation.

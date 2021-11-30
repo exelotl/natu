@@ -1,3 +1,36 @@
+## 
+## This module exposes the `waitcnt <#waitcnt_2>`_ register, which controls the number of
+## CPU cycles taken to access cart memory (ROM and SRAM).
+## 
+## The "standard" setting (used by most commercial games) is as follows:
+## 
+## .. code-block:: nim
+##   waitcnt.init(
+##     sram = wss_8,      # 8 cycles to access SRAM.
+##     rom0 = ws0_n3s1,   # 3 cycles to access ROM, or 1 cycle for sequential access.
+##     rom2 = ws2_n8s8,   # 8 cycles to access ROM (mirror #2) which may be used for flash storage.
+##     prefetch = true    # prefetch buffer enabled.
+##   )
+## 
+## In this example, `waitcnt.rom0` determines the access time for the default view into ROM.
+## 
+## The preferred access time of "3,1" works on every flashcart *except* for
+## the SuperCard SD and its derivatives. If you want to support the SuperCard
+## without compromising performance for all, you can try something like this:
+## 
+## .. code-block:: nim
+##   if slowGamePak():
+##     waitcnt.init(rom0 = ws0_n4s2)
+##   else:
+##     waitcnt.init(rom0 = ws0_n3s1)
+## 
+## There are two additional ROM mirrors located at `0x0A000000` and `0x0C000000`,
+## which have access times determined by `waitcnt.rom1` and `waitcnt.rom2`.
+## 
+## The mirrors may be useful for carts containing multiple ROM chips. For example
+## on some carts the upper 128KiB of ROM is mapped to flash storage which would
+## require different access timings.
+
 import ./core
 import ./private/utils
 import std/volatile
@@ -47,7 +80,7 @@ type
   
   WsPhi* = enum
     ## PHI Terminal Output
-    wsPhiOff    ## Disabled (recommended)
+    wsPhiOff    ## Disabled (recommended because I have no idea what this is)
     wsPhi4MHz   ## 4.19MHz 
     wsPhi8MHz   ## 8.38MHz
     wsPhi16MHz  ## 16.78MHz
@@ -59,44 +92,13 @@ type
     rom1* {.bitsize:3.}: WsRom1   ## ROM access time (alt. #1)
     rom2* {.bitsize:3.}: WsRom2   ## ROM access time (alt. #2)
     phi* {.bitsize:2.}: WsPhi
-    unused {.bitsize:1.}: bool
+    `-` {.bitsize:1.}: bool
     prefetch* {.bitsize:1.}: bool ## Prefetch buffer enabled.
     gb {.bitsize:1.}: bool
 
 
 var waitcnt* {.importc:"(*(volatile WaitCnt*)(0x04000204))", nodecl.}: WaitCnt
-  ##
-  ## This register controls the number of CPU cycles taken to access cart memory.
-  ## 
-  ## The "standard" setting (used by most commercial games) is as follows:
-  ## 
-  ## .. code-block:: nim
-  ##   waitcnt.init(
-  ##     sram = wss_8,      # 8 cycles to access SRAM.
-  ##     rom0 = ws0_n3s1,   # 3 cycles to access ROM, 1 cycle for sequential access.
-  ##     rom2 = ws2_n8s8,   # 8 cycles to access ROM mirror 2 which may be used for flash storage.
-  ##     prefetch = true    # prefetch buffer enabled.
-  ##   )
-  ## 
-  ## The default view into ROM has its access time determined by `waitcnt.rom0`.
-  ## 
-  ## The preferred access time of "3,1" works on every flashcart *except* for
-  ## the SuperCard SD and its derivatives. If you want to support the SuperCard
-  ## without compromising performance for all, you can try something like this:
-  ## 
-  ## .. code-block:: nim
-  ##   if slowGamePak():
-  ##     waitcnt.init(rom0 = ws0_n4s2)
-  ##   else:
-  ##     waitcnt.init(rom0 = ws0_n3s1)
-  ## 
-  ## There are two additional ROM mirrors located at `0x0A000000` and `0x0C000000`,
-  ## which have access times determined by `waitcnt.rom1` and `waitcnt.rom2`.
-  ## 
-  ## The mirror timings may be useful for carts containing multiple ROM chips. For
-  ## example on some carts the upper 128KiB of ROM is mapped to flash storage which
-  ## would require different access timings.
-
+  ## Waitstate control register.
 
 template init*(r: WaitCnt, args: varargs[untyped]) =
   var tmp: WaitCnt
@@ -112,8 +114,8 @@ template edit*(r: WaitCnt, args: varargs[untyped]) =
 let data = [305419896'u32, 270441'u32, 3735928559'u32]  # Some arbitrary data in ROM.
 
 proc slowGamePak*: bool {.codegenDecl:EWRAM_CODE.} =
-  ## Check if the cartridge does not support fast ROM access
-  ## (e.g. the game is running on SuperCard SD)
+  ## Check if the cartridge does not support fast ROM access, which might
+  ## be the case if the game is running on the SuperCard MiniSD.
   
   let old = waitcnt
   var a, b, c: array[3, uint32]

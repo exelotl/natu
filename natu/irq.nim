@@ -1,8 +1,17 @@
-## Interrupts
-## ----------
-## Hardware interrupt management.
+## Hardware interrupt manager from Tonc (see `the chapter on interrupts <https://www.coranac.com/tonc/text/interrupts.htm>`_).
 ## 
-## For details, see http://www.coranac.com/tonc/text/interrupts.htm
+## This module does expose the registers directly, but for most purposes you don't need to
+## worry about them as the IRQ management procs can take care of everything:
+## 
+## =================================== ================================================
+## Procedure                           Description
+## =================================== ================================================
+## `irq.init <#init,FnPtr>`_           Initialise the interrupt manager.
+## `irq.enable <#enable,IrqIndex>`_    Enable an interrupt.
+## `irq.put <#put,IrqIndex,FnPtr>`_    Enable an interrupt and register a handler for it.
+## `irq.disable <#disable,IrqIndex>`_  Disable an interrupt.
+## `irq.delete <#delete,IrqIndex>`_    Disable an interrupt and remove its handler.
+## =================================== ================================================
 
 {.warning[UnusedImport]: off.}
 
@@ -30,11 +39,11 @@ var ie* {.importc:"(*(volatile NU16*)(0x4000200))", nodecl.}: set[IrqIndex]
   ## "Interrupt Enable" register.
   ## 
   ## Setting a bit allows an interrupt to be received. But nothing will
-  ## happen unless you also set the relevant bit to request the interrupt,
+  ## happen unless the relevant bit to request the interrupt is also set,
   ## e.g. `dispcnt.vblankIrq = true`.
   ## 
   ## .. note::
-  ##   When calling the  this will be taken care of for you.
+  ##   `irq.put <#put,IrqIndex,FnPtr>`_ or `irq.enable <#enable,IrqIndex>`_ will take care of this for you.
 
 var `if`* {.importc:"(*(volatile NU16*)(0x4000202))", nodecl.}: set[IrqIndex]
   ## "Interrupt Flags" register.
@@ -51,7 +60,7 @@ var `if`* {.importc:"(*(volatile NU16*)(0x4000202))", nodecl.}: set[IrqIndex]
 var ime* {.importc:"(*(volatile NU8*)(0x4000208))", nodecl.}: bool
   ## "Interrupt Master Enable" register.
   ## 
-  ## Set this to `false` to disable all interrupts.
+  ## Setting this to `false` will disable all interrupts.
   ## 
   ## .. note::
   ##   Calling `irq.init()` will set this to true.
@@ -59,13 +68,13 @@ var ime* {.importc:"(*(volatile NU8*)(0x4000208))", nodecl.}: bool
 var ifbios* {.importc:"(*(volatile NU16*)(0x03FFFFF8))", nodecl.}: set[IrqIndex]
   ## "BIOS Interrupt Flags" register.
   ## 
-  ## This is used in addition to 
-  ## 
-  ## Usage is the same as the `if` register, except this must be used in addition to it 
+  ## In addition to the `if` register, this must be acknowledged in order to
+  ## wake up from the `IntrWait` and `VBlankIntrWait` system calls.
   ## 
 
 var `isr`* {.importc:"(*(volatile FnPtr*)(0x03FFFFFC))", nodecl.}: FnPtr
-  ## Contains the address of the master ISR.
+  ## Contains the address of the master Interrupt Service Routine.
+
 
 # Available interrupt service routines
 # ------------------------------------
