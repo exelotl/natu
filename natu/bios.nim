@@ -8,6 +8,8 @@
 
 import ./private/[types, common]
 
+from ./irq import IrqIndex
+
 {.compile(toncPath & "/asm/tonc_bios.s", toncAsmFlags).}
 {.compile(toncPath & "/asm/tonc_bios_ex.s", toncAsmFlags).}
 

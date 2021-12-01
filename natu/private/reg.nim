@@ -338,11 +338,6 @@ converter toBgOfs*(p: BgPoint): BgOfs =
   p.BgOfs
 ]#
 
-type InvertedKeyState* = distinct uint16
-
-proc state*(keyinput: InvertedKeyState): KeyState =
-  ## Flip the `keyinput` register to obtain the set of keys which are currently pressed.
-  {KeyIndex.low .. KeyIndex.high} - cast[KeyState](keyinput)
 
 var dispcnt* {.importc:"(*(volatile DispCnt*)(0x04000000))", nodecl.}: DispCnt              ## Display control register
 var dispstat* {.importc:"(*(volatile DispStat*)(0x04000004))", nodecl.}: DispStat           ## Display status register
@@ -366,8 +361,6 @@ var mosaic* {.importc:"REG_MOSAIC", header:"tonc.h".}: Mosaic   ## [Write only!]
 var bldcnt* {.importc:"REG_BLDCNT", header:"tonc.h".}: BldCnt          ## Blend control register
 var bldalpha* {.importc:"REG_BLDALPHA", header:"tonc.h".}: BlendAlpha  ## Alpha blending fade coefficients
 var bldy* {.importc:"REG_BLDY", header:"tonc.h".}: BlendBrightness     ## [Write only!] Brightness (fade in/out) coefficient
-
-let keyinput* {.importc:"REG_KEYINPUT", header:"tonc.h".}: InvertedKeyState   ## The current state of the keypad (read only)
 
 
 import macros

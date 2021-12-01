@@ -1,4 +1,4 @@
-import private/[acsl, types, memmap, core, math, reg]
+import private/[types, memmap, core, math, reg]
 export types, core, math, reg
 
 # Exporting memmap arrays.

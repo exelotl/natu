@@ -1,3 +1,5 @@
+{.used.}
+
 import natu/[core, bios, irq, tte, video]
 
 proc panic*(msg1: cstring; msg2: cstring = nil) {.exportc: "natuPanic", noreturn.} =

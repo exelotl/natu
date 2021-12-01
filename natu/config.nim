@@ -106,7 +106,7 @@ proc gbaCfg* =
   switch "cincludes", natuDir/"vendor/maxmod/include"
   
   # Natu panic handler
-  switch "import", natuDir/"natu/private/panics"
+  switch "import", natuDir/"natu/private/essentials"
   patchFile("stdlib", "fatal", natuDir/"natu/private/fatal")
   
   # Ensure subprocesses can see the DLLs in tools/bin

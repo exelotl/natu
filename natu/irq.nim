@@ -18,13 +18,18 @@
 import private/[common, types]
 import ./core
 
-export types.IrqIndex
-
 {.compile(toncPath & "/src/tonc_irq.c", toncCFlags).}
 {.compile(toncPath & "/asm/tonc_isr_master.s", toncAsmFlags).}
 {.compile(toncPath & "/asm/tonc_isr_nest.s", toncAsmFlags).}
 
 type
+  IrqIndex* {.size: 4.} = enum
+    ## IRQ indices, used to enable/disable and register handlers for interrupts.
+    iiVBlank,   iiHBlank,  iiVCount,  iiTimer0,
+    iiTimer1,   iiTimer2,  iiTimer3,  iiSerial,
+    iiDma0,     iiDma1,    iiDma2,    iiDma3,
+    iiKeypad,   iiGamepak
+  
   IrqPriority* = range[0..14]
     ## The desired position of a handler in the list of interrupt handlers.
     ## 
@@ -71,6 +76,8 @@ var ifbios* {.importc:"(*(volatile NU16*)(0x03FFFFF8))", nodecl.}: set[IrqIndex]
   ## In addition to the `if` register, this must be acknowledged in order to
   ## wake up from the `IntrWait` and `VBlankIntrWait` system calls.
   ## 
+  ## .. note::
+  ##   The master ISR will take care of this for you.
 
 var `isr`* {.importc:"(*(volatile FnPtr*)(0x03FFFFFC))", nodecl.}: FnPtr
   ## Contains the address of the master Interrupt Service Routine.

@@ -1,3 +1,5 @@
+{.used.}
+
 const AcslAsmFlags = "-I" & currentSourcePath[0..^22] & "/vendor/acsl/asminc"
 
 {.compile("../../vendor/acsl/stdlib/calloc.s", AcslAsmFlags).}

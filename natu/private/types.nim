@@ -240,37 +240,3 @@ proc `=sink`*(dst: var ObjAffine, src: ObjAffine) =
   dst.pd = src.pd
 
 {.pop.}
-
-
-# Input
-# -----
-
-type
-  KeyIndex* = enum
-    ## Bit positions for `reg.keyinput` and `reg.keycnt`.
-    ## Used with input module functions such as `keyIsDown`.
-    kiA            ## Button A
-    kiB            ## Button B
-    kiSelect       ## Select button
-    kiStart        ## Start button
-    kiRight        ## Right D-pad
-    kiLeft         ## Left D-pad
-    kiUp           ## Up D-pad
-    kiDown         ## Down D-pad
-    kiR            ## Shoulder R
-    kiL            ## Shoulder L
-  
-  KeyState* {.size:2.} = set[KeyIndex]
-
-
-# Interrupts
-# ----------
-
-type
-  IrqIndex* {.size: 4.} = enum
-    ## IRQ indices, used to enable/disable and register handlers for interrupts.
-    iiVBlank,   iiHBlank,  iiVCount,  iiTimer0,
-    iiTimer1,   iiTimer2,  iiTimer3,  iiSerial,
-    iiDma0,     iiDma1,    iiDma2,    iiDma3,
-    iiKeypad,   iiGamepak
-
