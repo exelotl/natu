@@ -65,54 +65,54 @@ type
     mmMix27Khz
     mmMix31Khz
   
-  MmSoundEffect* {.importc: "mm_sound_effect", header:"mm_types.h", bycopy.} = object
-    id* {.importc: "id".}: uint32              ## sample ID (defined in soundbank header)
-    rate* {.importc: "rate".}: uint16          
-    handle* {.importc: "handle".}: MmSfxHandle ## sound handle
-    volume* {.importc: "volume".}: uint8       ## volume, 0..255
-    panning* {.importc: "panning".}: uint8     ## panning, 0..255
+  MmSoundEffect* {.bycopy.} = object
+    id*: uint32              ## sample ID (defined in soundbank header)
+    rate*: uint16          
+    handle*: MmSfxHandle ## sound handle
+    volume*: uint8       ## volume, 0..255
+    panning*: uint8     ## panning, 0..255
   
-  MmGbaSystem* {.importc: "mm_gba_system", header:"mm_types.h", bycopy.} = object
-    mixingMode* {.importc: "mixing_mode".}: MmMixMode
-    modChannelCount* {.importc: "mod_channel_count".}: uint32
-    mixChannelCount* {.importc: "mix_channel_count".}: uint32
-    moduleChannels* {.importc: "module_channels".}: pointer
-    activeChannels* {.importc: "active_channels".}: pointer
-    mixingChannels* {.importc: "mixing_channels".}: pointer
-    mixingMemory* {.importc: "mixing_memory".}: pointer
-    waveMemory* {.importc: "wave_memory".}: pointer
-    soundbank* {.importc: "soundbank".}: MmSoundbankPtr
+  MmGbaSystem* {.bycopy.} = object
+    mixingMode*: MmMixMode
+    modChannelCount*: uint32
+    mixChannelCount*: uint32
+    moduleChannels*: pointer
+    activeChannels*: pointer
+    mixingChannels*: pointer
+    mixingMemory*: pointer
+    waveMemory*: pointer
+    soundbank*: MmSoundbankPtr
   
-  MmModLayer* {.importc: "mm_modlayer", header:"mm_types.h", bycopy.} = object
-    tick* {.importc: "tick".}: uint8                   ## current tick count
-    row* {.importc: "row".}: uint8                     ## current row being played
-    position* {.importc: "position".}: uint8           ## module sequence position
-    nrows* {.importc: "nrows".}: uint8                 ## number of rows in current pattern
-    globalVolume* {.importc: "global_volume".}: uint8  ## global volume multiplier
-    speed* {.importc: "speed".}: uint8                 ## speed of module (ticks/row)
-    active* {.importc: "active".}: uint8               ## module is active
-    bpm* {.importc: "bpm".}: uint8                     ## tempo of module
+  MmModLayer* {.bycopy.} = object
+    tick*: uint8         ## current tick count
+    row*: uint8          ## current row being played
+    position*: uint8     ## module sequence position
+    nrows*: uint8        ## number of rows in current pattern
+    globalVolume*: uint8 ## global volume multiplier
+    speed*: uint8        ## speed of module (ticks/row)
+    active*: uint8       ## module is active
+    bpm*: uint8          ## tempo of module
   
-  MmVoice* {.importc: "mm_voice", header:"mm_types.h", bycopy.} = object
+  MmVoice* {.bycopy.} = object
     
     # data source information
-    source* {.importc: "source".}: pointer        ## address to sample data
-    length* {.importc: "length".}: uint32         ## length of sample data OR loop length (expressed in WORDS)
-    loopStart* {.importc: "loop_start".}: uint16  ## loop start position (expressed in WORDS)
+    source*: pointer     ## address to sample data
+    length*: uint32      ## length of sample data OR loop length (expressed in WORDS)
+    loopStart*: uint16   ## loop start position (expressed in WORDS)
     
-    timer* {.importc: "timer".}: uint16       ## frequency divider
-    flags* {.importc: "flags".}: MmVoiceFlags ## update flags
-    format* {.importc: "format".}: uint8      ## source format (0: 8-bit, 1: 16-bit, 2: adpcm)
-    repeat* {.importc: "repeat".}: uint8      ## repeat mode (0: manual, 1: forward loop, 2: one shot)
+    timer*: uint16       ## frequency divider
+    flags*: MmVoiceFlags ## update flags
+    format*: uint8       ## source format (0: 8-bit, 1: 16-bit, 2: adpcm)
+    repeat*: uint8       ## repeat mode (0: manual, 1: forward loop, 2: one shot)
     
-    volume* {.importc: "volume".}: uint8   ## volume setting (0->127)
-    divider* {.importc: "divider".}: uint8 ## divider setting (0->3 = /1, /2, /4, /16)
+    volume*: uint8       ## volume setting (0->127)
+    divider*: uint8      ## divider setting (0->3 = /1, /2, /4, /16)
     
-    panning* {.importc: "panning".}: uint8 ## panning setting (0->127)
-    index* {.importc: "index".}: uint8     ## index of voice (0->15)
+    panning*: uint8      ## panning setting (0->127)
+    index*: uint8        ## index of voice (0->15)
   
   MmVoiceFlag* = enum
-    mmvfUnused = 0  # (todo: figure out if this bit is used for something)
+    mmvfUnused = 0  ## (unused?)
     mmvfFreq = 1    ## update frequency when this flag is set
     mmvfVolume = 2  ## update volume
     mmvfPanning = 3 ## update panning
@@ -143,7 +143,7 @@ proc `==`*(a, b: MmModuleId): bool {.borrow.}
 proc `==`*(a, b: MmSampleId): bool {.borrow.}
 proc `==`*(a, b: MmSfxHandle): bool {.borrow.}
 
-proc init*(soundbank: MmSoundbankPtr; channels: uint) {.importc:"mmInitDefault", header:"maxmod.h".}
+proc init*(soundbank: MmSoundbankPtr; channels: uint) {.importc:"mmInitDefault".}
   ## Initialize Maxmod with default settings.
   ## 
   ## **Parameters:**
@@ -160,10 +160,10 @@ proc init*(soundbank: MmSoundbankPtr; channels: uint) {.importc:"mmInitDefault",
   ##   16KHz mixing rate, channel buffers in EWRAM, wave buffer in EWRAM, and
   ##   mixing buffer in IWRAM.
 
-proc init*(setup: ptr MmGbaSystem) {.importc:"mmInit", header:"maxmod.h".}
+proc init*(setup: ptr MmGbaSystem) {.importc:"mmInit".}
   ## Initialize system. Call once at startup.
 
-proc vblank*() {.importc:"mmVBlank", header:"maxmod.h".}
+proc vblank*() {.importc:"mmVBlank".}
   ## Must be linked to the VBlank IRQ.
   ## This function must be linked directly to the VBlank IRQ.
   ## During this function, the sound DMA is reset. The timing is extremely critical, so
@@ -171,7 +171,7 @@ proc vblank*() {.importc:"mmVBlank", header:"maxmod.h".}
   ## If you need another function to execute after this process is finished, use
   ##  `setVBlankHandler` to install a your handler. 
 
-proc setVBlankHandler*(function: MmFnPtr) {.importc:"mmSetVBlankHandler", header:"maxmod.h".}
+proc setVBlankHandler*(function: MmFnPtr) {.importc:"mmSetVBlankHandler".}
   ## Install user vblank handler
   ## 
   ## **Parameters:**
@@ -179,21 +179,21 @@ proc setVBlankHandler*(function: MmFnPtr) {.importc:"mmSetVBlankHandler", header
   ## function
   ##   Pointer to your VBlank handler.
 
-proc setEventHandler*(handler: MmCallback) {.importc:"mmSetEventHandler", header:"maxmod.h".}
+proc setEventHandler*(handler: MmCallback) {.importc:"mmSetEventHandler".}
   ## Install handler to receive song events.
   ## Use this function to receive song events. Song events occur in two situations.
   ## One is by special pattern data in a module (which is triggered by SFx/EFx commands).
   ## The other occurs when a module finishes playback (in MM_PLAY_ONCE mode).
   ## Note for GBA projects: During the song event, Maxmod is in the middle of module processing. Avoid using any Maxmod related functions during your song event handler since they may cause problems in this situation. 
 
-proc frame*() {.importc:"mmFrame", header:"maxmod.h".}
+proc frame*() {.importc:"mmFrame".}
   ## Work routine. *Must* be called every frame.
 
 
 # Module Playback
 # ---------------
 
-proc start*(id: MmModuleId; mode: MmPlaybackMode = mmPlayLoop) {.importc:"mmStart", header:"maxmod.h".}
+proc start*(id: MmModuleId; mode: MmPlaybackMode = mmPlayLoop) {.importc:"mmStart".}
   ## Start module playback.
   ## 
   ## **Parameters**:
@@ -204,16 +204,16 @@ proc start*(id: MmModuleId; mode: MmPlaybackMode = mmPlayLoop) {.importc:"mmStar
   ## mode
   ##   Playback mode (`mmPlayLoop` or `mmPlayOnce`)
 
-proc pause*() {.importc:"mmPause", header:"maxmod.h".}
+proc pause*() {.importc:"mmPause".}
   ## Pause module playback, resume with `maxmod.resume()`
 
-proc resume*() {.importc:"mmResume", header:"maxmod.h".}
+proc resume*() {.importc:"mmResume".}
   ## Resume module playback, pause with `maxmod.pause()`
 
-proc stop*() {.importc:"mmStop", header:"maxmod.h".}
+proc stop*() {.importc:"mmStop".}
   ## Stop module playback. start again with mmStart().
 
-proc setPosition*(position: uint) {.importc:"mmSetPosition", header:"maxmod.h".}
+proc setPosition*(position: uint) {.importc:"mmPosition".}
   ## Set playback position.
   ## 
   ## **Parameters**:
@@ -221,13 +221,13 @@ proc setPosition*(position: uint) {.importc:"mmSetPosition", header:"maxmod.h".}
   ## position
   ##   New position in the module sequence.
 
-proc getPosition*(): uint {.importc:"mmGetPosition", header:"maxmod.h".}
+proc getPosition*(): uint {.importc:"mmGetPosition".}
   ## Get playback position.
 
-proc active*(): bool {.importc:"mmActive", header:"maxmod.h".}
+proc active*(): bool {.importc:"mmActive".}
   ## Returns true if module is playing.
 
-proc jingle*(id: MmModuleId) {.importc:"mmJingle", header:"maxmod.h".}
+proc jingle*(id: MmModuleId) {.importc:"mmJingle".}
   ##  Play module as jingle. Jingles are limited to 4 channels only.
   ## 
   ## **Parameters**:
@@ -235,10 +235,10 @@ proc jingle*(id: MmModuleId) {.importc:"mmJingle", header:"maxmod.h".}
   ## moduleID
   ##   ID of module (defined in soundbank header)
 
-proc activeSub*(): bool {.importc:"mmActiveSub", header:"maxmod.h".}
+proc activeSub*(): bool {.importc:"mmActiveSub".}
   ## Returns true if a jingle is actively playing.
 
-proc setModuleVolume*(volume: uint) {.importc:"mmSetModuleVolume", header:"maxmod.h".}
+proc setModuleVolume*(volume: uint) {.importc:"mmSetModuleVolume".}
   ## Set volume scaler for music.
   ## 
   ## **Parameters**:
@@ -246,7 +246,7 @@ proc setModuleVolume*(volume: uint) {.importc:"mmSetModuleVolume", header:"maxmo
   ## volume
   ##   0->1024 = silent..normal
 
-proc setJingleVolume*(volume: uint) {.importc:"mmSetJingleVolume", header:"maxmod.h".}
+proc setJingleVolume*(volume: uint) {.importc:"mmSetJingleVolume".}
   ## Set volume scaler for jingles.
   ## 
   ## **Parameters**:
@@ -254,7 +254,7 @@ proc setJingleVolume*(volume: uint) {.importc:"mmSetJingleVolume", header:"maxmo
   ## volume
   ##   0->1024 = silent..normal
 
-proc setModuleTempo*(tempo: uint) {.importc:"mmSetModuleTempo", header:"maxmod.h".}
+proc setModuleTempo*(tempo: uint) {.importc:"mmSetModuleTempo".}
   ## Set tempo of playback.
   ## 
   ## **Parameters**:
@@ -263,7 +263,7 @@ proc setModuleTempo*(tempo: uint) {.importc:"mmSetModuleTempo", header:"maxmod.h
   ##   Fixed point (Q10) value representing tempo.
   ##   Range: `0x200 .. 0x800` = `0.5 .. 2.0`
 
-proc setModulePitch*(pitch: uint) {.importc:"mmSetModulePitch", header:"maxmod.h".}
+proc setModulePitch*(pitch: uint) {.importc:"mmSetModulePitch".}
   ## Set pitch of playback.
   ## 
   ## pitch
@@ -271,24 +271,24 @@ proc setModulePitch*(pitch: uint) {.importc:"mmSetModulePitch", header:"maxmod.h
 
 # TODO: check types of mode and layer.
 
-proc playModule*(address: pointer; mode: uint; layer: uint) {.importc:"mmPlayModule", header:"maxmod.h".}
+proc playModule*(address: pointer; mode: uint; layer: uint) {.importc:"mmPlayModule".}
   ## Play direct MAS file
 
 
 # Sound Effects
 # -------------
 
-proc effect*(id: MmSampleId): MmSfxHandle {.importc:"mmEffect", header:"maxmod.h", discardable.}
+proc effect*(id: MmSampleId): MmSfxHandle {.importc:"mmEffect", discardable.}
   ## Play a sound effect at its default frequency with full volume and centered panning.
   ## 
   ## **Parameters:**
   ## 
   ## id
-  ##   Sound effect ID. (defined in `output/soundbank.nim` which is generated for your project)
+  ##   Sound effect ID. (defined in ``output/soundbank.nim`` which is generated for your project)
 
 # TODO: link to page about asset conversion ^
 
-proc effectEx*(sound: ptr MmSoundEffect): MmSfxHandle {.importc:"mmEffectEx", header:"maxmod.h", discardable.}
+proc effectEx*(sound: ptr MmSoundEffect): MmSfxHandle {.importc:"mmEffectEx", discardable.}
   ## Play a sound effect with all parameters.
   ## 
   ## **Parameters:**
@@ -296,7 +296,7 @@ proc effectEx*(sound: ptr MmSoundEffect): MmSfxHandle {.importc:"mmEffectEx", he
   ## sound
   ##   Sound effect attributes.
 
-proc setVolume*(handle: MmSfxHandle; volume: uint) {.importc:"mmEffectVolume", header:"maxmod.h".}
+proc setVolume*(handle: MmSfxHandle; volume: uint) {.importc:"mmEffectVolume".}
   ## Set the volume of a sound effect.
   ## 
   ## **Parameters:**
@@ -307,7 +307,7 @@ proc setVolume*(handle: MmSfxHandle; volume: uint) {.importc:"mmEffectVolume", h
   ## volume
   ##   0->65535
 
-proc setPanning*(handle: MmSfxHandle; panning: uint8) {.importc:"mmEffectPanning", header:"maxmod.h".}
+proc setPanning*(handle: MmSfxHandle; panning: uint8) {.importc:"mmEffectPanning".}
   ## Set the panning of a sound effect.
   ## 
   ## **Parameters:**
@@ -320,7 +320,7 @@ proc setPanning*(handle: MmSfxHandle; panning: uint8) {.importc:"mmEffectPanning
 
 # TODO: use fixed point param for these two procs:
 
-proc setRate*(handle: MmSfxHandle; rate: uint) {.importc:"mmEffectRate", header:"maxmod.h".}
+proc setRate*(handle: MmSfxHandle; rate: uint) {.importc:"mmEffectRate".}
   ## Set the playback rate of an effect.
   ## 
   ## **Parameters:**
@@ -331,7 +331,7 @@ proc setRate*(handle: MmSfxHandle; rate: uint) {.importc:"mmEffectRate", header:
   ## rate
   ##   6.10 factor (??)
 
-proc scaleRate*(handle: MmSfxHandle; factor: uint) {.importc:"mmEffectScaleRate", header:"maxmod.h".}
+proc scaleRate*(handle: MmSfxHandle; factor: uint) {.importc:"mmEffectScaleRate".}
   ## Scale the playback rate of an effect.
   ## 
   ## **Parameters:**
@@ -342,7 +342,7 @@ proc scaleRate*(handle: MmSfxHandle; factor: uint) {.importc:"mmEffectScaleRate"
   ## factor
   ##   6.10 fixed point factor. (??)
 
-proc cancel*(handle: MmSfxHandle) {.importc:"mmEffectCancel", header:"maxmod.h".}
+proc cancel*(handle: MmSfxHandle) {.importc:"mmEffectCancel".}
   ## Stop sound effect.
   ## 
   ## **Parameters:**
@@ -350,7 +350,7 @@ proc cancel*(handle: MmSfxHandle) {.importc:"mmEffectCancel", header:"maxmod.h".
   ## handle
   ##   Sound effect handle.
 
-proc release*(handle: MmSfxHandle) {.importc:"mmEffectRelease", header:"maxmod.h".}
+proc release*(handle: MmSfxHandle) {.importc:"mmEffectRelease".}
   ## Release sound effect (invalidate handle and allow interruption)
   ## 
   ## **Parameters:**
@@ -358,7 +358,7 @@ proc release*(handle: MmSfxHandle) {.importc:"mmEffectRelease", header:"maxmod.h
   ## handle
   ##   Sound effect handle.
 
-proc isActive*(handle: MmSfxHandle) {.importc:"mmEffectActive", header:"maxmod.h".}
+proc isActive*(handle: MmSfxHandle) {.importc:"mmEffectActive".}
   ## Indicates if a sound effect is active or not.
   ## 
   ## **Parameters:**
@@ -366,7 +366,7 @@ proc isActive*(handle: MmSfxHandle) {.importc:"mmEffectActive", header:"maxmod.h
   ## handle
   ##   Sound effect handle.
 
-proc setEffectsVolume*(volume: uint) {.importc:"mmSetEffectsVolume", header:"maxmod.h".}
+proc setEffectsVolume*(volume: uint) {.importc:"mmSetEffectsVolume".}
   ## Set master volume scale for effect playback.
   ## 
   ## **Parameters:**
@@ -374,7 +374,7 @@ proc setEffectsVolume*(volume: uint) {.importc:"mmSetEffectsVolume", header:"max
   ## volume
   ##   0->1024 representing 0%->100% volume
 
-proc cancelAllEffects*() {.importc:"mmEffectCancelAll", header:"maxmod.h".}
+proc cancelAllEffects*() {.importc:"mmEffectCancelAll".}
   ## Stop all sound effects
 
 
@@ -392,11 +392,11 @@ const mmcbSongFinished* = 0x0000002B'u32
 
 # Old names, deprecated.
 
-proc position*(position: uint) {.deprecated, importc:"mmPosition", header:"maxmod.h".}
-proc effectRelease*(handle: MmSfxHandle) {.deprecated, importc:"mmEffectRelease", header:"maxmod.h".}
-proc effectCancel*(handle: MmSfxHandle) {.deprecated, importc:"mmEffectCancel", header:"maxmod.h".}
-proc effectRate*(handle: MmSfxHandle; rate: uint) {.importc:"mmEffectRate", header:"maxmod.h".}
-proc effectScaleRate*(handle: MmSfxHandle; factor: uint) {.deprecated, importc:"mmEffectScaleRate", header:"maxmod.h".}
-proc effectPanning*(handle: MmSfxHandle; panning: uint8) {.deprecated, importc:"mmEffectPanning", header:"maxmod.h".}
-proc effectVolume*(handle: MmSfxHandle; volume: uint) {.deprecated, importc:"mmEffectVolume", header:"maxmod.h".}
-proc effectCancelAll*() {.deprecated, importc:"mmEffectCancelAll", header:"maxmod.h".}
+proc position*(position: uint) {.deprecated, importc:"mmPosition".}
+proc effectRelease*(handle: MmSfxHandle) {.deprecated, importc:"mmEffectRelease".}
+proc effectCancel*(handle: MmSfxHandle) {.deprecated, importc:"mmEffectCancel".}
+proc effectRate*(handle: MmSfxHandle; rate: uint) {.importc:"mmEffectRate".}
+proc effectScaleRate*(handle: MmSfxHandle; factor: uint) {.deprecated, importc:"mmEffectScaleRate".}
+proc effectPanning*(handle: MmSfxHandle; panning: uint8) {.deprecated, importc:"mmEffectPanning".}
+proc effectVolume*(handle: MmSfxHandle; volume: uint) {.deprecated, importc:"mmEffectVolume".}
+proc effectCancelAll*() {.deprecated, importc:"mmEffectCancelAll".}
