@@ -1,4 +1,5 @@
 import natu/core
+from natu/video import clrRed, clrBlack
 
 # Palette buffers
 # ---------------
@@ -56,15 +57,23 @@ var objPals {.codegenDecl:EWRAM_DATA.}: array[16, PalState]
 
 proc allocObjPal*: int =
   ## Allocate a 4bpp palette in Obj PAL RAM.
-  for i, v in objPals:
-    if v == palUnused:
+  for i in countdown(objPals.len-1, 0):
+    if objPals[i] == palUnused:
       objPals[i] = palUsed
       return i
   assert(false, "Ran out of obj palettes")
-  objPals.len-1
+  0
 
 proc freeObjPal*(i: int) =
   ## Deallocate a 4bpp palette in Obj PAL RAM.
   objPals[i] = palUnused
   when defined(natuShowFreePals):
     objPalBuf[i][0] = clrRed
+    for j in 1..15:
+      objPalBuf[i][j] = clrBlack
+
+# initialisation:
+when defined(natuShowFreePals):
+  for i in 0..<objPalMem.len:
+    objPalBuf[i][0] = clrRed
+
