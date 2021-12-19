@@ -92,7 +92,7 @@ type
     rom1* {.bitsize:3.}: WsRom1   ## ROM access time (alt. #1)
     rom2* {.bitsize:3.}: WsRom2   ## ROM access time (alt. #2)
     phi* {.bitsize:2.}: WsPhi
-    `-` {.bitsize:1.}: bool
+    unused {.bitsize:1.}: bool
     prefetch* {.bitsize:1.}: bool ## Prefetch buffer enabled.
     gb {.bitsize:1.}: bool
 
