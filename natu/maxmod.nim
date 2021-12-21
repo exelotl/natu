@@ -56,14 +56,14 @@ type
     mmPlayOnce
   
   MmMixMode* {.size: 4.} = enum
-    mmMix8Khz
-    mmMix10Khz
-    mmMix13Khz
-    mmMix16Khz
-    mmMix18Khz
-    mmMix21Khz
-    mmMix27Khz
-    mmMix31Khz
+    mmMix8kHz
+    mmMix10kHz
+    mmMix13kHz
+    mmMix16kHz
+    mmMix18kHz
+    mmMix21kHz
+    mmMix27kHz
+    mmMix31kHz
   
   MmSoundEffect* {.bycopy.} = object
     id*: uint32              ## sample ID (defined in soundbank header)
@@ -124,14 +124,14 @@ type
 
 # Precalculated mix buffer lengths (in bytes)
 const
-  mmMixLen8Khz* = 544    # (8121 hz)
-  mmMixLen10Khz* = 704   # (10512 hz)
-  mmMixLen13Khz* = 896   # (13379 hz)
-  mmMixLen16Khz* = 1056  # (15768 hz)
-  mmMixLen18Khz* = 1216  # (18157 hz)
-  mmMixLen21Khz* = 1408  # (21024 hz)
-  mmMixLen27Khz* = 1792  # (26758 hz)
-  mmMixLen31Khz* = 2112  # (31536 hz)
+  mmMixLen8kHz* = 544    # (8121 hz)
+  mmMixLen10kHz* = 704   # (10512 hz)
+  mmMixLen13kHz* = 896   # (13379 hz)
+  mmMixLen16kHz* = 1056  # (15768 hz)
+  mmMixLen18kHz* = 1216  # (18157 hz)
+  mmMixLen21kHz* = 1408  # (21024 hz)
+  mmMixLen27kHz* = 1792  # (26758 hz)
+  mmMixLen31kHz* = 2112  # (31536 hz)
 
 # Measurements of channel types (bytes)
 const
@@ -157,7 +157,7 @@ proc init*(soundbank: MmSoundbankPtr; channels: uint) {.importc:"mmInitDefault".
   ##   Must be greater or equal to the channel count in your modules.
   ## 
   ##   For GBA, this function uses these default settings (and allocates memory):
-  ##   16KHz mixing rate, channel buffers in EWRAM, wave buffer in EWRAM, and
+  ##   16kHz mixing rate, channel buffers in EWRAM, wave buffer in EWRAM, and
   ##   mixing buffer in IWRAM.
 
 proc init*(setup: ptr MmGbaSystem) {.importc:"mmInit".}

@@ -4,15 +4,15 @@ include ../output/soundbank
 
 const
   channels = 16
-  waveMemSize = channels * (mmSizeofModCh + mmSizeofActCh + mmSizeofMixCh) + mmMixLen31Khz 
+  waveMemSize = channels * (mmSizeofModCh + mmSizeofActCh + mmSizeofMixCh) + mmMixLen31kHz 
 
 var
   waveMem {.codegenDecl:EWRAM_DATA.}: array[waveMemSize, uint8]
-  mixMem {.align:4.}: array[mmMixLen31Khz, uint8]
+  mixMem {.align:4.}: array[mmMixLen31kHz, uint8]
 
 proc init* =
   var config = MmGbaSystem(
-    mixingMode: mmMix31Khz,
+    mixingMode: mmMix31kHz,
     modChannelCount: channels,
     mixChannelCount: channels,
     moduleChannels: addr waveMem[0],

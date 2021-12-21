@@ -83,7 +83,7 @@ type
     wsPhiOff    ## Disabled (recommended because I have no idea what this is)
     wsPhi4MHz   ## 4.19MHz 
     wsPhi8MHz   ## 8.38MHz
-    wsPhi16MHz  ## 16.78MHz
+    wsPhi17MHz  ## 16.78MHz
   
   WaitCnt* {.bycopy, exportc.} = object
     ## Waitstate control
