@@ -17,7 +17,7 @@ type
   ResetFlag* = enum
     rsEwram      ## Clear 256K on-board RAM.
     rsIwram      ## Clear 32K in-chip RAM, except for the last 0x200 bytes
-    rsPalette    ## Clear palette
+    rsPalettes   ## Clear palettes
     rsVram       ## Clear VRAM
     rsOam        ## Clear OAM (does not disable OBJs!)
     rsSio        ## Reset serial registers (switches to general purpose mode)
