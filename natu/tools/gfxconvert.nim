@@ -80,12 +80,14 @@ proc gfxConvert*(tsvPath, script, indir, outdir: string) =
       currentPal = @[clrEmpty]
       namesInCurrentPal: seq[string]  # all gfx names with a shared pal are added here (only for troubleshooting really)
       lastPalGroup = 0
+      lastBpp = -1
     
     # to append and reset the current palette
     proc flushSharedPalette =
+      let maxColors = (1 shl lastBpp)
       doAssert(
-        currentPal.len <= 16,
-        "Palette has {currentPal.len} colors, max is 16. Used by: {namesInCurrentPal}\nPalette = {currentPal}".fmt
+        currentPal.len <= maxColors,
+        "Palette has {currentPal.len} colors, max is {maxColors}. Used by: {namesInCurrentPal}\nPalette = {currentPal}".fmt
       )
       let palBytes = currentPal.toBytes()
       palData.add(palBytes)
@@ -99,10 +101,21 @@ proc gfxConvert*(tsvPath, script, indir, outdir: string) =
     for g in gfxRows:
       echo g.pngPath
       
-      if g.palNum != lastPalGroup:
+      if lastBpp == -1:
+        lastBpp = ord(g.bpp)
+      
+      if g.palNum == lastPalGroup:
+        # this graphic shares a palette with the previous
+        doAssert(
+          ord(g.bpp) == lastBpp,
+          "Graphics that share a palette must have the same bpp ({g.name} is {ord(g.bpp)} but the previous graphic was {lastBpp})."
+        )
+      else:
         # this graphic has a new palette
         flushSharedPalette()
         lastPalGroup = g.palNum
+      
+      lastBpp = ord(g.bpp)
       
       # convert the graphic
       var info = GfxInfo(
@@ -122,7 +135,6 @@ proc gfxConvert*(tsvPath, script, indir, outdir: string) =
       let size = parseEnum[ObjSize]("s" & $g.w & "x" & $g.h)
       currentPal = info.pal
       namesInCurrentPal.add(g.pngPath.extractFilename())
-      
       
       # push data necessary for codegen
       gfxDatas.add GraphicData(
