@@ -74,26 +74,12 @@ proc gbaCfg* =
     get("natu.ldflags.map"),
   ].join(" ")
   
-  # Remove default GCC flags
-  
-  put "gcc.options.linker", ""
-  put "gcc.options.always", ""
-  
-  # Work with --gc:arc --os:any
-  
-  put "arm.any.gcc.path", devkitArm() / "bin"
-  put "arm.any.gcc.exe", "arm-none-eabi-gcc"
-  put "arm.any.gcc.linkerexe", "arm-none-eabi-gcc"
-  put "arm.any.gcc.options.linker", ldflags
-  put "arm.any.gcc.options.always", cflags
-  
-  # Work with --gc:none --os:standalone
-  
-  put "arm.standalone.gcc.path", devkitArm() / "bin"
-  put "arm.standalone.gcc.exe", "arm-none-eabi-gcc"
-  put "arm.standalone.gcc.linkerexe", "arm-none-eabi-gcc"
-  put "arm.standalone.gcc.options.linker", ldflags
-  put "arm.standalone.gcc.options.always", cflags
+  # Set path to GCC and replace default flags
+  put "gcc.path", devkitArm() / "bin"
+  put "gcc.exe", "arm-none-eabi-gcc"
+  put "gcc.linkerexe", "arm-none-eabi-gcc"
+  put "gcc.options.linker", ldflags
+  put "gcc.options.always", cflags
   
   # Only set switches that the developer will never need to override.
   switch "define", "gba"
