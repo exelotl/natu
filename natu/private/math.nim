@@ -240,6 +240,16 @@ proc `/`*(a: Vec2i, n: int): Vec2i =
   result.x = a.x div n
   result.y = a.y div n
 
+proc `*`*(n: int, a: Vec2i): Vec2i =
+  ## Scale vector by n
+  result.x = a.x * n
+  result.y = a.y * n
+
+proc `/`*(n: int, a: Vec2i): Vec2i =
+  ## Scale vector by 1/n
+  result.x = a.x div n
+  result.y = a.y div n
+
 proc dot*(a, b: Vec2i): int =
   ## Dot product of two vectors
   (a.x * b.x) + (a.y * b.y)
@@ -308,6 +318,16 @@ proc `*`*(a: Vec2f, n: Fixed|int): Vec2f =
   result.y = a.y * n
 
 proc `/`*(a: Vec2f, n: Fixed|int): Vec2f =
+  ## Scale a fixed point vector by 1/n
+  result.x = a.x / n
+  result.y = a.y / n
+
+proc `*`*(n: Fixed|int, a: Vec2f): Vec2f =
+  ## Scale a fixed point vector by n
+  result.x = a.x * n
+  result.y = a.y * n
+
+proc `/`*(n: Fixed|int, a: Vec2f): Vec2f =
   ## Scale a fixed point vector by 1/n
   result.x = a.x / n
   result.y = a.y / n
