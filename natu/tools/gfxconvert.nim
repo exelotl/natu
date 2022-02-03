@@ -3,6 +3,8 @@ import options, os, times
 import trick
 import ./common
 
+{.push warning[HoleEnumConv]:off.}   # https://github.com/nim-lang/Nim/issues/19238
+
 type
   GraphicRow = object
     ## Just the stuff parsed from the tsv

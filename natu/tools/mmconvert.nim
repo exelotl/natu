@@ -18,7 +18,7 @@ proc mmConvert*(script, sfxdir, moddir, outdir: string, files: seq[string]) =
   
   for f in files:
     
-    let (dir, name, ext) = splitFile(f)
+    let (_, name, ext) = splitFile(f)
     
     var inPath: string
     
