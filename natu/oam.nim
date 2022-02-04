@@ -14,6 +14,8 @@ export ObjAttr, ObjAffine, ObjAttrPtr, ObjAffinePtr
 {.compile(toncPath & "/src/tonc_oam.c", toncCFlags).}
 {.compile(toncPath & "/src/tonc_obj_affine.c", toncCFlags).}
 
+{.pragma: tonc, header: "tonc_oam.h".}
+
 type
   ObjMode* {.size:2.} = enum
     omReg = ATTR0_REG
@@ -53,68 +55,51 @@ func setAttr*(obj: var ObjAttr; a0, a1, a2: uint16) {.inline.} =
   obj.attr2 = a2
 
 
-func hide*(obj: var ObjAttr) {.importc: "obj_hide", header: "tonc.h".}
-  ## Hide an object
-  ## Equivalent to ``obj.mode = omHide``
-
-func unhide*(obj: var ObjAttr; mode: ObjMode) {.importc: "obj_unhide", header: "tonc.h".}
-  ## Unhide an object.
-  ## Equivalent to ``obj.mode = mode``
-  ## 
-  ## **Parameters:**
-  ## 
-  ## obj
-  ##   Object to unhide.
-  ## 
-  ## mode
-  ##   Object mode to unhide to. Necessary because this affects the affine-ness of the object.
-
-
 # Obj affine procedures
 # ---------------------
 
-proc affCopy*(dst, src: ObjAffinePtr; count: uint) {.importc: "obj_aff_copy", header: "tonc.h".}
+proc affCopy*(dst, src: ObjAffinePtr; count: uint) {.importc: "obj_aff_copy", tonc.}
   ## Copy `count` object affine matrices from src to dest
   # TODO: could make this more nim-friendly? Arrays instead of pointers? How to ensure safety though?
 
 
-proc affSet*(oaff: var ObjAffine; pa, pb, pc, pd: Fixed) {.importc: "obj_aff_set", header: "tonc.h".}
+proc affSet*(oaff: var ObjAffine; pa, pb, pc, pd: Fixed) {.importc: "obj_aff_set", tonc.}
   ## Set the elements of an object affine matrix.
 
-proc affIdentity*(oaff: var ObjAffine) {.importc: "obj_aff_identity", header: "tonc.h".}
+proc affIdentity*(oaff: var ObjAffine) {.importc: "obj_aff_identity", tonc.}
   ##  Set an object affine matrix to the identity matrix
 
-proc affScale*(oaff: var ObjAffine; sx, sy: Fixed) {.importc: "obj_aff_scale", header: "tonc.h".}
+proc affScale*(oaff: var ObjAffine; sx, sy: Fixed) {.importc: "obj_aff_scale", tonc.}
   ## Set an object affine matrix for scaling.
   
-proc affShearX*(oaff: var ObjAffine; hx: Fixed) {.importc: "obj_aff_shearx", header: "tonc.h".}
-proc affShearY*(oaff: var ObjAffine; hy: Fixed) {.importc: "obj_aff_sheary", header: "tonc.h".}
-proc affRotate*(oaff: var ObjAffine; alpha: uint16) {.importc: "obj_aff_rotate", header: "tonc.h".}
+proc affShearX*(oaff: var ObjAffine; hx: Fixed) {.importc: "obj_aff_shearx", tonc.}
+proc affShearY*(oaff: var ObjAffine; hy: Fixed) {.importc: "obj_aff_sheary", tonc.}
+proc affRotate*(oaff: var ObjAffine; alpha: uint16) {.importc: "obj_aff_rotate", tonc.}
   ## Set obj matrix to counter-clockwise rotation.
   ## `oaff`  Object affine struct to set.
   ## `alpha` CCW angle. full-circle is 10000h.
   
-proc affRotscale*(oaff: var ObjAffine; sx, sy: Fixed; alpha: uint16) {.importc: "obj_aff_rotscale", header: "tonc.h".}
+proc affRotscale*(oaff: var ObjAffine; sx, sy: Fixed; alpha: uint16) {.importc: "obj_aff_rotscale", tonc.}
   ## Set obj matrix to 2d scaling, then counter-clockwise rotation.
   ## `oaff`  Object affine struct to set.
   ## `sx`    Horizontal scale (zoom). .8 fixed point.
   ## `sy`    Vertical scale (zoom). .8 fixed point.
   ## `alpha` CCW angle. full-circle is 10000h.
 
-proc affRotscale*(oaff: var ObjAffine; affSrc: ptr AffSrc) {.importc: "obj_aff_rotscale2", header: "tonc.h".}
+proc affRotscale*(oaff: var ObjAffine; affSrc: ptr AffSrc) {.importc: "obj_aff_rotscale2", tonc.}
   ## Set obj matrix to 2d scaling, then counter-clockwise rotation.
   ## `oaff` Object affine struct to set.
   ## `as`   Struct with scales and angle.
 
 # [alternative ways of doing it?]
-# proc affSet*(oaff: ObjAffinePtr; pa, pb, pc, pd: Fixed) {.importc: "obj_aff_set", header: "tonc.h".}
-# proc affIdentity*(oaff: ObjAffinePtr) {.importc: "obj_aff_identity", header: "tonc.h".}
-# proc affScale*(oaff: ObjAffinePtr; sx, sy: Fixed) {.importc: "obj_aff_scale", header: "tonc.h".}
-# proc affShearX*(oaff: ObjAffinePtr; hx: Fixed) {.importc: "obj_aff_shearx", header: "tonc.h".}
-# proc affShearY*(oaff: ObjAffinePtr; hy: Fixed) {.importc: "obj_aff_sheary", header: "tonc.h".}
-# proc affRotate*(oaff: ObjAffinePtr; alpha: uint16) {.importc: "obj_aff_rotate", header: "tonc.h".}
-# proc affRotscale*(oaff: ObjAffinePtr; sx, sy: Fixed; alpha: uint16) {.importc: "obj_aff_rotscale", header: "tonc.h".}
-# proc affRotscale*(oaff: ObjAffinePtr; affSrc: ptr AffSrc) {.importc: "obj_aff_rotscale2", header: "tonc.h".}
+# proc affSet*(oaff: ObjAffinePtr; pa, pb, pc, pd: Fixed) {.importc: "obj_aff_set", tonc.}
+# proc affIdentity*(oaff: ObjAffinePtr) {.importc: "obj_aff_identity", tonc.}
+# proc affScale*(oaff: ObjAffinePtr; sx, sy: Fixed) {.importc: "obj_aff_scale", tonc.}
+# proc affShearX*(oaff: ObjAffinePtr; hx: Fixed) {.importc: "obj_aff_shearx", tonc.}
+# proc affShearY*(oaff: ObjAffinePtr; hy: Fixed) {.importc: "obj_aff_sheary", tonc.}
+# proc affRotate*(oaff: ObjAffinePtr; alpha: uint16) {.importc: "obj_aff_rotate", tonc.}
+# proc affRotscale*(oaff: ObjAffinePtr; sx, sy: Fixed; alpha: uint16) {.importc: "obj_aff_rotscale", tonc.}
+# proc affRotscale*(oaff: ObjAffinePtr; affSrc: ptr AffSrc) {.importc: "obj_aff_rotscale2", tonc.}
 # proc affShearX*(oaff: var ObjAffine; hx: Fixed) = affShearX(addr oaff, hx)
 # proc affShearY*(oaff: var ObjAffine; hy: Fixed) = affShearY(addr oaff, hy)
 # proc affRotate*(oaff: var ObjAffine; alpha: uint16) = affRotate(addr oaff, alpha)
@@ -122,12 +107,12 @@ proc affRotscale*(oaff: var ObjAffine; affSrc: ptr AffSrc) {.importc: "obj_aff_r
 # proc affRotscale*(oaff: var ObjAffine; affSrc: ptr AffSrc) = affRotscale(addr oaff, affSrc)
 
 
-proc affPreMul*(dst: var ObjAffine, src: ObjAffinePtr) {.importc: "obj_aff_premul", header: "tonc.h".}
+proc affPreMul*(dst: var ObjAffine, src: ObjAffinePtr) {.importc: "obj_aff_premul", tonc.}
   ## Pre-multiply the matrix `dst` by `src`
   ## i.e. ::
   ##   dst = src * dst
 
-proc affPostMul*(dst: var ObjAffine, src: ObjAffinePtr) {.importc: "obj_aff_postmul", header: "tonc.h".}
+proc affPostMul*(dst: var ObjAffine, src: ObjAffinePtr) {.importc: "obj_aff_postmul", tonc.}
   ## Post-multiply the matrix `dst` by `src`
   ## i.e. ::
   ##   dst = dst * src
@@ -135,7 +120,7 @@ proc affPostMul*(dst: var ObjAffine, src: ObjAffinePtr) {.importc: "obj_aff_post
 template affPreMul*(dst: var ObjAffine, src: ObjAffine) = affPreMul(dst, unsafeAddr src)
 template affPostMul*(dst: var ObjAffine, src: ObjAffine) = affPostMul(dst, unsafeAddr src)
 
-proc rotscaleEx*(obj: var ObjAttr; oaff: var ObjAffine; asx: ptr AffSrcEx) {.importc: "obj_rotscale_ex", header: "tonc.h".}
+proc rotscaleEx*(obj: var ObjAttr; oaff: var ObjAffine; asx: ptr AffSrcEx) {.importc: "obj_rotscale_ex", tonc.}
   ## Rot/scale an object around an arbitrary point.
   ## Sets up `obj` and `oaff` for rot/scale transformation around an arbitrary point using the `asx` data.
   ## `obj`  Object to set.
@@ -146,10 +131,10 @@ template rotscaleEx*(obj: var ObjAttr; oaff: var ObjAffine; asx: AffSrcEx) =
   rotscaleEx(obj, oaff, unsafeAddr asx)
 
 #  inverse (object -> screen) functions, could be useful
-proc affScaleInv*(oa: var ObjAffine; wx, wy: Fixed) {.importc: "obj_aff_scale_inv", header: "tonc.h".}
-proc affRotateInv*(oa: var ObjAffine; theta: uint16) {.importc: "obj_aff_rotate_inv", header: "tonc.h".}
-proc affShearxInv*(oa: var ObjAffine; hx: Fixed) {.importc: "obj_aff_shearx_inv", header: "tonc.h".}
-proc affShearyInv*(oa: var ObjAffine; hy: Fixed) {.importc: "obj_aff_sheary_inv", header: "tonc.h".}
+proc affScaleInv*(oa: var ObjAffine; wx, wy: Fixed) {.importc: "obj_aff_scale_inv", tonc.}
+proc affRotateInv*(oa: var ObjAffine; theta: uint16) {.importc: "obj_aff_rotate_inv", tonc.}
+proc affShearxInv*(oa: var ObjAffine; hx: Fixed) {.importc: "obj_aff_shearx_inv", tonc.}
+proc affShearyInv*(oa: var ObjAffine; hy: Fixed) {.importc: "obj_aff_sheary_inv", tonc.}
 
 
 # SPRITE GETTERS/SETTERS
@@ -284,20 +269,20 @@ template dup*(obj: ObjAttr, args: varargs[untyped]): ObjAttr =
 func getSize*(size: ObjSize): tuple[w, h: int] {.inline.} =
   ## Get the width and height in pixels of an `ObjSize` enum value.
   {.noSideEffect.}:
-    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](addr oamSizes)
+    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](unsafeAddr oamSizes)
     let arr = sizes[size]
     (arr[0].int, arr[1].int)
   
 func getWidth*(size: ObjSize): int {.inline.} =
   ## Get the width in pixels of an `ObjSize` enum value.
   {.noSideEffect.}:
-    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](addr oamSizes)
+    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](unsafeAddr oamSizes)
     sizes[size][0].int
 
 func getHeight*(size: ObjSize): int {.inline.} =
   ## Get the height in pixels of an `ObjSize` enum value.
   {.noSideEffect.}:
-    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](addr oamSizes)
+    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](unsafeAddr oamSizes)
     sizes[size][1].int
 
 func getSize*(obj: ObjAttr | ObjAttrPtr): tuple[w, h: int] {.inline.} =
@@ -311,3 +296,26 @@ func getWidth*(obj: ObjAttr | ObjAttrPtr): int {.inline.} =
 func getHeight*(obj: ObjAttr | ObjAttrPtr): int {.inline.} =
   ## Get the height of an object in pixels.
   getHeight(obj.size)
+
+
+func hide*(obj: var ObjAttr) {.inline.} =
+  ## Hide an object.
+  ## 
+  ## Equivalent to ``obj.mode = omHide``
+  ## 
+  obj.mode = omHide
+
+func unhide*(obj: var ObjAttr; mode = omReg) {.inline.} =
+  ## Unhide an object.
+  ## 
+  ## Equivalent to ``obj.mode = mode``
+  ## 
+  ## **Parameters:**
+  ## 
+  ## obj
+  ##   Object to unhide.
+  ## 
+  ## mode
+  ##   Object mode to unhide to. Necessary because this affects the affine-ness of the object.
+  ## 
+  obj.mode = mode

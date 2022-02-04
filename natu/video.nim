@@ -15,6 +15,9 @@ import private/[common, types, core, math, memmap, memdef]
 {.compile(toncPath & "/asm/clr_blend_fast.s", toncAsmFlags).}
 {.compile(toncPath & "/asm/clr_fade_fast.s", toncAsmFlags).}
 
+{.pragma: tonc, header: "tonc_video.h".}
+{.pragma: toncinl, header: "tonc_video.h".}  # inline from header.
+
 # Constants
 # ---------
 # Sizes in pixels
@@ -63,10 +66,10 @@ const
 
 # TODO: Rework color/pal function signatures?
 
-proc clrRotate*(clrs: ptr Color; nclrs: uint; ror: int) {.importc: "clr_rotate", header: "tonc.h".}
+proc clrRotate*(clrs: ptr Color; nclrs: uint; ror: int) {.importc: "clr_rotate", tonc.}
   ## Rotate `nclrs` colors at `clrs` to the right by `ror`.
 
-proc clrBlend*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs, alpha: uint32) {.importc: "clr_blend", header: "tonc.h".}
+proc clrBlend*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs, alpha: uint32) {.importc: "clr_blend", tonc.}
   ## Blends color arrays `srca` and `srcb` into `dst`.
   ## Specific transitional blending effects can be created by making a 'target' color array
   ##  with other routines, then using `alpha` to morph into it.
@@ -88,7 +91,7 @@ proc clrBlend*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs, alpha: u
   ## alpha
   ##   Blend weight (range: 0-32). 0 Means full `srca`
 
-proc clrFade*(src: ptr Color; clr: Color; dst: ptr Color; nclrs, alpha: uint32) {.importc: "clr_fade", header: "tonc.h".}
+proc clrFade*(src: ptr Color; clr: Color; dst: ptr Color; nclrs, alpha: uint32) {.importc: "clr_fade", tonc.}
   ## Fades color arrays `srca` to `clr` into `dst`.
   ## 
   ## **Parameters:**
@@ -108,7 +111,7 @@ proc clrFade*(src: ptr Color; clr: Color; dst: ptr Color; nclrs, alpha: uint32) 
   ## alpha
   ##   Blend weight (range: 0-32). 0 Means full `srca`
 
-proc clrGrayscale*(dst: ptr Color; src: ptr Color; nclrs: uint) {.importc: "clr_grayscale", header: "tonc.h".}
+proc clrGrayscale*(dst: ptr Color; src: ptr Color; nclrs: uint) {.importc: "clr_grayscale", tonc.}
   ## Transform colors to grayscale.
   ## 
   ## **Parameters:**
@@ -122,7 +125,7 @@ proc clrGrayscale*(dst: ptr Color; src: ptr Color; nclrs: uint) {.importc: "clr_
   ## nclrs
   ##   Number of colors.
 
-proc clrRgbscale*(dst: ptr Color; src: ptr Color; nclrs: uint; clr: Color) {.importc: "clr_rgbscale", header: "tonc.h".}
+proc clrRgbscale*(dst: ptr Color; src: ptr Color; nclrs: uint; clr: Color) {.importc: "clr_rgbscale", tonc.}
   ## Transform colors to an rgb-scale.
   ## .. note:: `clr` indicates a color vector in RGB-space. Each source color is converted to a brightness value (i.e. grayscale) and then mapped 
   ## onto that color vector. A grayscale is a special case of this, using a color with R=G=B.
@@ -141,7 +144,7 @@ proc clrRgbscale*(dst: ptr Color; src: ptr Color; nclrs: uint; clr: Color) {.imp
   ## clr
   ##   Destination color vector.
 
-proc clrAdjBrightness*(dst: ptr Color; src: ptr Color; nclrs: uint; bright: Fixed) {.importc: "clr_adj_brightness", header: "tonc.h".}
+proc clrAdjBrightness*(dst: ptr Color; src: ptr Color; nclrs: uint; bright: Fixed) {.importc: "clr_adj_brightness", tonc.}
   ## Adjust brightness by `bright`
   ## Operation: `color= color+dB`;
   ## 
@@ -159,7 +162,7 @@ proc clrAdjBrightness*(dst: ptr Color; src: ptr Color; nclrs: uint; bright: Fixe
   ## bright
   ##   Brightness difference, dB (in .8f)
 
-proc clrAdjContrast*(dst: ptr Color; src: ptr Color; nclrs: uint; contrast: Fixed) {.importc: "clr_adj_contrast", header: "tonc.h".}
+proc clrAdjContrast*(dst: ptr Color; src: ptr Color; nclrs: uint; contrast: Fixed) {.importc: "clr_adj_contrast", tonc.}
   ## Adjust contrast by `contrast`
   ## Operation: `color = color*(1+dC) - MAX*dC/2`
   ## 
@@ -177,7 +180,7 @@ proc clrAdjContrast*(dst: ptr Color; src: ptr Color; nclrs: uint; contrast: Fixe
   ## contrast
   ##   Contrast differencem dC (in .8f)
 
-proc clrAdjIntensity*(dst: ptr Color; src: ptr Color; nclrs: uint; intensity: Fixed) {.importc: "clr_adj_intensity", header: "tonc.h".}
+proc clrAdjIntensity*(dst: ptr Color; src: ptr Color; nclrs: uint; intensity: Fixed) {.importc: "clr_adj_intensity", tonc.}
   ## Adjust intensity by `intensity`. 
   ## Operation: `color = (1+dI)*color`.
   ## 
@@ -195,7 +198,7 @@ proc clrAdjIntensity*(dst: ptr Color; src: ptr Color; nclrs: uint; intensity: Fi
   ## intensity
   ##   Intensity difference, dI (in .8f)
 
-proc palGradient*(pal: ptr Color; first: int; last: int) {.importc: "pal_gradient", header: "tonc.h".}
+proc palGradient*(pal: ptr Color; first: int; last: int) {.importc: "pal_gradient", tonc.}
   ## Create a gradient between `pal[first]` and `pal[last]`.
   ## 
   ## **Parameters:**
@@ -209,7 +212,7 @@ proc palGradient*(pal: ptr Color; first: int; last: int) {.importc: "pal_gradien
   ## last
   ##   Last index of gradient.
 
-proc palGradient*(pal: ptr Color; first: int; last: int; clr_first: Color; clr_last: Color) {.importc: "pal_gradient_ex", header: "tonc.h".}
+proc palGradient*(pal: ptr Color; first: int; last: int; clr_first: Color; clr_last: Color) {.importc: "pal_gradient_ex", tonc.}
   ## Create a gradient between `pal[first]` and `pal[last]`.
   ## 
   ## **Parameters:**
@@ -229,7 +232,7 @@ proc palGradient*(pal: ptr Color; first: int; last: int; clr_first: Color; clr_l
   ## clr_last
   ##   Color of last index.
 
-proc clrBlendFast*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: uint; alpha: uint32) {.importc: "clr_blend_fast", header: "tonc.h".}
+proc clrBlendFast*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: uint; alpha: uint32) {.importc: "clr_blend_fast", tonc.}
   ## Blends color arrays `srca` and `srcb` into `dst`.
   ## 
   ## **Parameters:**
@@ -250,7 +253,7 @@ proc clrBlendFast*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: uint
   ##   Blend weight (range: 0-32).
   ## .. note:: Handles 2 colors per loop. Very fast.
 
-proc clrFadeFast*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: uint; alpha: uint32) {.importc: "clr_fade_fast", header: "tonc.h".}
+proc clrFadeFast*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: uint; alpha: uint32) {.importc: "clr_fade_fast", tonc.}
   ## Fades color arrays `srca` to `clr` into `dst`.
   ## 
   ## **Parameters:**
@@ -310,41 +313,41 @@ proc clearRow*(sbb: var Screenblock, row: range[0..31]) =
 {.pop.}
 
 # TODO: document and/or port these two
-proc bgIsAffine*(n:int):bool {.importc: "BG_IS_AFFINE", header: "tonc.h".}
-proc bgIsAvail*(n:int):bool {.importc: "BG_IS_AVAIL", header: "tonc.h".}
+proc bgIsAffine*(n: int): bool {.importc: "BG_IS_AFFINE", toncinl.}
+proc bgIsAvail*(n: int): bool {.importc: "BG_IS_AVAIL", toncinl.}
 
-proc fill*(sbb: var Screenblock; se: ScrEntry) {.importc: "se_fill", header: "tonc.h".}
+proc fill*(sbb: var Screenblock; se: ScrEntry) {.importc: "se_fill", toncinl.}
   ## Fill screenblock `sbb` with `se`.
 
-proc plot*(sbb: var Screenblock; x, y: int; se: ScrEntry) {.importc: "se_plot", header: "tonc.h".}
+proc plot*(sbb: var Screenblock; x, y: int; se: ScrEntry) {.importc: "se_plot", toncinl.}
   ## Plot a screen entry at (`x`,`y`) of screenblock `sbb`.
 
-proc rect*(sbb: var Screenblock; left, top, right, bottom: int; se: ScrEntry) {.importc: "se_rect", header: "tonc.h".}
+proc rect*(sbb: var Screenblock; left, top, right, bottom: int; se: ScrEntry) {.importc: "se_rect", toncinl.}
   ## Fill a rectangle on `sbb` with `se`.
 
-proc frame*(sbb: var Screenblock; left, top, right, bottom: int; se: ScrEntry) {.importc: "se_frame", header: "tonc.h".}
+proc frame*(sbb: var Screenblock; left, top, right, bottom: int; se: ScrEntry) {.importc: "se_frame", toncinl.}
   ## Create a border on `sbb` with `se`.
 
-proc window*(sbb: var Screenblock; left, top, right, bottom: int; se0: ScrEntry) {.importc: "se_window", header: "tonc.h".}
-proc hline*(sbb: var Screenblock; x0, x1, y: int; se: ScrEntry) {.importc: "se_hline", header: "tonc.h".}
-proc vline*(sbb: var Screenblock; x, y0, y1: int; se: ScrEntry) {.importc: "se_vline", header: "tonc.h".}
+proc window*(sbb: var Screenblock; left, top, right, bottom: int; se0: ScrEntry) {.importc: "se_window", tonc.}
+proc hline*(sbb: var Screenblock; x0, x1, y: int; se: ScrEntry) {.importc: "se_hline", tonc.}
+proc vline*(sbb: var Screenblock; x, y0, y1: int; se: ScrEntry) {.importc: "se_vline", tonc.}
 
 
 # TODO: rework below
 
-proc bgAffSet*(bgaff: ptr BgAffine; pa, pb, pc, pd: Fixed) {.importc: "bg_aff_set", header: "tonc.h".}
+proc bgAffSet*(bgaff: ptr BgAffine; pa, pb, pc, pd: Fixed) {.importc: "bg_aff_set", toncinl.}
   ## Set the elements of a bg affine matrix.
 
-proc bgAffIdentity*(bgaff: ptr BgAffine) {.importc: "bg_aff_identity", header: "tonc.h".}
+proc bgAffIdentity*(bgaff: ptr BgAffine) {.importc: "bg_aff_identity", toncinl.}
   ## Set an bg affine matrix to the identity matrix
 
-proc bgAffScale*(bgaff: ptr BgAffine; sx, sy: Fixed) {.importc: "bg_aff_scale", header: "tonc.h".}
+proc bgAffScale*(bgaff: ptr BgAffine; sx, sy: Fixed) {.importc: "bg_aff_scale", toncinl.}
   ## Set an bg affine matrix for scaling.
 
-proc bgAffShearX*(bgaff: ptr BgAffine; hx: Fixed) {.importc: "bg_aff_shearx", header: "tonc.h".}
-proc bgAffShearY*(bgaff: ptr BgAffine; hy: Fixed) {.importc: "bg_aff_sheary", header: "tonc.h".}
+proc bgAffShearX*(bgaff: ptr BgAffine; hx: Fixed) {.importc: "bg_aff_shearx", toncinl.}
+proc bgAffShearY*(bgaff: ptr BgAffine; hy: Fixed) {.importc: "bg_aff_sheary", toncinl.}
 
-proc bgAffRotate*(bgaff: ptr BgAffine; alpha: uint16) {.importc: "bg_aff_rotate", header: "tonc.h".}
+proc bgAffRotate*(bgaff: ptr BgAffine; alpha: uint16) {.importc: "bg_aff_rotate", tonc.}
   ## Set bg matrix to counter-clockwise rotation.
   ## 
   ## **Parameters:**
@@ -355,7 +358,7 @@ proc bgAffRotate*(bgaff: ptr BgAffine; alpha: uint16) {.importc: "bg_aff_rotate"
   ## alpha
   ##   CCW angle. full-circle is 10000h.
 
-proc bgAffRotscale*(bgaff: ptr BgAffine; sx, sy: int; alpha: uint16) {.importc: "bg_aff_rotscale", header: "tonc.h".}
+proc bgAffRotscale*(bgaff: ptr BgAffine; sx, sy: int; alpha: uint16) {.importc: "bg_aff_rotscale", tonc.}
   ## Set bg matrix to 2d scaling, then counter-clockwise rotation.
   ## 
   ## **Parameters:**
@@ -372,7 +375,7 @@ proc bgAffRotscale*(bgaff: ptr BgAffine; sx, sy: int; alpha: uint16) {.importc: 
   ## alpha
   ##   CCW angle. full-circle is 10000h.
 
-proc bgAffRotscale*(bgaff: ptr BgAffine; `as`: ptr AffSrc) {.importc: "bg_aff_rotscale2", header: "tonc.h".}
+proc bgAffRotscale*(bgaff: ptr BgAffine; `as`: ptr AffSrc) {.importc: "bg_aff_rotscale2", tonc.}
   ## Set bg matrix to 2d scaling, then counter-clockwise rotation.
   ## 
   ## **Parameters:**
@@ -383,13 +386,13 @@ proc bgAffRotscale*(bgaff: ptr BgAffine; `as`: ptr AffSrc) {.importc: "bg_aff_ro
   ## as
   ##   Struct with scales and angle.
 
-proc bgAffPremul*(dst: ptr BgAffine; src: ptr BgAffine) {.importc: "bg_aff_premul", header: "tonc.h".}
+proc bgAffPremul*(dst: ptr BgAffine; src: ptr BgAffine) {.importc: "bg_aff_premul", tonc.}
   ## Pre-multiply `dst` by `src`: `D = S*D`
 
-proc bgAffPostmul*(dst: ptr BgAffine; src: ptr BgAffine) {.importc: "bg_aff_postmul", header: "tonc.h".}
+proc bgAffPostmul*(dst: ptr BgAffine; src: ptr BgAffine) {.importc: "bg_aff_postmul", tonc.}
   ## Post-multiply `dst` by `src`: `D = D*S`
 
-proc bgRotscaleEx*(bgaff: ptr BgAffine; asx: ptr AffSrcEx) {.importc: "bg_rotscale_ex", header: "tonc.h".}
+proc bgRotscaleEx*(bgaff: ptr BgAffine; asx: ptr AffSrcEx) {.importc: "bg_rotscale_ex", tonc.}
   ## Set bg affine matrix to a rot/scale around an arbitrary point.
   ## 
   ## **Parameters:**
@@ -403,17 +406,17 @@ proc bgRotscaleEx*(bgaff: ptr BgAffine; asx: ptr AffSrcEx) {.importc: "bg_rotsca
 
 proc m3Clear*() {.inline.} =
   memset32(addr vidMem, 0, M3_SIZE div 4)
-proc m3Fill*(clr: Color) {.importc: "m3_fill", header: "tonc.h".}
+proc m3Fill*(clr: Color) {.importc: "m3_fill", toncinl.}
   ## Fill the mode 3 background with color `clr`.
-proc m3Plot*(x, y: int; clr: Color) {.importc: "m3_plot", header: "tonc.h".}
+proc m3Plot*(x, y: int; clr: Color) {.importc: "m3_plot", toncinl.}
   ## Plot a single colored pixel in mode 3 at (`x`, `y`).
-proc m3Hline*(x1, y, x2: int; clr: Color) {.importc: "m3_hline", header: "tonc.h".}
+proc m3Hline*(x1, y, x2: int; clr: Color) {.importc: "m3_hline", toncinl.}
   ## Draw a colored horizontal line in mode 3.
-proc m3Vline*(x, y1, y2: int; clr: Color) {.importc: "m3_vline", header: "tonc.h".}
+proc m3Vline*(x, y1, y2: int; clr: Color) {.importc: "m3_vline", toncinl.}
   ## Draw a colored vertical line in mode 3.
-proc m3Line*(x1, y1, x2, y2: int; clr: Color) {.importc: "m3_line", header: "tonc.h".}
+proc m3Line*(x1, y1, x2, y2: int; clr: Color) {.importc: "m3_line", toncinl.}
   ## Draw a colored line in mode 3.
-proc m3Rect*(left, top, right, bottom: int; clr: Color) {.importc: "m3_rect", header: "tonc.h".}
+proc m3Rect*(left, top, right, bottom: int; clr: Color) {.importc: "m3_rect", toncinl.}
   ## Draw a colored rectangle in mode 3.
   ## 
   ## **Parameters:**
@@ -435,7 +438,7 @@ proc m3Rect*(left, top, right, bottom: int; clr: Color) {.importc: "m3_rect", he
   ## 
   ## .. note:: Normalized, but not clipped.
 
-proc m3Frame*(left, top, right, bottom: int; clr: Color) {.importc: "m3_frame", header: "tonc.h".}
+proc m3Frame*(left, top, right, bottom: int; clr: Color) {.importc: "m3_frame", toncinl.}
   ## Draw a colored frame in mode 3.
   ## 
   ## **Parameters:**
@@ -458,17 +461,17 @@ proc m3Frame*(left, top, right, bottom: int; clr: Color) {.importc: "m3_frame", 
   ## .. note:: Normalized, but not clipped.
 
 proc m4Clear*() = memset32(vidPage, 0, M4_SIZE div 4)
-proc m4Fill*(clrid: uint8) {.importc: "m4_fill", header: "tonc.h".}
+proc m4Fill*(clrid: uint8) {.importc: "m4_fill", toncinl.}
   ## Fill the current mode 4 backbuffer with `clrid`
-proc m4Plot*(x, y: int; clrid: uint8) {.importc: "m4_plot", header: "tonc.h".}
+proc m4Plot*(x, y: int; clrid: uint8) {.importc: "m4_plot", toncinl.}
   ## Plot a `clrid` pixel on the current mode 4 backbuffer
-proc m4Hline*(x1, y, x2: int; clrid: uint8) {.importc: "m4_hline", header: "tonc.h".}
+proc m4Hline*(x1, y, x2: int; clrid: uint8) {.importc: "m4_hline", toncinl.}
   ## Draw a `clrid` colored horizontal line in mode 4.
-proc m4Vline*(x, y1, y2: int; clrid: uint8) {.importc: "m4_vline", header: "tonc.h".}
+proc m4Vline*(x, y1, y2: int; clrid: uint8) {.importc: "m4_vline", toncinl.}
   ## Draw a `clrid` colored vertical line in mode 4.
-proc m4Line*(x1, y1, x2, y2: int; clrid: uint8) {.importc: "m4_line", header: "tonc.h".}
+proc m4Line*(x1, y1, x2, y2: int; clrid: uint8) {.importc: "m4_line", toncinl.}
   ## Draw a `clrid` colored line in mode 4.
-proc m4Rect*(left, top, right, bottom: int; clrid: uint8) {.importc: "m4_rect", header: "tonc.h".}
+proc m4Rect*(left, top, right, bottom: int; clrid: uint8) {.importc: "m4_rect", toncinl.}
   ## Draw a `clrid` colored rectangle in mode 4.
   ## 
   ## **Parameters:**
@@ -489,7 +492,7 @@ proc m4Rect*(left, top, right, bottom: int; clrid: uint8) {.importc: "m4_rect", 
   ##   color index.
   ## 
   ## .. note:: Normalized, but not clipped.
-proc m4Frame*(left, top, right, bottom: int; clrid: uint8) {.importc: "m4_frame", header: "tonc.h".}
+proc m4Frame*(left, top, right, bottom: int; clrid: uint8) {.importc: "m4_frame", toncinl.}
   ## Draw a `clrid` colored frame in mode 4.
   ## 
   ## **Parameters:**
@@ -512,17 +515,17 @@ proc m4Frame*(left, top, right, bottom: int; clrid: uint8) {.importc: "m4_frame"
   ## .. note:: Normalized, but not clipped.
 
 proc m5Clear*() = memset32(vidPage, 0, M5_SIZE div 4)
-proc m5Fill*(clr: Color) {.importc: "m5_fill", header: "tonc.h".}
+proc m5Fill*(clr: Color) {.importc: "m5_fill", toncinl.}
   ## Fill the current mode 5 backbuffer with `clr`
-proc m5Plot*(x, y: int; clr: Color) {.importc: "m5_plot", header: "tonc.h".}
+proc m5Plot*(x, y: int; clr: Color) {.importc: "m5_plot", toncinl.}
   ## Plot a `clrid` pixel on the current mode 5 backbuffer
-proc m5HLine*(x1, y, x2: int; clr: Color) {.importc: "m5_hline", header: "tonc.h".}
+proc m5HLine*(x1, y, x2: int; clr: Color) {.importc: "m5_hline", toncinl.}
   ## Draw a colored horizontal line in mode 5.
-proc m5VLine*(x, y1, y2: int; clr: Color) {.importc: "m5_vline", header: "tonc.h".}
+proc m5VLine*(x, y1, y2: int; clr: Color) {.importc: "m5_vline", toncinl.}
   ## Draw a colored vertical line in mode 5.
-proc m5Line*(x1, y1, x2, y2: int; clr: Color) {.importc: "m5_line", header: "tonc.h".}
+proc m5Line*(x1, y1, x2, y2: int; clr: Color) {.importc: "m5_line", toncinl.}
   ## Draw a colored line in mode 5.
-proc m5Rect*(left, top, right, bottom: int; clr: Color) {.importc: "m5_rect", header: "tonc.h".}
+proc m5Rect*(left, top, right, bottom: int; clr: Color) {.importc: "m5_rect", toncinl.}
   ## Draw a colored rectangle in mode 5.
   ## 
   ## **Parameters:**
@@ -544,7 +547,7 @@ proc m5Rect*(left, top, right, bottom: int; clr: Color) {.importc: "m5_rect", he
   ## 
   ## .. note:: Normalized, but not clipped.
 
-proc m5Frame*(left, top, right, bottom: int; clr: Color) {.importc: "m5_frame", header: "tonc.h".}
+proc m5Frame*(left, top, right, bottom: int; clr: Color) {.importc: "m5_frame", toncinl.}
   ## Draw a colored frame in mode 5.
   ## 
   ## **Parameters:**

@@ -351,16 +351,16 @@ var win1h* {.importc:"(*(volatile WinH*)(0x04000042))", nodecl.}: WinH  ## [Writ
 var win0v* {.importc:"(*(volatile WinV*)(0x04000044))", nodecl.}: WinV  ## [Write only!] Sets the upper and lower bounds of window 0
 var win1v* {.importc:"(*(volatile WinV*)(0x04000046))", nodecl.}: WinV  ## [Write only!] Sets the upper and lower bounds of window 1
 
-var win0cnt* {.importc:"REG_WIN0CNT", header:"tonc.h".}: WinCnt  ## Window 0 control
-var win1cnt* {.importc:"REG_WIN1CNT", header:"tonc.h".}: WinCnt  ## Window 1 control
-var winoutcnt* {.importc:"REG_WINOUTCNT", header:"tonc.h".}: WinCnt  ## Out window control
-var winobjcnt* {.importc:"REG_WINOBJCNT", header:"tonc.h".}: WinCnt  ## Object window control
+var win0cnt* {.importc:"REG_WIN0CNT", header:"tonc_memmap.h".}: WinCnt  ## Window 0 control
+var win1cnt* {.importc:"REG_WIN1CNT", header:"tonc_memmap.h".}: WinCnt  ## Window 1 control
+var winoutcnt* {.importc:"REG_WINOUTCNT", header:"tonc_memmap.h".}: WinCnt  ## Out window control
+var winobjcnt* {.importc:"REG_WINOBJCNT", header:"tonc_memmap.h".}: WinCnt  ## Object window control
 
-var mosaic* {.importc:"REG_MOSAIC", header:"tonc.h".}: Mosaic   ## [Write only!] Mosaic size register
+var mosaic* {.importc:"REG_MOSAIC", header:"tonc_memmap.h".}: Mosaic   ## [Write only!] Mosaic size register
 
-var bldcnt* {.importc:"REG_BLDCNT", header:"tonc.h".}: BldCnt          ## Blend control register
-var bldalpha* {.importc:"REG_BLDALPHA", header:"tonc.h".}: BlendAlpha  ## Alpha blending fade coefficients
-var bldy* {.importc:"REG_BLDY", header:"tonc.h".}: BlendBrightness     ## [Write only!] Brightness (fade in/out) coefficient
+var bldcnt* {.importc:"REG_BLDCNT", header:"tonc_memmap.h".}: BldCnt          ## Blend control register
+var bldalpha* {.importc:"REG_BLDALPHA", header:"tonc_memmap.h".}: BlendAlpha  ## Alpha blending fade coefficients
+var bldy* {.importc:"REG_BLDY", header:"tonc_memmap.h".}: BlendBrightness     ## [Write only!] Brightness (fade in/out) coefficient
 
 
 import macros

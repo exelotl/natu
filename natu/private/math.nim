@@ -11,6 +11,8 @@ import std/[math, macros, parseutils]
 {.compile(toncPath & "/asm/div_lut.s", toncAsmFlags).}
 {.compile(toncPath & "/asm/sin_lut.s", toncAsmFlags).}
 
+{.pragma: tonc, header: "tonc_math.h".}
+{.pragma: toncinl, header: "tonc_math.h".}  # indicates that the definition is in the header.
 
 const
   FIX_SHIFT*: int = 8
@@ -116,30 +118,30 @@ template `/=`*(a: var Fixed, b: Fixed|int) =  a = a / b
 # Lookup Tables
 # -------------
 
-var sinLut* {.importc: "sin_lut", header: "tonc.h".}: array[514, int16]
-var divLut* {.importc: "div_lut", header: "tonc.h".}: array[257, int32]
+var sinLut* {.importc: "sin_lut", tonc.}: array[514, int16]
+var divLut* {.importc: "div_lut", tonc.}: array[257, int32]
 
 ## TODO: make these distinct, add helper functions such as degrees(Fixed|int)
 type
   Angle* = uint32  ## 2π = 0x10000 (i.e. angle with 16 bits of resolution)
   TrigResult* = int32
 
-proc luSin*(theta: Angle): TrigResult {.importc: "lu_sin", header: "tonc.h".}
+proc luSin*(theta: Angle): TrigResult {.importc: "lu_sin", toncinl.}
   ## Look-up a sine value (2π = 0x10000)
   ## `theta` Angle in [0,FFFFh] range
   ## Return: .12f sine value
 
-proc luCos*(theta: Angle): TrigResult {.importc: "lu_cos", header: "tonc.h".}
+proc luCos*(theta: Angle): TrigResult {.importc: "lu_cos", toncinl.}
   ## Look-up a cosine value (2π = 0x10000)
   ## `theta` Angle in [0,FFFFh] range
   ## Returns .12f cosine value
 
-proc luDiv*(x: uint32): uint32 {.importc: "lu_div", header: "tonc.h".}
+proc luDiv*(x: uint32): uint32 {.importc: "lu_div", toncinl.}
   ## Look-up a division value between 0 and 255
   ## `x` reciprocal to look up.
   ## Returns 1/x (.16f)
 
-proc luLerp32*(lut: ptr int32; x: uint; shift: uint): int {.importc: "lu_lerp32", header: "tonc.h".}
+proc luLerp32*(lut: ptr int32; x: uint; shift: uint): int {.importc: "lu_lerp32", toncinl.}
   ## Linear interpolator for 32bit LUTs.
   ## A lut is essentially the discrete form of a function, f(x).
   ## You can get values for non-integer `x` via (linear) interpolation between f(x) and f(x+1).
@@ -147,7 +149,7 @@ proc luLerp32*(lut: ptr int32; x: uint; shift: uint): int {.importc: "lu_lerp32"
   ## `x`     Fixed point number to interpolate at.
   ## `shift` Number of fixed-point bits of `x`.
 
-proc luLerp16*(lut: ptr int16; x: uint; shift: uint): int {.importc: "lu_lerp16", header: "tonc.h".}
+proc luLerp16*(lut: ptr int16; x: uint; shift: uint): int {.importc: "lu_lerp16", toncinl.}
   ## As luLerp32, but for 16bit LUTs.
 
 

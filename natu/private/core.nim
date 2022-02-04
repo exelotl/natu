@@ -9,11 +9,14 @@ import types
 {.compile(toncPath & "/asm/tonc_memset.s", toncAsmFlags).}
 # {.compile(toncPath & "/asm/tonc_nocash.s", toncAsmFlags).}  # Natu doesn't do nocash debugging yet.
 
+{.pragma: tonc, header: "tonc_core.h".}
+{.pragma: toncinl, header: "tonc_core.h".}  # indicates that the definition is in the header.
+
 # Data
 # ----
 
-proc tonccpy*(dst: pointer; src: pointer; size: SomeInteger): pointer {.importc: "tonccpy", header: "tonc.h", discardable.}
-  ## VRAM-safe cpy.
+proc tonccpy*(dst: pointer; src: pointer; size: SomeInteger): pointer {.importc: "tonccpy", tonc, discardable.}
+  ## VRAM-safe copy.
   ## This version mimics memcpy in functionality, with the benefit of working for VRAM as well. It is also 
   ## slightly faster than the original memcpy, but faster implementations can be made.
   ## `dst`  Destination pointer.
@@ -22,16 +25,16 @@ proc tonccpy*(dst: pointer; src: pointer; size: SomeInteger): pointer {.importc:
   ## Returns `dst`
   ## Note: The pointers and size need not be word-aligned.
 
-proc toncset*(dst: pointer, src: uint8, size: SomeInteger): pointer {.importc: "toncset", header: "tonc.h", discardable.}
+proc toncset*(dst: pointer, src: uint8, size: SomeInteger): pointer {.importc: "toncset", toncinl, discardable.}
   ## VRAM-safe memset, byte version. Size in bytes.
 
-proc toncset16*(dst: pointer, src: uint16, size: SomeInteger): pointer {.importc: "toncset16", header: "tonc.h", discardable.}
+proc toncset16*(dst: pointer, src: uint16, size: SomeInteger): pointer {.importc: "toncset16", toncinl, discardable.}
   ## VRAM-safe memset, halfword version. Size in hwords.
 
-proc toncset32*(dst: pointer, src: uint32, size: SomeInteger): pointer {.importc: "toncset32", header: "tonc.h", discardable.}
+proc toncset32*(dst: pointer, src: uint32, size: SomeInteger): pointer {.importc: "toncset32", toncinl, discardable.}
   ## VRAM-safe memset, word version. Size in words.
 
-proc memset16*(dst:pointer, hw:uint16, hwcount:SomeInteger) {.importc: "memset16", header: "tonc.h".}
+proc memset16*(dst: pointer, hw: uint16, hwcount: SomeInteger) {.importc: "memset16", tonc.}
   ## Fastfill for halfwords, analogous to memset()
   ## Uses `memset32()` if `hwcount>5`
   ## `dst`     Destination address.
@@ -40,7 +43,7 @@ proc memset16*(dst:pointer, hw:uint16, hwcount:SomeInteger) {.importc: "memset16
   ## Note: `dst` *must* be halfword aligned.
   ## Note: `r0` returns as `dst + hwcount*2`.
 
-proc memcpy16*(dst:pointer, src:pointer, hwcount:SomeInteger) {.importc: "memcpy16", header: "tonc.h".}
+proc memcpy16*(dst: pointer, src: pointer, hwcount: SomeInteger) {.importc: "memcpy16", tonc.}
   ## Copy for halfwords.
   ## Uses `memcpy32()` if `hwn > 6` and `src` and `dst` are aligned equally.
   ## `dst`     Destination address.
@@ -49,7 +52,7 @@ proc memcpy16*(dst:pointer, src:pointer, hwcount:SomeInteger) {.importc: "memcpy
   ## Note: `dst` and `src` *must* be halfword aligned.
   ## Note: `r0` and `r1` return as `dst + hwcount*2` and `src + hwcount*2`.
 
-proc memset32*(dst:pointer, wd:uint32, wcount:SomeInteger) {.importc: "memset32", header: "tonc.h".}
+proc memset32*(dst: pointer, wd: uint32, wcount: SomeInteger) {.importc: "memset32", tonc.}
   ## Fast-fill by words, analogous to memset()
   ## Like CpuFastSet(), only without the requirement of 32byte chunks and no awkward store-value-in-memory-first issue.
   ## `dst`     Destination address.
@@ -58,7 +61,7 @@ proc memset32*(dst:pointer, wd:uint32, wcount:SomeInteger) {.importc: "memset32"
   ## Note: `dst` *must* be word aligned.
   ## Note: `r0` returns as `dst + wdcount*4`.
 
-proc memcpy32*(dst:pointer, src:pointer, wcount:SomeInteger) {.importc: "memcpy32", header: "tonc.h".}
+proc memcpy32*(dst: pointer, src: pointer, wcount: SomeInteger) {.importc: "memcpy32", tonc.}
   ## Fast-copy by words.
   ## Like CpuFastFill(), only without the requirement of 32byte chunks
   ## `dst`     Destination address.
@@ -106,7 +109,7 @@ template hword2word*(h0, h1: uint16): uint32 =
 # DMA
 # ---
 
-proc dmaCpy*(dst: pointer; src: pointer; count: SomeInteger; ch: uint; mode: uint32) {.importc: "dma_cpy", header: "tonc.h".}
+proc dmaCpy*(dst: pointer; src: pointer; count: SomeInteger; ch: uint; mode: uint32) {.importc: "dma_cpy", toncinl.}
   ## Generic DMA copy routine.
   ## `dst`   Destination address.
   ## `src`   Source address.
@@ -115,7 +118,7 @@ proc dmaCpy*(dst: pointer; src: pointer; count: SomeInteger; ch: uint; mode: uin
   ## `mode`  DMA transfer mode.
   ## Note: `count` is the number of copies, not the size in bytes.
 
-proc dmaFill*(dst: pointer; src: uint32; count: SomeInteger; ch: uint; mode: uint32) {.importc: "dma_fill", header: "tonc.h".}
+proc dmaFill*(dst: pointer; src: uint32; count: SomeInteger; ch: uint; mode: uint32) {.importc: "dma_fill", toncinl.}
   ## Generic DMA fill routine.
   ## `dst`   Destination address.
   ## `src`   Source value.
@@ -124,14 +127,14 @@ proc dmaFill*(dst: pointer; src: uint32; count: SomeInteger; ch: uint; mode: uin
   ## `mode`  DMA transfer mode.
   ## Note: `count` is the number of copies, not the size in bytes.
   
-proc dma3Cpy*(dst: pointer; src: pointer; size: SomeInteger) {.importc: "dma3_cpy", header: "tonc.h".}
+proc dma3Cpy*(dst: pointer; src: pointer; size: SomeInteger) {.importc: "dma3_cpy", toncinl.}
   ## Specific DMA copier, using channel 3, word transfers.
   ## `dst`  Destination address.
   ## `src`  Source address.
   ## `size` Number of bytes to copy
   ## Note: `size` is the number of bytes
 
-proc dma3Fill*(dst: pointer; src: uint32; size: SomeInteger) {.importc: "dma3_fill", header: "tonc.h".}
+proc dma3Fill*(dst: pointer; src: uint32; size: SomeInteger) {.importc: "dma3_fill", toncinl.}
   ## Specific DMA filler, using channel 3, word transfers.
   ## `dst`  Destination address.
   ## `src`  Source value.
@@ -142,26 +145,28 @@ proc dma3Fill*(dst: pointer; src: uint32; size: SomeInteger) {.importc: "dma3_fi
 # Timer
 # -----
 
-proc profileStart*() {.importc: "profile_start", header: "tonc.h".}
-  ## Start a profiling run
-  ## Note: Routine uses timers 3 and 3; if you're already using these somewhere, chaos is going to ensue.
+proc profileStart*() {.importc: "profile_start", toncinl.}
+  ## Start a profiling run.
+  ## 
+  ## .. note::
+  ##    Routine uses timers 2 and 3; if you're already using these somewhere, chaos is going to ensue.
 
-proc profileStop*(): uint32 {.importc: "profile_stop", header: "tonc.h".}
+proc profileStop*(): uint {.importc: "profile_stop", toncinl.}
   ## Stop a profiling run and return the time since its start.
-  ## Return: 32bit cycle count
+  ## 
+  ## Returns number of CPU cycles elapsed since `profileStart` was called.
 
 
 # TODO, accept string literal, output assembly?
 # proc ASM_CMT*(str:string)
 
-proc ASM_BREAK*() {.importc: "ASM_BREAK", header: "tonc.h".}
+proc asmBreak*() {.importc: "ASM_BREAK", toncinl.}
   ## No$gba breakpoint
 
-proc ASM_NOP*() {.importc: "ASM_NOP", header: "tonc.h".}
+proc asmNop*() {.importc: "ASM_NOP", toncinl.}
   ## No-op; wait a bit.
 
-
-proc SND_RATE*(note, oct: int32) {.importc: "SND_RATE", header: "tonc.h".}
+proc sndRate*(note, oct: int32) {.importc: "SND_RATE", toncinl.}
   ## Gives the period of a note for the tone-gen registers.
   ## GBA sound range: 8 octaves: ``-2..5``; ``8*12`` = 96 notes (kinda).
   ## `note` ID (range: ``0 ..< 11``). See eSndNoteId.
@@ -171,12 +176,12 @@ proc SND_RATE*(note, oct: int32) {.importc: "SND_RATE", header: "tonc.h".}
 # Sector checking
 # ---------------
 
-proc octant*(x: int32; y: int32): uint32 {.importc: "octant", header: "tonc.h".}
+proc octant*(x, y: int): uint {.importc: "octant", tonc.}
   ## Get the octant that (`x`, `y`) is in.
   ## This function divides the circle in 8 parts. The angle starts at the `y=0` line and then moves in the direction
   ## of the `x=0` line. On the screen, this would be like starting at the 3 o'clock position and moving clockwise.
 
-proc octantRot*(x0: int32; y0: int32): uint32 {.importc: "octant_rot", header: "tonc.h".}
+proc octantRot*(x0, y0: int): uint {.importc: "octant_rot", tonc.}
   ## Get the rotated octant that (`x`, `y`) is in.
   ## Like `octant()` but with a twist. The 0-octant starts 22.5° earlier so that 3 o'clock falls in the middle of 
   ## octant 0, instead of at its start. This can be useful for 8 directional pointing.
@@ -184,9 +189,9 @@ proc octantRot*(x0: int32; y0: int32): uint32 {.importc: "octant_rot", header: "
 # Globals
 # -------
 
-var oamSizes* {.importc: "oam_sizes", header: "tonc.h".}: array[3, array[4, array[2, uint8]]]
-var bgAffDefault* {.importc: "bg_aff_default", header: "tonc.h".}: BgAffine
-var vidPage* {.importc: "vid_page", header: "tonc.h".}: ptr Color
+let oamSizes* {.importc: "oam_sizes", tonc.}: array[3, array[4, array[2, uint8]]]
+let bgAffDefault* {.importc: "bg_aff_default", tonc.}: BgAffine
+var vidPage* {.importc: "vid_page", tonc.}: ptr Color
 
 # Random
 # ------
@@ -196,18 +201,18 @@ const
   QRAN_MASK* = ((1 shl QRAN_SHIFT) - 1)
   QRAN_MAX* = QRAN_MASK
 
-var qranSeed* {.importc: "__qran_seed", header: "tonc.h".}: int
+var qranSeed* {.importc: "__qran_seed", tonc.}: int
   ## Current state of the random number generator. 
   
-proc sqran*(seed: int): int {.importc: "sqran", header: "tonc.h".}
+proc sqran*(seed: int): int {.importc: "sqran", tonc.}
   ## Seed the random number generator.
   ## Returns the old seed.
   
-proc qran*(): int {.importc: "qran", header: "tonc.h".}
+proc qran*(): int {.importc: "qran", toncinl.}
   ## Quick (and very dirty) pseudo-random number generator.
   ## Returns: random in range ``0x0000 ..< 0x8000``
   
-proc qranRange*(min: int; max: int): int {.importc: "qran_range", header: "tonc.h".}
+proc qranRange*(min: int; max: int): int {.importc: "qran_range", toncinl.}
   ## Returns a random number in range ``min ..< max``
   ## Note: ``(max-min)`` must be lower than ``0x8000``
 

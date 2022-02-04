@@ -30,7 +30,7 @@ const
 
 
 type
-  Block* {.importc: "BLOCK", header: "tonc.h", bycopy, completeStruct.} = object
+  Block* {.importc: "BLOCK", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## 8-word type for fast struct-copies
     data* {.importc: "data".}: array[8, uint32]
 
@@ -47,11 +47,11 @@ type
 type
   Tile* = Tile4
   
-  Tile4* {.importc: "TILE4", header: "tonc.h", bycopy, completeStruct.} = object
+  Tile4* {.importc: "TILE4", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## 4bpp tile type, for easy indexing and copying of 16-color tiles
     data* {.importc: "data".}: array[8, uint32]
     
-  Tile8* {.importc: "TILE8", header: "tonc.h", bycopy, completeStruct.} = object
+  Tile8* {.importc: "TILE8", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## 8bpp tile type, for easy indexing and copying of 256-color tiles
     data* {.importc: "data".}: array[16, uint32]
 
@@ -61,14 +61,14 @@ type
   ObjAffineDest* = AffDst
   BgAffineDest* = AffDstEx
   
-  AffSrc* {.importc: "AFF_SRC", header: "tonc.h", bycopy, completeStruct.} = object
+  AffSrc* {.importc: "AFF_SRC", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## Simple scale-rotation source struct.
     ## This can be used with ``bios.ObjAffineSet``, and several of tonc's affine functions
     sx* {.importc: "sx".}: int16          ## Horizontal zoom (8.8f)
     sy* {.importc: "sy".}: int16          ## Vertical zoom (8.8f)
     alpha* {.importc: "alpha".}: uint16   ## Counter-clockwise angle (range 0..0xffff)
   
-  AffSrcEx* {.importc: "AFF_SRC_EX", header: "tonc.h", bycopy, completeStruct.} = object
+  AffSrcEx* {.importc: "AFF_SRC_EX", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## Extended scale-rotate source struct
     ## This is used to scale/rotate around an arbitrary point. See tonc's main text for all the details.
     texX* {.importc: "tex_x".}: int32   ## Texture-space anchor, x coordinate  (.8f)
@@ -79,7 +79,7 @@ type
     sy* {.importc: "sy".}: int16        ## Vertical zoom (8.8f)
     alpha* {.importc: "alpha".}: uint16 ## Counter-clockwise angle (range [0, 0xFFFF])
   
-  AffDst* {.importc: "AFF_DST", header: "tonc.h", bycopy, completeStruct.} = object
+  AffDst* {.importc: "AFF_DST", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## Simple scale-rotation destination struct, BG version.
     ## This is a P-matrix with continuous elements, like the BG matrix.
     ## It can be used with ObjAffineSet.
@@ -88,7 +88,7 @@ type
     pc* {.importc: "pc".}: int16
     pd* {.importc: "pd".}: int16
 
-  AffDstEx* {.importc: "AFF_DST_EX", header: "tonc.h", bycopy, completeStruct.} = object
+  AffDstEx* {.importc: "AFF_DST_EX", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## Extended scale-rotate destination struct
     ## This contains the P-matrix and a fixed-point offset, the
     ##  combination can be used to rotate around an arbitrary point.
@@ -112,20 +112,20 @@ type
 
 type
   BgPoint* = Point16
-  Point16* {.importc: "POINT16", header: "tonc.h", bycopy, completeStruct.} = object
+  Point16* {.importc: "POINT16", header: "tonc_types.h", bycopy, completeStruct.} = object
     x*, y*: int16
 
 type BgAffine* = AffDstEx
   ## Affine parameters for backgrounds; range : 0400:0020 - 0400:003F
 
 type
-  DmaRec* {.importc: "DMA_REC", header: "tonc.h", bycopy, completeStruct.} = object
+  DmaRec* {.importc: "DMA_REC", header: "tonc_types.h", bycopy, completeStruct.} = object
     ##  DMA struct; range: 0400:00B0 - 0400:00DF
     src* {.importc: "src".}: pointer
     dst* {.importc: "dst".}: pointer
     cnt* {.importc: "cnt".}: uint32
   
-  TmrRec* {.importc: "TMR_REC", header: "tonc.h", bycopy, completeStruct.} = object
+  TmrRec* {.importc: "TMR_REC", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## Timer struct, range: 0400:0100 - 0400:010F
     ## note: The attribute is required, because union's counted as u32 otherwise.
     start* {.importc: "start".}: uint16
@@ -180,7 +180,7 @@ allowUnboundedAccess(UnboundedCharblock8, 256, Tile8)
 
 
 type
-  ObjAttr* {.importc: "OBJ_ATTR", header: "tonc.h", bycopy, completeStruct.} = object
+  ObjAttr* {.importc: "OBJ_ATTR", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## Object attributes. i.e. a sprite.
     ## **Note**
     ##  The `fill` field is padding for the interlace with ObjAffine.
@@ -190,7 +190,7 @@ type
     attr2* {.importc: "attr2".}: uint16
     fill {.importc: "fill".}: int16
   
-  ObjAffine* {.importc: "OBJ_AFFINE", header: "tonc.h", bycopy, completeStruct.} = object
+  ObjAffine* {.importc: "OBJ_AFFINE", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## Object affine parameters.
     fill0 {.importc: "fill0".}: array[3, uint16]
     pa* {.importc: "pa".}: int16
