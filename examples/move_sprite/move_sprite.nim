@@ -42,11 +42,11 @@ memcpy16(addr objPalMem[pal], unsafeAddr shipPal, shipPal.len div sizeof(uint16)
 memcpy32(addr objTileMem[tid], unsafeAddr shipTiles, shipTiles.len div sizeof(uint32))
 
 # hide all sprites
-for obj in mitems(oamMem):
+for obj in mitems(objMem):
   obj.hide()
 
 # set up a sprite
-let s = addr oamMem[oid]
+let s = addr objMem[oid]
 s.init:
   pos = pos
   size = s64x64

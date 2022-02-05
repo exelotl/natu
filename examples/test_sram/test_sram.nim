@@ -87,7 +87,7 @@ proc main() =
   memset32(addr tileMemObj[0][0], octup(1), numBytes div sizeof(uint32))
   
   # Initialise a sprite to display our white tile
-  oamMem[0].init(
+  objMem[0].init(
     pos = pos,
     size = s8x8,
     tid = 0,
@@ -112,6 +112,6 @@ proc main() =
     VBlankIntrWait()
     
     # Update sprite position
-    oamMem[0].pos = pos
+    objMem[0].pos = pos
 
 main()

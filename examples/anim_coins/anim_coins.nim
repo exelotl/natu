@@ -118,7 +118,7 @@ proc main() =
       inc oid
     
     # hide remaining sprites
-    while oid < oamMem.len:
+    while oid < objMem.len:
       objMem[oid].hide()
       inc oid
   

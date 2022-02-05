@@ -197,7 +197,7 @@ var m5MemBack* {.importc:"m5_mem_back", tonc.}: array[128, M5Line]
 var objMem* {.importc:"oam_mem", tonc.}: array[128, ObjAttr]
   ## Object attribute memory
   ## ::
-  ##   oamMem[i] = object i            (ObjAttr)
+  ##   objMem[i] = object i            (ObjAttr)
 
 var objAffMem* {.importc:"obj_aff_mem", tonc.}: array[32, ObjAffine]
   ## Object affine memory

@@ -242,7 +242,7 @@ template init*(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
   ## **Example:**
   ## 
   ## .. code-block:: nim
-  ##   oamMem[0].init:
+  ##   objMem[0].init:
   ##     pos = vec2i(100, 100)
   ##     size = s32x32
   ##     tid = 0
