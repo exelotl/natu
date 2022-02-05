@@ -19,7 +19,7 @@
 
 import std/compilesettings
 
-when querySetting(command) == "doc":
+when querySetting(command) in ["doc", "jsondoc"]:
   import core
   import bios
   import irq
@@ -28,6 +28,7 @@ when querySetting(command) == "doc":
   import video
   import oam
   import surface
+  import timers
   import posprintf
   import tte
   import mgba

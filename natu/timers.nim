@@ -1,3 +1,34 @@
+## This module exposes the GBA's 4 hardware timers.
+## 
+## Each timer holds a 16-bit value which ticks up by 1 after a certain number
+## of CPU cycles (determined by the the timer's frequency setting).
+## 
+## When this value overflows, it will reset to the timer's `start` value and
+## an interrupt will be raised if one has been requested.
+## 
+## **Example:**
+## 
+## .. code-block:: nim
+## 
+##    import natu/[irq, timers, mgba]
+##    
+##    irq.init()
+##    
+##    proc myHandler() =
+##      mgba.printf("Bonk!")
+##    
+##    irq.put(iiTimer3, myHandler)      # Register the handler.
+##    
+##    tmcnt[3].init(
+##      freq = tf16kHz,
+##      start = cast[uint16](-0x4000),  # 2^14 ticks at 16 kHz = 1 second
+##      active = true,                  # Enable the timer.
+##    )
+## 
+## .. note::
+##    Timer 0 is used by `maxmod <maxmod.html>`_ for audio, so don't touch it
+##    unless you know what you're doing.
+
 from ./private/utils import writeFields
 
 type
@@ -11,13 +42,17 @@ type
   Timer* {.bycopy, exportc.} = object
     ## Provides access to a timer data register and the corresponding timer control register.
     
-    data: uint16    ## Timer data. Since reading and writing to this do different
-                    ## things, it is accessed via the `count` and `start=` procs.
+    data: uint16    ## Timer data. Since reading and writing this value do different things,
+                    ## it is accessed via the `count` and `start=` procs.
     
     freq* {.bitsize:3.}: TimerFreq   ## Frequency of the timer.
+    
     _ {.bitsize:3.}: uint16
-    irq* {.bitsize:1.}: bool         ## Enables the overflow interrupt for this timer.
-    active* {.bitsize:1.}: bool      ## Enables the timer. 
+    
+    irq* {.bitsize:1.}: bool    ## Enables the overflow interrupt for this timer.
+                                ## When using the `irq` module you don't have to set this directly.
+    
+    active* {.bitsize:1.}: bool   ## Enables the timer and resets it to its `start` value.
 
 
 var tmcnt* {.importc:"((volatile Timer*)(0x04000100))", nodecl.}: array[4, Timer]
@@ -25,14 +60,14 @@ var tmcnt* {.importc:"((volatile Timer*)(0x04000100))", nodecl.}: array[4, Timer
 
 
 proc count*(timer: Timer): uint16 {.inline.} =
-  ## Get the value of the timer.
+  ## Get the current value of the timer.
   timer.data
 
-proc `reset=`*(timer: var Timer, val: uint16) {.inline.} =
-  ## Set the initial value for the next timer run.
+proc `start=`*(timer: var Timer, val: uint16) {.inline.} =
+  ## Set the initial value of the timer.
   ## 
   ## The timer will reset to this value when it overflows
-  ## or when the `active` bit changes from `false` to `true`.
+  ## or when the `active` bit is changed from `false` to `true`.
   timer.data = val
 
 
@@ -45,7 +80,7 @@ template init*(r: Timer, args: varargs[untyped]) =
   ##    
   ##    tmcnt[3].init(
   ##      freq = tf16kHz,
-  ##      reset = cast[uint16](-0x4000),  # 2^14 ticks at 16 kHz = 1 second
+  ##      start = cast[uint16](-0x4000),  # 2^14 ticks at 16 kHz = 1 second
   ##      active = true,                  # Enable the timer.
   ##    )
   ## 

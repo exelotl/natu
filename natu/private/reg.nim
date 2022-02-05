@@ -396,7 +396,7 @@ template init*[T:WritableRegister](r: T, args: varargs[untyped]) =
   ##   dispcnt.mode = mode1
   ##   dispcnt.bg0 = true
   ## 
-  ## But this would be slower because `dispcnt` is _volatile_, so the C compiler can't optimise these lines into a single assignment.
+  ## But this would be slower because `dispcnt` is *volatile*, so the C compiler can't optimise these lines into a single assignment.
   ## 
   var tmp: T
   writeFields(tmp, args)
