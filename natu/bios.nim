@@ -167,19 +167,38 @@ proc Sqrt*(num: uint): uint {.importc.}
   ## Integer Square root (swi 0x08).
 
 proc ArcTan*(dydx: int16): int16 {.importc.}
-  ## Arctangent of dydx (swi 0x09)
+  ## Arctangent of dy/dx. (swi 0x09)
   ## 
-  ## **Parameters:**
+  ## Takes a 2.14 fixed-point value representing the steepness of the slope.
   ## 
-  ## dydx
-  ##   Slope in the range `-0x3fff..0x3fff` (corresponding to < -Pi/2, Pi/2 >)
+  ## Returns an angle in the range `-0x4000..0x4000` (representing -𝜋/2 to 𝜋/2).
   ## 
-  ## .. note:: This may be inaccurate near the range's limits.
+  ## .. warning::
+  ##    This gives completely wrong results for inputs outside the range `-0x2000..0x2000` (-1.0 to 1.0).
+  ##    
+  ##    As such, it can only *effectively* return angles in the range `-0x2000..0x2000` (-𝜋/4 to 𝜋/4).
+  ##    
+  ##    Consider using `ArcTan2` instead.
+  ## 
 
-proc ArcTan2*(x: int16; y: int16): int16 {.importc.}
-  ## Arctangent of a coordinate pair (swi 0x0A).
+proc ArcTan2*(x, y: int16): uint16 {.importc.}
+  ## Full-circle arctangent of a coordinate pair (swi 0x0A).
   ## 
-  ## This is the full-circle arctan, with an angle range of `0x0000..0xffff`.
+  ## ```
+  ##           +Y
+  ##            │  . (x,y)
+  ##            │ ╱
+  ##            │╱╮θ
+  ## -X ────────┼──────── +X
+  ##            │
+  ##            │
+  ##            │
+  ##           -Y
+  ## ```
+  ## 
+  ## This calculates the angle between the positive X axis and the point `(x, y)`.
+  ## 
+  ## The value returned is in the range `0x0000..0xffff` (0 to 2𝜋).
   ## 
 
 
@@ -235,7 +254,7 @@ proc CpuFastSet*(src: pointer; dst: pointer; opts: CpuFastSetOptions) {.importc.
   ##    
   ##    In fill-mode, the source is still an address, not a value.
   ##    
-  ##    `memcpy32`/`16` and `memset32`/`16` basically do the same things, but safer. Use those instead.
+  ##    ``memcpy32``/``16`` and ``memset32``/``16`` basically do the same things, but safer. Use those instead.
 
 
 proc BiosCheckSum*(): uint32 {.importc.}
@@ -259,11 +278,11 @@ proc ObjAffineSet*(src: ptr ObjAffineSource; dst: pointer; num: int; offset: int
   ## matrix created is:
   ## 
   ## ```
-  ## +-----------+------------+
+  ## ┌───────────┬────────────┐
   ## | sx·cos(α) | -sx·sin(α) |
-  ## +-----------+------------+
+  ## ├───────────┼────────────┤
   ## | sy·sin(α) | sy·cos(α)  |
-  ## +-----------+------------+
+  ## └───────────┴────────────┘
   ## ```
   ## 
   ## **Parameters:**
