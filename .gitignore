@@ -12,3 +12,4 @@ examples/*/nimcache/
 *.DS_Store
 *.out
 *.exe
+mmutil
