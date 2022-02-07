@@ -4,7 +4,6 @@ import natu/config
 const main = "play_music.nim"         # path to project file
 const name = splitFile(main).name     # name of ROM
 
-put "natu.toolchain", "devkitarm"
 put "natu.gameTitle", "PLAYMUSIC"     # max 12 chars, uppercase
 put "natu.gameCode", "2NTP"           # 4 chars, see GBATEK for info
 

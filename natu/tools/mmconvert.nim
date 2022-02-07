@@ -42,19 +42,21 @@ proc mmConvert*(script, sfxdir, moddir, outdir: string, files: seq[string]) =
     
     echo "Building soundbank:"
     
-    # Find mmutil in system path
-    var mmutilPath = findExe("mmutil")
+    var mmutilPath = getAppDir() / "mmutil".addFileExt(ExeExt)
     
-    # If none was found, try devkitPro tools directory as a fallback?
-    if mmutilPath == "" and existsEnv("DEVKITPRO"):
-      mmutilPath = getEnv("DEVKITPRO")/"tools"/"bin"/"mmutil".addFileExt(ExeExt)
+    if not fileExists(mmutilPath):
+      # Find mmutil in system path
+      mmutilPath = findExe("mmutil")
+      
+      # If none was found, try devkitPro tools directory as a fallback?
+      if mmutilPath == "" and existsEnv("DEVKITPRO"):
+        mmutilPath = getEnv("DEVKITPRO")/"tools"/"bin"/"mmutil".addFileExt(ExeExt)
     
     proc mmutil(args: string) =
       doAssert(
         fileExists(mmutilPath),
         "Could not find mmutil executable! (mmutilPath = \"" & mmutilPath & "\")\n" &
-        "Check you have a working devkitARM installation (including the gba-dev package group), " &
-        "or try adding mmutil to your PATH environment variable."
+        "Ensure the directory containing the mmutil executable is in your PATH, or try reinstalling Natu."
       )
       let res = execCmd(mmutilPath & " " & args)
       if res != 0:

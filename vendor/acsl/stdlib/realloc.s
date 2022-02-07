@@ -24,7 +24,7 @@
 		.include "gba_constants.inc"
 		.include "errnos.inc"
 
-HeapOrg		= __sbss_end__
+HeapOrg		= __HEAP_START__
 HeapEnd		= EWRAM_END
 
 		.text

@@ -92,8 +92,7 @@ proc main =
   # setup
   
   irq.init()
-  irq.enable(iiVBlank)
-  irq.add(iiVBlank, onVBlank)
+  irq.put(iiVBlank, onVBlank)
   
   audio.init()
   
@@ -111,7 +110,7 @@ proc main =
   
   playSong(modSubway)
   initCurrentSprite(gfxPlayer)
-
+  
   while true:
     keyPoll()
     update()

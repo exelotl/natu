@@ -41,7 +41,7 @@
 @ Variables exported
 		.global	acsl_FreeList		@ Points to free memory list
 
-HeapOrg		= __sbss_end__
+HeapOrg		= __HEAP_START__
 HeapEnd		= EWRAM_END
 
 		.section .iwram

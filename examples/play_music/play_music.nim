@@ -17,10 +17,9 @@ proc main() =
 """
   
   irq.init()
-  irq.enable(iiVBlank)
   
   # register maxmod VBlank handler
-  irq.add(iiVBlank, maxmod.vblank)
+  irq.put(iiVBlank, maxmod.vblank)
   
   # init with 8 channels
   maxmod.init(soundbankBin, 8)

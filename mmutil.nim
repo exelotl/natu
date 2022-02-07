@@ -1,0 +1,16 @@
+{.compile:"./vendor/mmutil/source/adpcm.c".}
+{.compile:"./vendor/mmutil/source/files.c".}
+{.compile:"./vendor/mmutil/source/gba.c".}
+{.compile:"./vendor/mmutil/source/it.c".}
+{.compile:"./vendor/mmutil/source/kiwi.c".}
+{.compile:"./vendor/mmutil/source/main.c".}
+{.compile:"./vendor/mmutil/source/mas.c".}
+{.compile:"./vendor/mmutil/source/mod.c".}
+{.compile:"./vendor/mmutil/source/msl.c".}
+{.compile:"./vendor/mmutil/source/nds.c".}
+{.compile:"./vendor/mmutil/source/s3m.c".}
+{.compile:"./vendor/mmutil/source/samplefix.c".}
+{.compile:"./vendor/mmutil/source/simple.c".}
+{.compile:"./vendor/mmutil/source/upload.c".}
+{.compile:"./vendor/mmutil/source/wav.c".}
+{.compile:"./vendor/mmutil/source/xm.c".}

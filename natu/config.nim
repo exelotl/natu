@@ -36,14 +36,24 @@ proc natuExe*: string =
     if dirExists(result):
       result = natuDir/"natu.out"  # unix-friendly fallback
 
+var useDkp = false
+
 proc gbaCfg* =
   
-  doAssert(get("natu.toolchain") == "devkitarm", "Only \"devkitarm\" toolchain is supported for now.")
+  if findExe("arm-none-eabi-gcc") == "":
+    if getEnv("DEVKITPRO") != "" and getEnv("DEVKITARM") != "":
+      echo "Using devkitARM's GCC."
+      useDkp = true
+    else:
+      doAssert(false, "Missing arm-none-eabi-gcc, please install it and make sure it's in your system PATH!")
   
   # set linker flags
   
+  if not exists("natu.ldflags.script"):
+    put "natu.ldflags.script", "-T " & natuDir & "/natu/private/gba_cart.ld"
+  
   if not exists("natu.ldflags.specs"):
-    put "natu.ldflags.specs", "-specs=" & devkitArm() & "/arm-none-eabi/lib/gba.specs"
+    put "natu.ldflags.specs", "-lnosys -Wl,--gc-sections"  # you could potentially pass a specs file here instead
   
   if not exists("natu.ldflags.target"):
     put "natu.ldflags.target", get("natu.cflags.target")
@@ -68,6 +78,7 @@ proc gbaCfg* =
   ].join(" ")
   
   let ldflags = [
+    get("natu.ldflags.script"),
     get("natu.ldflags.specs"),
     get("natu.ldflags.target"),
     get("natu.ldflags.debug"),
@@ -75,7 +86,7 @@ proc gbaCfg* =
   ].join(" ")
   
   # Set path to GCC and replace default flags
-  put "gcc.path", devkitArm() / "bin"
+  put "gcc.path", if useDkp: devkitArm()/"bin" else: findExe("arm-none-eabi-gcc").parentDir
   put "gcc.exe", "arm-none-eabi-gcc"
   put "gcc.linkerexe", "arm-none-eabi-gcc"
   put "gcc.options.linker", ldflags
@@ -95,20 +106,22 @@ proc gbaCfg* =
   switch "import", natuDir/"natu/private/essentials"
   patchFile("stdlib", "fatal", natuDir/"natu/private/fatal")
   
-  # Ensure subprocesses can see the DLLs in tools/bin
-  putEnv "PATH", devkitPro()/"tools"/"bin" & PathSep & getEnv("PATH")
+  if useDkp:
+    # Ensure subprocesses can see the DLLs in tools/bin
+    putEnv "PATH", devkitPro()/"tools"/"bin" & PathSep & getEnv("PATH")
 
 
 proc gbaStrip*(elfFile, gbaFile: string) =
   ## Invoke objcopy to create a raw binary file (all debug symbols removed)
-  exec devkitArm() / "bin/arm-none-eabi-objcopy -O binary " & elfFile & " " & gbaFile
+  let cmd = if useDkp: devkitArm() / "bin/arm-none-eabi-objcopy"
+            else: "arm-none-eabi-objcopy"
+  exec cmd & " -O binary " & elfFile & " " & gbaFile
 
 proc gbaFix*(gbaFile: string) =
   ## Invoke gbafix to set the ROM header
-  exec devkitPro() / "tools/bin/gbafix " &
-    gbaFile &
-    " -c" & get("natu.gameCode") &
-    " -t" & get("natu.gameTitle").toUpperAscii()
+  exec natuExe() & " fix " & gbaFile &
+    " -c:" & get("natu.gameCode") &
+    " -t:" & get("natu.gameTitle").toUpperAscii()
 
 
 # Asset conversion
