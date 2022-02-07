@@ -62,7 +62,7 @@ proc gbafix*(
     h.title = padToArray[12, char](splitFile(filename).name.toUpperAscii())
   if gameCode.isSome:
     h.gameCode = padToArray[4, char](gameCode.get)
-  if gameCode.isSome:
+  if makerCode.isSome:
     h.makerCode = padToArray[2, char](makerCode.get)
   if gameVersion.isSome:
     h.gameVersion = gameVersion.get.byte
