@@ -66,6 +66,21 @@ SECTIONS
         *(.gnu.linkonce.r.*) /* Used for vague linking */
     } > ROM
 
+    /*
+     * Required by libgcc for exception handling?
+     * https://stackoverflow.com/q/9752000
+     */
+    .ARM.extab :
+    {
+        *(.ARM.extab* .gnu.linkonce.armextab.*)
+    }
+    .ARM.exidx :
+    {
+        PROVIDE_HIDDEN(__exidx_start = .);
+        *(.ARM.exidx* .gnu.linkonce.armexidx.*)
+        PROVIDE_HIDDEN(__exidx_end = .);
+    }
+
     /* Array of functions to be called during initialization of the program */
 
     .preinit_array : ALIGN(4)
