@@ -66,20 +66,26 @@ SECTIONS
         *(.gnu.linkonce.r.*) /* Used for vague linking */
     } > ROM
 
-    /*
-     * Required by libgcc for exception handling?
-     * https://stackoverflow.com/q/9752000
-     */
-    .ARM.extab :
+
+   /*
+    * Required for C++ and for C programs that try to examine backtraces. Each
+    * function that can throw exceptions has entries in exidx and extab.
+    *
+    * - exidx is used to contain index entries for stack unwinding.
+    * - extab names sections containing exception unwinding information.
+    */
+
+    .ARM.extab : ALIGN(4)
     {
         *(.ARM.extab* .gnu.linkonce.armextab.*)
-    }
-    .ARM.exidx :
+    } > ROM
+
+    .ARM.exidx : ALIGN(4)
     {
         PROVIDE_HIDDEN(__exidx_start = .);
         *(.ARM.exidx* .gnu.linkonce.armexidx.*)
         PROVIDE_HIDDEN(__exidx_end = .);
-    }
+    } > ROM
 
     /* Array of functions to be called during initialization of the program */
 
