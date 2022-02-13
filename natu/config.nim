@@ -29,6 +29,17 @@ proc devkitArm*: string =
   when not defined(nimsuggest):
     doAssert(result != "", "Please set DEVKITARM in your environment.")
 
+# detect toolchain
+
+var useDkp = false
+let gcc = findExe("arm-none-eabi-gcc")
+if gcc == "":
+  if getEnv("DEVKITPRO") != "" and getEnv("DEVKITARM") != "":
+    useDkp = true
+  else:
+    doAssert(false, "Missing arm-none-eabi-gcc, please install it and make sure it's in your system PATH!")
+
+
 proc natuExe*: string =
   result = getEnv("NATU_EXE")
   if result == "":
@@ -36,16 +47,10 @@ proc natuExe*: string =
     if dirExists(result):
       result = natuDir/"natu.out"  # unix-friendly fallback
 
-var useDkp = false
-
 proc gbaCfg* =
   
-  if findExe("arm-none-eabi-gcc") == "":
-    if getEnv("DEVKITPRO") != "" and getEnv("DEVKITARM") != "":
-      echo "Using devkitARM's GCC."
-      useDkp = true
-    else:
-      doAssert(false, "Missing arm-none-eabi-gcc, please install it and make sure it's in your system PATH!")
+  if useDkp:
+    echo "Using devkitARM's GCC."
   
   # set linker flags
   
@@ -86,7 +91,7 @@ proc gbaCfg* =
   ].join(" ")
   
   # Set path to GCC and replace default flags
-  put "gcc.path", if useDkp: devkitArm()/"bin" else: findExe("arm-none-eabi-gcc").parentDir
+  put "gcc.path", if useDkp: devkitArm()/"bin" else: gcc.parentDir
   put "gcc.exe", "arm-none-eabi-gcc"
   put "gcc.linkerexe", "arm-none-eabi-gcc"
   put "gcc.options.linker", ldflags
