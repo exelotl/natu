@@ -99,42 +99,63 @@ type
     mbFast = 0x02
 
 
+# Annotation to indicate which software interrupt is used.
+template swi(n: string) {.pragma.}
 
-# BASIC BIOS ROUTINES
-# -------------------
 
 # Reset Functions
+# ---------------
 
-proc SoftReset*() {.importc, noreturn.}
-  ## swi 0x00
+proc SoftReset*() {.swi:"0x00", importc, noreturn.}
 
-proc RegisterRamReset*(flags: ResetFlags) {.importc.}
-  ## swi 0x01
+proc RegisterRamReset*(flags: ResetFlags) {.swi:"0x01", importc.}
 
 # Halt functions
 # --------------
 
-proc Halt*() {.importc.}
-  ## swi 0x02
+proc Halt*() {.swi:"0x02", importc.}
+  ## Halts the CPU until any enabled interrupt occurs.
 
-proc Stop*() {.importc.}
-  ## swi 0x03
+proc Stop*() {.swi:"0x03", importc.}
+  ## Stops the CPU and turns off the LCD until an enabled keypad, cartridge or serial interrupt occurs.
 
-proc IntrWait*(flagClear: bool; irq: IrqIndex) {.importc.}
-  ## swi 0x04
-
-proc VBlankIntrWait*() {.importc.}
-  ## Wait for the next VBlank (swi 0x05).
+proc IntrWait*(clear: bool; irq: set[IrqIndex]) {.swi:"0x04", importc.}
+  ## Wait until any one of the specified interrupts occurs.
   ## 
-  ## .. note:: Requires clearing of REG_IFBIOS bit 0 at the interrupt.
-  ##    Tonc's master interrupt handler does this for you.
+  ## **Parameters:**
+  ## 
+  ## clear
+  ##   If true, pre-acknowledged interrupts will be disregarded and the routine
+  ##   will wait for them to be acknowledged again.
+  ## 
+  ## irq
+  ##   Which interrupt(s) to wait for.
+
+proc VBlankIntrWait*() {.swi:"0x05", importc.}
+  ## Wait for the next VBlank.
+  ## 
+  ## This is equivalent to `IntrWait(true, {iiVBlank})`.
+  ## 
+  ## This will hang unless the VBlank interrupt is enabled.
+  ## 
+  ## **Example:**
+  ## 
+  ## .. code-block:: nim
+  ##    
+  ##    import natu/[irq, bios]
+  ##    
+  ##    irq.init()
+  ##    irq.enable(iiVBlank)
+  ##    
+  ##    while true:
+  ##      VBlankIntrWait()
 
 
 # Arithmetic
 # ----------
 
-proc Div*(num, den: int): int {.importc.}
-  ## Basic integer division (swi 0x06).
+proc Div*(num, den: int): int {.swi:"0x06", importc.}
+  ## Basic integer division.
   ## 
   ## **Parameters:**
   ## 
@@ -148,8 +169,8 @@ proc Div*(num, den: int): int {.importc.}
   ## 
   ## .. note:: Dividing by zero results in an infinite loop. Try `DivSafe <#DivSafe,int,int>`_ instead.
 
-proc DivArm*(den, num: int): int {.importc.}
-  ## Basic integer division, but with switched arguments (swi 0x07).
+proc DivArm*(den, num: int): int {.swi:"0x07", importc.}
+  ## Basic integer division, but with switched arguments.
   ## 
   ## **Parameters:**
   ## 
@@ -163,11 +184,11 @@ proc DivArm*(den, num: int): int {.importc.}
   ## 
   ## .. note:: Dividing by 0 results in an infinite loop.
 
-proc Sqrt*(num: uint): uint {.importc.}
-  ## Integer Square root (swi 0x08).
+proc Sqrt*(num: uint): uint {.swi:"0x08", importc.}
+  ## Integer Square root.
 
-proc ArcTan*(dydx: int16): int16 {.importc.}
-  ## Arctangent of dy/dx. (swi 0x09)
+proc ArcTan*(dydx: int16): int16 {.swi:"0x09", importc.}
+  ## Arctangent of dy/dx.
   ## 
   ## Takes a 2.14 fixed-point value representing the steepness of the slope.
   ## 
@@ -181,8 +202,8 @@ proc ArcTan*(dydx: int16): int16 {.importc.}
   ##    Consider using `ArcTan2` instead.
   ## 
 
-proc ArcTan2*(x, y: int16): uint16 {.importc.}
-  ## Full-circle arctangent of a coordinate pair (swi 0x0A).
+proc ArcTan2*(x, y: int16): uint16 {.swi:"0x0A", importc.}
+  ## Full-circle arctangent of a coordinate pair.
   ## 
   ## ```
   ##           +Y
@@ -205,7 +226,7 @@ proc ArcTan2*(x, y: int16): uint16 {.importc.}
 # Memory copiers/fillers
 # ----------------------
 
-proc CpuSet*(src: pointer; dst: pointer; opts: CpuSetOptions) {.importc.}
+proc CpuSet*(src: pointer; dst: pointer; opts: CpuSetOptions) {.swi:"0x0B", importc.}
   ## Transfer via CPU in word/halfword chunks.
   ## 
   ## The default mode is 16-bit copies.
@@ -230,7 +251,7 @@ proc CpuSet*(src: pointer; dst: pointer; opts: CpuSetOptions) {.importc.}
   ##    
   ##    In fill-mode, the source is still an address, not a value.
 
-proc CpuFastSet*(src: pointer; dst: pointer; opts: CpuFastSetOptions) {.importc.}
+proc CpuFastSet*(src: pointer; dst: pointer; opts: CpuFastSetOptions) {.swi:"0x0C", importc.}
   ## A fast transfer via CPU in 32 byte chunks.
   ## 
   ## This uses ARM's ldmia/stmia instructions to copy 8 words at a time,
@@ -257,8 +278,12 @@ proc CpuFastSet*(src: pointer; dst: pointer; opts: CpuFastSetOptions) {.importc.
   ##    ``memcpy32``/``16`` and ``memset32``/``16`` basically do the same things, but safer. Use those instead.
 
 
-proc BiosCheckSum*(): uint32 {.importc.}
-
+proc BiosChecksum*(): uint32 {.swi:"0x0D", importc:"BiosCheckSum".}
+  ## Calculate the checksum of the BIOS.
+  ## 
+  ## Returns:
+  ## - `0xbaae187f` for GBA / GBA SP / Game Boy Micro / Game Boy Player
+  ## - `0xbaae1880` for DS / DS Lite / DSi / 3DS Family.
 
 
 # Rot/scale functions
@@ -271,8 +296,8 @@ const
   BgAffOffset* = 2    ## To be used with `ObjAffineSet` when the destination type is `BgAffineDest`.
   ObjAffOffset* = 8   ## To be used with `ObjAffineSet` when the destination type is `ObjAffineDest`.
 
-proc ObjAffineSet*(src: ptr ObjAffineSource; dst: pointer; num: int; offset: int) {.importc.}
-  ## Sets up a simple scale-then-rotate affine transformation (swi 0x0E).
+proc ObjAffineSet*(src: ptr ObjAffineSource; dst: pointer; num: int; offset: int) {.swi:"0x0E", importc.}
+  ## Sets up a simple scale-then-rotate affine transformation.
   ## Uses a single `ObjAffineSource` struct to set up an array of affine
   ## matrices (either BG or Object) with a certain transformation. The
   ## matrix created is:
@@ -300,11 +325,10 @@ proc ObjAffineSet*(src: ptr ObjAffineSource; dst: pointer; num: int; offset: int
   ##   Offset between affine elements. Use 2 for BG and 8 for object matrices.
   ## 
   ## .. note::
-  ##   Each element in `src` needs to be word aligned, which
-  ##   devkitPro doesn't do anymore by itself.
+  ##   Each element in `src` needs to be word aligned.
 
-proc BgAffineSet*(src: ptr BgAffineSource; dst: ptr BgAffineDest; num: int) {.importc.}
-  ## Sets up a simple scale-then-rotate affine transformation (swi 0x0F).
+proc BgAffineSet*(src: ptr BgAffineSource; dst: ptr BgAffineDest; num: int) {.swi:"0x0F", importc.}
+  ## Sets up a simple scale-then-rotate affine transformation.
   ## See `ObjAffineSet` for more information.
 
 
@@ -312,57 +336,41 @@ proc BgAffineSet*(src: ptr BgAffineSource; dst: ptr BgAffineDest; num: int) {.im
 # -------------
 # (see GBATek for format details)
 
-proc BitUnPack*(src: pointer; dst: pointer; bup: BitUnpackOptions) {.importc.}
-  ## swi 0x10 +
+proc BitUnPack*(src: pointer; dst: pointer; bup: BitUnpackOptions) {.swi:"0x10", importc.}
 
-proc LZ77UnCompWram*(src: pointer; dst: pointer) {.importc.}
-  ## swi 0x11 +
+proc LZ77UnCompWram*(src: pointer; dst: pointer) {.swi:"0x11", importc.}
 
-proc LZ77UnCompVram*(src: pointer; dst: pointer) {.importc.}
-  ## swi 0x12 +
+proc LZ77UnCompVram*(src: pointer; dst: pointer) {.swi:"0x12", importc.}
 
-proc HuffUnComp*(src: pointer; dst: pointer) {.importc.}
-  ## swi 0x13 +
+proc HuffUnComp*(src: pointer; dst: pointer) {.swi:"0x13", importc.}
 
-proc RLUnCompWram*(src: pointer; dst: pointer) {.importc.}
-  ## swi 0x14
+proc RLUnCompWram*(src: pointer; dst: pointer) {.swi:"0x14", importc.}
 
-proc RLUnCompVram*(src: pointer; dst: pointer) {.importc.}
-  ## swi 0x15 +
+proc RLUnCompVram*(src: pointer; dst: pointer) {.swi:"0x15", importc.}
 
-proc Diff8bitUnFilterWram*(src: pointer; dst: pointer) {.importc.}
-  ## swi 0x16
+proc Diff8bitUnFilterWram*(src: pointer; dst: pointer) {.swi:"0x16", importc.}
 
-proc Diff8bitUnFilterVram*(src: pointer; dst: pointer) {.importc.}
-  ## swi 0x17
+proc Diff8bitUnFilterVram*(src: pointer; dst: pointer) {.swi:"0x17", importc.}
 
-proc Diff16bitUnFilter*(src: pointer; dst: pointer) {.importc.}
-  ## swi 0x18
+proc Diff16bitUnFilter*(src: pointer; dst: pointer) {.swi:"0x18", importc.}
 
 
 # Sound
 # -----
 
-proc SoundBias*(bias: uint32) {.importc.}
-  ## swi 0x19
+proc SoundBias*(bias: uint32) {.swi:"0x19", importc.}
 
-proc SoundDriverInit*(src: pointer) {.importc.}
-  ## swi 0x1A
+proc SoundDriverInit*(src: pointer) {.swi:"0x1A", importc.}
 
-proc SoundDriverMode*(mode: uint32) {.importc.}
-  ## swi 0x1B
+proc SoundDriverMode*(mode: uint32) {.swi:"0x1B", importc.}
 
-proc SoundDriverMain*() {.importc.}
-  ## swi 0x1C
+proc SoundDriverMain*() {.swi:"0x1C", importc.}
 
-proc SoundDriverVSync*() {.importc.}
-  ## swi 0x1D
+proc SoundDriverVSync*() {.swi:"0x1D", importc.}
 
-proc SoundChannelClear*() {.importc.}
-  ## swi 0x1E
+proc SoundChannelClear*() {.swi:"0x1E", importc.}
 
-proc MidiKey2Freq*(wa: pointer; mk: uint8; fp: uint8): uint32 {.importc.}
-  ## swi 0x1F
+proc MidiKey2Freq*(wa: pointer; mk: uint8; fp: uint8): uint32 {.swi:"0x1F", importc.}
 
 # TODO:
 # swi 0x20: MusicPlayerOpen
@@ -371,24 +379,22 @@ proc MidiKey2Freq*(wa: pointer; mk: uint8; fp: uint8): uint32 {.importc.}
 # swi 0x23: MusicPlayerContinue
 # swi 0x24: MusicPlayerFadeOut 
 
-proc MultiBoot*(mb: MultibootOptions; mode: MultibootMode): int {.importc.}
-  ## Multiboot handshake (swi 0x25)
+proc MultiBoot*(mb: MultibootOptions; mode: MultibootMode): int {.swi:"0x25", importc.}
+  ## Multiboot handshake
 
-# TODO:
-# swi 0x26: HardReset
+proc HardReset*() {.swi:"0x26", importc, noreturn.}
+  ## Reboots the GBA, including playing through the GBA boot intro.
 
-proc SoundDriverVSyncOff*() {.importc.}
-  ## swi 0x28
+proc SoundDriverVSyncOff*() {.swi:"0x28", importc.}
 
-proc SoundDriverVSyncOn*() {.importc.}
-  ## swi 0x29
+proc SoundDriverVSyncOn*() {.swi:"0x29", importc.}
 
 
 
 # EXTRA BIOS ROUTINES
 # -------------------
-# More BIOS functions.
-# You can find these in swi_ex.s
+# Additional utilities from Tonc which are built atop the BIOS routines.
+# You can find these in ``tonc_bios_ex.s``
 
 proc VBlankIntrDelay*(count: uint) {.importc.}
   ## Wait for `count` frames
