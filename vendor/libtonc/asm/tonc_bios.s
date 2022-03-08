@@ -271,6 +271,14 @@ BEGIN_FUNC_THUMB(MultiBoot, CSEC_TEXT)
 	bx		lr
 END_FUNC(MultiBoot)
 
+@ === HardReset [26h] =================================================
+@ DECL: void HardReset();
+@ DESC: 
+BEGIN_FUNC_THUMB(HardReset, CSEC_TEXT)
+	swi		0x26
+	bx		lr
+END_FUNC(HardReset)
+
 @ === SoundDriverVSyncOff [28h] =======================================
 @ DECL: void SoundDriverVSyncOff();
 @ DESC: 

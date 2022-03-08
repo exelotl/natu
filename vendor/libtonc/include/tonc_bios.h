@@ -509,6 +509,8 @@ void SoundDriverVSyncOn(void);				// swi 29h
 // --- Multiboot handshake ---
 int MultiBoot(MultiBootParam* mb, u32 mode);	// swi 25h
 
+void HardReset();								// swi 26h
+
 
 // --------------------------------------------------------------------
 // EXTRA BIOS ROUTINES
