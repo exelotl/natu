@@ -358,7 +358,7 @@ proc release*(handle: MmSfxHandle) {.importc:"mmEffectRelease".}
   ## handle
   ##   Sound effect handle.
 
-proc isActive*(handle: MmSfxHandle) {.importc:"mmEffectActive".}
+proc active*(handle: MmSfxHandle): bool {.importc:"mmEffectActive".}
   ## Indicates if a sound effect is active or not.
   ## 
   ## **Parameters:**
