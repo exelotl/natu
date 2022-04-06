@@ -17,7 +17,7 @@ put "natu.cflags.debug", "-g"
 
 # silence some warnings that may occur in the generated C code,
 # but are out of your control.
-put "natu.cflags.noWarn", "-Wno-unused-variable -Wno-unused-but-set-variable -Wno-discarded-qualifiers -Wno-incompatible-pointer-types"
+put "natu.cflags.noWarn", "-Wno-unused-variable -Wno-unused-but-set-variable -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-stringop-overflow"
 
 proc devkitPro*: string =
   result = getEnv("DEVKITPRO")
