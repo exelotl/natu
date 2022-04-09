@@ -164,12 +164,13 @@ proc init*(setup: ptr MmGbaSystem) {.importc:"mmInit".}
   ## Initialize system. Call once at startup.
 
 proc vblank*() {.importc:"mmVBlank".}
-  ## Must be linked to the VBlank IRQ.
   ## This function must be linked directly to the VBlank IRQ.
+  ## 
   ## During this function, the sound DMA is reset. The timing is extremely critical, so
-  ##  make sure that it is not interrupted, otherwise garbage may be heard in the output.
+  ## make sure that it is not interrupted, otherwise garbage may be heard in the output.
+  ## 
   ## If you need another function to execute after this process is finished, use
-  ##  `setVBlankHandler` to install a your handler. 
+  ## `setVBlankHandler` to install your handler.
 
 proc setVBlankHandler*(function: MmFnPtr) {.importc:"mmSetVBlankHandler".}
   ## Install user vblank handler
@@ -181,13 +182,20 @@ proc setVBlankHandler*(function: MmFnPtr) {.importc:"mmSetVBlankHandler".}
 
 proc setEventHandler*(handler: MmCallback) {.importc:"mmSetEventHandler".}
   ## Install handler to receive song events.
-  ## Use this function to receive song events. Song events occur in two situations.
-  ## One is by special pattern data in a module (which is triggered by SFx/EFx commands).
-  ## The other occurs when a module finishes playback (in MM_PLAY_ONCE mode).
-  ## Note for GBA projects: During the song event, Maxmod is in the middle of module processing. Avoid using any Maxmod related functions during your song event handler since they may cause problems in this situation. 
+  ## 
+  ## Use this function to receive song events. Song events occur in two situations:
+  ## One is by special pattern data in a module (which is triggered by ``SFx``/``EFx`` commands).
+  ## The other occurs when a module finishes playback (in `mmPlayOnce` mode).
+  ## 
+  ## During the song event, Maxmod is in the middle of module processing. Avoid
+  ## using any Maxmod related functions during your song event handler since they
+  ## may cause problems in this situation. 
 
 proc frame*() {.importc:"mmFrame".}
-  ## Work routine. *Must* be called every frame.
+  ## This is the main work routine that processes music and updates the sound output.
+  ## 
+  ## This function must be called every frame. If a call is missed, garbage will be
+  ## heard in the output and module processing will be delayed.
 
 
 # Module Playback
