@@ -327,6 +327,8 @@ proc getFontTable*(): ptr UncheckedArray[Font] {.importc: "tte_get_font_table", 
 
 proc setPos*(x, y: int) {.importc: "tte_set_pos", toncinl.}
   ## Set cursor position
+proc setPos*(p: Vec2i) {.inline.} = setPos(p.x, p.y)
+  ## Set cursor position
 proc setInk*(cattr: uint16) {.importc: "tte_set_ink", toncinl.}
   ## Set ink color attribute.
 proc setShadow*(cattr: uint16) {.importc: "tte_set_shadow", toncinl.}
