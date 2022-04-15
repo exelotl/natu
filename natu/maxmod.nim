@@ -392,11 +392,14 @@ proc cancelAllEffects*() {.importc:"mmEffectCancelAll".}
 const mmcbSongMessage* = 0x0000002A'u32
   ## This happens when Maxmod reads a `SFx` (or mod/xm `EFx`) effect from a module.
   ## 
-  ## It will store `x` in `param_b`
+  ## `param` will contain the number specified in the effect (e.g. `3` for `EF3`).
 
 const mmcbSongFinished* = 0x0000002B'u32
-  ## This happens when a module has finished playing.
-  ## param == `0` if main module, `1` otherwise.
+  ## This happens when a module has finished playing, which can happen if you passed
+  ## `mmPlayOnce` to `maxmod.start`, or when playing a jingle.
+  ## 
+  ## `param` will be `0` if the main module has ended, or `1` if the sub module (jingle)
+  ## has ended.
 
 # Old names, deprecated.
 
