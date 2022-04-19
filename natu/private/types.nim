@@ -35,9 +35,6 @@ type
     data* {.importc: "data".}: array[8, uint32]
 
 type
-  Fixed* = distinct int32   ## Fixed point type, "24.8"
-
-type
   Color* = distinct uint16  ## Type for colors
 
 type

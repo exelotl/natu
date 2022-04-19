@@ -3,7 +3,8 @@
 
 {.warning[UnusedImport]: off.}
 
-import private/[common, types, memdef, math]
+import ./math
+import private/[common, types, memdef]
 from private/core import oamSizes
 from private/memmap import objMem, objAffMem
 from private/utils import writeFields

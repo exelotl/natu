@@ -40,8 +40,9 @@
 ##  margins and erases. See tte_cmd_default() and con_cmd_parse() for
 ##  details.
 
-import private/[common, types, reg, math]
+import private/[common, types, reg]
 import ./surface
+import ./math
 from video import clrOrange, clrYellow
 
 {.compile(toncPath & "/src/font/sys8.s", toncAsmFlags).}

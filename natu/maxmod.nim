@@ -24,6 +24,8 @@
 ############################################################################
 ]#
 
+from ./math import FixedN
+
 const thisDir = currentSourcePath()[0..^11]
 const mmPath = thisDir & "../vendor/maxmod"
 const mmAsmFlags = "-g -x assembler-with-cpp -DSYS_GBA -DUSE_IWRAM -I" & mmPath & "/asm_include"
@@ -246,36 +248,35 @@ proc jingle*(id: MmModuleId) {.importc:"mmJingle".}
 proc activeSub*(): bool {.importc:"mmActiveSub".}
   ## Returns true if a jingle is actively playing.
 
-proc setModuleVolume*(volume: uint) {.importc:"mmSetModuleVolume".}
+proc setModuleVolume*(volume: FixedN[10]) {.importc:"mmSetModuleVolume".}
   ## Set volume scaler for music.
   ## 
   ## **Parameters**:
   ## 
   ## volume
-  ##   0->1024 = silent..normal
+  ##   Multipler for the overall volume of the song, ranging from `0.0 .. 1.0` (silent .. normal).
 
-proc setJingleVolume*(volume: uint) {.importc:"mmSetJingleVolume".}
+proc setJingleVolume*(volume: FixedN[10]) {.importc:"mmSetJingleVolume".}
   ## Set volume scaler for jingles.
   ## 
   ## **Parameters**:
   ## 
   ## volume
-  ##   0->1024 = silent..normal
+  ##   Multipler for the overall volume of the jingle, ranging from `0.0 .. 1.0` (silent .. normal).
 
-proc setModuleTempo*(tempo: uint) {.importc:"mmSetModuleTempo".}
+proc setModuleTempo*(tempo: FixedN[10]) {.importc:"mmSetModuleTempo".}
   ## Set tempo of playback.
   ## 
   ## **Parameters**:
   ## 
   ## tempo
-  ##   Fixed point (Q10) value representing tempo.
-  ##   Range: `0x200 .. 0x800` = `0.5 .. 2.0`
+  ##   Multiplier for the overall tempo of the song, ranging from `0.5 .. 2.0`
 
-proc setModulePitch*(pitch: uint) {.importc:"mmSetModulePitch".}
+proc setModulePitch*(pitch: FixedN[10]) {.importc:"mmSetModulePitch".}
   ## Set pitch of playback.
   ## 
   ## pitch
-  ##   Range: `0x200 .. 0x800` = `0.5 .. 2.0`
+  ##   Multiplier for the overall pitch of the song, ranging from `0.5 .. 2.0`.
 
 # TODO: check types of mode and layer.
 
@@ -304,7 +305,7 @@ proc effectEx*(sound: ptr MmSoundEffect): MmSfxHandle {.importc:"mmEffectEx", di
   ## sound
   ##   Sound effect attributes.
 
-proc setVolume*(handle: MmSfxHandle; volume: uint) {.importc:"mmEffectVolume".}
+proc setVolume*(handle: MmSfxHandle; volume: FixedN[16]) {.importc:"mmEffectVolume".}
   ## Set the volume of a sound effect.
   ## 
   ## **Parameters:**
@@ -313,9 +314,9 @@ proc setVolume*(handle: MmSfxHandle; volume: uint) {.importc:"mmEffectVolume".}
   ##   Sound effect handle.
   ## 
   ## volume
-  ##   0->65535
+  ##   Effect volume ranging from `0.0 ..< 1.0` (underlying value from `0 .. 65535`)
 
-proc setPanning*(handle: MmSfxHandle; panning: uint8) {.importc:"mmEffectPanning".}
+proc setPanning*(handle: MmSfxHandle; panning: FixedN[8]) {.importc:"mmEffectPanning".}
   ## Set the panning of a sound effect.
   ## 
   ## **Parameters:**
@@ -324,11 +325,9 @@ proc setPanning*(handle: MmSfxHandle; panning: uint8) {.importc:"mmEffectPanning
   ##   Sound effect handle.
   ## 
   ## panning
-  ##   `0..255` = `left..right`
+  ##   `0.0 ..< 1.0` = `left .. right`
 
-# TODO: use fixed point param for these two procs:
-
-proc setRate*(handle: MmSfxHandle; rate: uint) {.importc:"mmEffectRate".}
+proc setRate*(handle: MmSfxHandle; rate: FixedN[10]) {.importc:"mmEffectRate".}
   ## Set the playback rate of an effect.
   ## 
   ## **Parameters:**
@@ -337,9 +336,9 @@ proc setRate*(handle: MmSfxHandle; rate: uint) {.importc:"mmEffectRate".}
   ##   Sound effect handle.
   ## 
   ## rate
-  ##   6.10 factor (??)
+  ##   Absolute playback rate, ranging from `0.0 ..< 64.0`.
 
-proc scaleRate*(handle: MmSfxHandle; factor: uint) {.importc:"mmEffectScaleRate".}
+proc scaleRate*(handle: MmSfxHandle; factor: FixedN[10]) {.importc:"mmEffectScaleRate".}
   ## Scale the playback rate of an effect.
   ## 
   ## **Parameters:**
@@ -348,7 +347,7 @@ proc scaleRate*(handle: MmSfxHandle; factor: uint) {.importc:"mmEffectScaleRate"
   ##   Sound effect handle.
   ## 
   ## factor
-  ##   6.10 fixed point factor. (??)
+  ##   Amount by which to multiply the playback rate, ranging from `0.0 ..< 64.0`.
 
 proc cancel*(handle: MmSfxHandle) {.importc:"mmEffectCancel".}
   ## Stop sound effect.
@@ -374,13 +373,13 @@ proc active*(handle: MmSfxHandle): bool {.importc:"mmEffectActive".}
   ## handle
   ##   Sound effect handle.
 
-proc setEffectsVolume*(volume: uint) {.importc:"mmSetEffectsVolume".}
+proc setEffectsVolume*(volume: FixedN[8]) {.importc:"mmSetEffectsVolume".}
   ## Set master volume scale for effect playback.
   ## 
   ## **Parameters:**
   ## 
   ## volume
-  ##   0->1024 representing 0%->100% volume
+  ##   `0.0 ..< 1.0` representing 0% to 100% volume.
 
 proc cancelAllEffects*() {.importc:"mmEffectCancelAll".}
   ## Stop all sound effects

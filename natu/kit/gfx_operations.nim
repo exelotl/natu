@@ -1,4 +1,4 @@
-import natu/[core, video]
+import natu/[core, video, math]
 import natu/private/utils
 import natu/kit/[types, pal_manager, obj_tile_manager]
 

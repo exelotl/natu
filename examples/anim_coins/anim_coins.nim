@@ -42,8 +42,8 @@ type
 proc init(c: var Coin) =
   ## Set up a coin object. All properties are randomized.
   c.pos = vec2f(
-    fixed(qranRange(0, 224)),
-    fixed(qranRange(0, 160))
+    fp(qranRange(0, 224)),
+    fp(qranRange(0, 160))
   )
   c.fallSpeed = qranRange(200, 300).Fixed
   c.animFrame = qranRange(coinAnimFrames.a, coinAnimFrames.b+1)
@@ -62,9 +62,9 @@ proc update(c: var Coin) =
   
   # move coin vertically, wrap at bottom of screen
   c.pos.y += c.fallSpeed
-  if c.pos.y > fixed(160):
-    c.pos.y = fixed(-16)
-    c.pos.x = fixed(qranRange(0, 224))
+  if c.pos.y > fp(160):
+    c.pos.y = fp(-16)
+    c.pos.x = fp(qranRange(0, 224))
 
 
 proc draw(c: var Coin, oid: int) =

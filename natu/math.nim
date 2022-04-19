@@ -3,9 +3,10 @@
 
 {.warning[UnusedImport]: off.}
 
-import common
-import types, core
-import std/[math, macros, parseutils]
+import private/[common, types, core]
+import std/math as std_math
+
+export std_math.sgn
 
 {.compile(toncPath & "/src/tonc_math.c", toncCFlags).}
 {.compile(toncPath & "/asm/div_lut.s", toncAsmFlags).}
@@ -15,49 +16,133 @@ import std/[math, macros, parseutils]
 {.pragma: toncinl, header: "tonc_math.h".}  # indicates that the definition is in the header.
 
 const
-  FIX_SHIFT*: int = 8
-  FIX_SCALE*: int = (1 shl FIX_SHIFT)
-  FIX_MASK*: int = (FIX_SCALE - 1)
+  fpShift* = 8
+  fpScale* = (1 shl fpShift)
+  fpMask* = (fpScale - 1)
 
-template fp*(n: int): Fixed = (n shl FIX_SHIFT).Fixed
-  ## Convert an integer to fixed-point (shorthand)
-template fp*(n: float32): Fixed = (n * FIX_SCALE.float32).Fixed
-  ## Convert a float to fixed-point (shorthand)
+type
+  FixedT*[T: SomeInteger, N: static int] = distinct T
+    ## A fixed-point number based on type `T`, with `N` bits of precision.
+  
+  FixedN*[N: static int] = FixedT[int, N]
+    ## A signed 32-bit fixed-point number with `N` bits of precision.
+  
+  Fixed* = FixedN[8]
+    ## A signed 32-bit fixed-point number with 8 bits of precision.
 
-template fixed*(n: int): Fixed = (n shl FIX_SHIFT).Fixed
-  ## Convert an integer to fixed-point
-template fixed*(n: float32): Fixed = (n * FIX_SCALE.float32).Fixed
-  ## Convert a float to fixed-point
+template getBaseType[T, N](typ: typedesc[FixedT[T,N]]): typedesc[SomeInteger] = T
+template getShift[T, N](typ: typedesc[FixedT[T,N]]): int = N
+template getScale[T, N](typ: typedesc[FixedT[T,N]]): T = T(1) shl N
 
-template toInt*(a: Fixed): int = a.int div FIX_SCALE
-  ## Convert a fixed point value to an integer.
-template toInt32*(a: Fixed): int32 = a.int32 div FIX_SCALE.int32
-  ## Convert a fixed point value to a 32-bit integer.
-template toFloat32*(a: Fixed): float32 = a.float32 / FIX_SCALE.float32
-  ## Convert a fixed point value to floating point.
+template toFixed*(n: SomeNumber, F: typedesc[FixedT]): untyped =
+  ## Convert a number to the fixed-point type `F`.
+  F(n * typeof(n)(getScale(F)))
+
+template toFixed*[T,N](n: FixedT, F: typedesc[FixedT[T,N]]): untyped =
+  ## Convert from one fixed-point format to another.
+  const Diff = getShift(F) - getShift(typeof(n))
+  when sizeof(n) > sizeof(T):
+    when Diff >= 0:
+      F(raw(n) shl Diff)
+    else:
+      F(raw(n) shr -Diff)
+  else:
+    when Diff >= 0:
+      F(T(n) shl Diff)
+    else:
+      F(T(n) shr -Diff)
+
+template toFixed*(n: SomeNumber|FixedT, N: static int): untyped =
+  ## Convert a value to fixed-point with `N` bits of precision.
+  n.toFixed(FixedN[N])
+
+template fp*(n: SomeNumber|FixedT): Fixed =
+  ## Convert a value to fixed-point with 8 bits of precision.
+  n.toFixed(Fixed)
+
+template toInt*(n: FixedT): int = n.int div getScale(typeof(n))
+  ## Convert a fixed-point value to an integer.
+
+template toFloat32*(n: FixedT): float32 = n.float32 / getScale(typeof(n)).float32
+  ## Convert a fixed-point value to floating point.
+
+proc `$`*[F: FixedT](a: F): string = $(a.toFloat32())  # TODO: better implementation?
 
 when (NimMajor, NimMinor) >= (1, 6):
-  # Enable fixed point numeric literal, e.g: 22.5'fp
+  # Enable fixed-point numeric literals, e.g: 22.5'fp
   # (Relegated to external file to keep the parser happy)
-  include fp_literals
+  include private/fp_literals
+
+# implicit converters for the most common cases?
+# converter toFixedN8*(a: SomeNumber): FixedN[8] {.inline.} = toFixed(a, 8)
+# converter toFixedN10*(a: SomeNumber): FixedN[10] {.inline.} = toFixed(a, 10)
+
+template raw*[F: FixedT](a: F): untyped = getBaseType(typeof(a))(a)
+
+template `+`*[F: FixedT](a, b: F): F = F(raw(a) + raw(b))
+template `-`*[F: FixedT](a, b: F): F = F(raw(a) - raw(b))
+template `*`*[F: FixedT](a, b: F): F = F((raw(a) * raw(b)) shr getShift(typeof(a)))
+template `/`*[F: FixedT](a, b: F): F = F((raw(a) shl getShift(typeof(a))) div raw(b))
+
+template `==`*[F: FixedT](a, b: F): bool = (raw(a) == raw(b))
+template `<`*[F: FixedT](a, b: F): bool = (raw(a) < raw(b))
+template `<=`*[F: FixedT](a, b: F): bool = (raw(a) <= raw(b))
+template `-`*[F: FixedT](a: F): F = F(-raw(a))
+template abs*[F: FixedT](a: F): F = F(abs(raw(a)))
+
+template mul64*[F: FixedT](a, b: F): F = (((cast[int64](a)) * raw(b)) div getScale(typeof(a))).F
+  ## Multiply two fixed-point values using 64-bit math (to help avoid overflows)
+
+template div64*[F: FixedT](a, b: F): F = (((cast[int64](a)) shl getShift(typeof(a))) div raw(b)).F
+  ## Divide two fixed-point values using 64-bit math (to help avoid overflows)
+
+template `+`*[F: FixedT, I: SomeInteger](a: F, b: I): F = F(raw(a) + (getBaseType(typeof(a))(b) shl getShift(typeof(a))))
+template `-`*[F: FixedT, I: SomeInteger](a: F, b: I): F = F(raw(a) - (getBaseType(typeof(a))(b) shl getShift(typeof(a))))
+template `*`*[F: FixedT, I: SomeInteger](a: F, b: I): F = F(raw(a) * getBaseType(typeof(a))(b))
+template `/`*[F: FixedT, I: SomeInteger](a: F, b: I): F = F(raw(a) div getBaseType(typeof(a))(b))
+
+template `+`*[F: FixedT, I: SomeInteger](a: I, b: F): F = F((getBaseType(typeof(b))(a) shl getShift(typeof(b))) + raw(b))
+template `-`*[F: FixedT, I: SomeInteger](a: I, b: F): F = F((getBaseType(typeof(b))(a) shl getShift(typeof(b))) - raw(b))
+template `*`*[F: FixedT, I: SomeInteger](a: I, b: F): F = F(getBaseType(typeof(b))(a) * raw(b))
+
+template `==`*[F: FixedT, I: SomeInteger](a: F, b: I): bool = a == F(getBaseType(typeof(a))(b) shl getShift(typeof(a)))
+template `<`*[F: FixedT, I: SomeInteger](a: F, b: I): bool = a < F(getBaseType(typeof(a))(b) shl getShift(typeof(a)))
+template `<=`*[F: FixedT, I: SomeInteger](a: F, b: I): bool = a <= F(getBaseType(typeof(a))(b) shl getShift(typeof(a)))
+
+template `==`*[F: FixedT, I: SomeInteger](a: I, b: F): bool = F(getBaseType(typeof(b))(a) shl getShift(typeof(b))) == b
+template `<`*[F: FixedT, I: SomeInteger](a: I, b: F): bool = F(getBaseType(typeof(b))(a) shl getShift(typeof(b))) < b
+template `<=`*[F: FixedT, I: SomeInteger](a: I, b: F): bool = F(getBaseType(typeof(b))(a) shl getShift(typeof(b))) <= b
+
+template `+=`*[F: FixedT](a: var F, b: F) =  a = a + b
+template `-=`*[F: FixedT](a: var F, b: F) =  a = a - b
+template `*=`*[F: FixedT](a: var F, b: F) =  a = a * b
+template `/=`*[F: FixedT](a: var F, b: F) =  a = a / b
+
+template `+=`*[F: FixedT, I: SomeInteger](a: var F, b: I) =  a = a + b
+template `-=`*[F: FixedT, I: SomeInteger](a: var F, b: I) =  a = a - b
+template `*=`*[F: FixedT, I: SomeInteger](a: var F, b: I) =  a = a * b
+template `/=`*[F: FixedT, I: SomeInteger](a: var F, b: I) =  a = a / b
 
 {.push inline.}
 
-export math.sgn
+func flr*(n: FixedT): int =
+  ## Convert a fixed-point number to an integer, always rounding down.
+  n.int shr getShift(typeof(n))
 
-func sgn*(x: Fixed): int {.borrow.}
+func sgn*(x: FixedT): int =
   ## Get the sign of a fixed-point number.
   ## 
-  ## Returns `-1` when `x` is negative, `1` when `x` is positive, or `0` when x is `0`.
+  ## Returns `-1` when `x` is negative, `1` when `x` is positive, or `0` when `x` is `0`.
+  sgn(x.raw)
 
-func sign*(x: SomeNumber|Fixed): int =
+func sgn2*(x: SomeNumber|FixedT): int =
   ## Returns `1` or `-1` depending on the sign of `x`.
   ##
   ## Note: This never returns `0`. Use `sgn` if you want something that does.
   if x >= 0: 1
   else: -1
 
-func approach*[T: SomeNumber|Fixed](x: var T, target, step: T) =
+func approach*[T: SomeNumber|FixedT](x: var T, target, step: T) =
   ## Move `x` towards `target` by `step` without exceeding target.
   ## 
   ## `step` should be a positive number.
@@ -69,96 +154,57 @@ func approach*[T: SomeNumber|Fixed](x: var T, target, step: T) =
 {.pop.}
 
 
-proc `$`*(a: Fixed): string {.borrow.} # TODO: better implementation?
-
-template `+`*(a, b: Fixed): Fixed = (a.int + b.int).Fixed
-template `-`*(a, b: Fixed): Fixed = (a.int - b.int).Fixed
-template `*`*(a, b: Fixed): Fixed = ((a.int * b.int) div FIX_SCALE).Fixed
-template `/`*(a, b: Fixed): Fixed = ((a.int shl FIX_SHIFT) div b.int).Fixed
-
-template `==`*(a, b: Fixed): bool = (a.int == b.int)
-template `<`*(a, b: Fixed): bool = (a.int < b.int)
-template `<=`*(a, b: Fixed): bool = (a.int <= b.int)
-template `-`*(a: Fixed): Fixed = (-a.int).Fixed
-template abs*(a: Fixed): Fixed = abs(a.int).Fixed
-
-template mul64*(a, b: Fixed): Fixed = (((cast[int64](a)) * b.int) div FIX_SCALE).Fixed
-  ## Multiply two fixed point values using 64bit math (to help avoid overflows)
-template div64*(a, b: Fixed): Fixed = (((cast[int64](a)) shl FIX_SHIFT) div b.int).Fixed
-  ## Divide two fixed point values using 64bit math (to help avoid overflows)
-
-# Note:
-# While full type safety may be preferred, fixed-point * and / can easily overflow.
-# Therefore we should allow (fix*int), and it follows that we should have other
-#  operators for completeness.
-
-template `+`*(a: Fixed, b: int): Fixed = (a.int + (b shl FIX_SHIFT)).Fixed
-template `-`*(a: Fixed, b: int): Fixed = (a.int - (b shl FIX_SHIFT)).Fixed
-template `*`*(a: Fixed, b: int): Fixed = (a.int * b).Fixed
-template `/`*(a: Fixed, b: int): Fixed = (a.int div b).Fixed
-
-template `+`*(a: int, b: Fixed): Fixed = ((a shl FIX_SHIFT) + b.int).Fixed
-template `-`*(a: int, b: Fixed): Fixed = ((a shl FIX_SHIFT) - b.int).Fixed
-template `*`*(a: int, b: Fixed): Fixed = (a * b.int).Fixed
-
-template `==`*(a: Fixed, b: int): bool = a == (b shl FIX_SHIFT).Fixed
-template `<`*(a: Fixed, b: int): bool = a < (b shl FIX_SHIFT).Fixed
-template `<=`*(a: Fixed, b: int): bool = a <= (b shl FIX_SHIFT).Fixed
-
-template `==`*(a: int, b: Fixed): bool = (a shl FIX_SHIFT).Fixed == b
-template `<`*(a: int, b: Fixed): bool = (a shl FIX_SHIFT).Fixed < b
-template `<=`*(a: int, b: Fixed): bool = (a shl FIX_SHIFT).Fixed <= b
-
-template `+=`*(a: var Fixed, b: Fixed|int) =  a = a + b
-template `-=`*(a: var Fixed, b: Fixed|int) =  a = a - b
-template `*=`*(a: var Fixed, b: Fixed|int) =  a = a * b
-template `/=`*(a: var Fixed, b: Fixed|int) =  a = a / b
-
-
 # Lookup Tables
 # -------------
 
 var sinLut* {.importc: "sin_lut", tonc.}: array[514, int16]
 var divLut* {.importc: "div_lut", tonc.}: array[257, int32]
 
-## TODO: make these distinct, add helper functions such as degrees(Fixed|int)
+## TODO: make distinct? Add helper functions such as degrees(FixedT|int)
 type
   Angle* = uint32  ## 2π = 0x10000 (i.e. angle with 16 bits of resolution)
-  TrigResult* = int32
 
-proc luSin*(theta: Angle): TrigResult {.importc: "lu_sin", toncinl.}
+proc luSin*(theta: Angle): FixedN[12] {.inline.} =
   ## Look-up a sine value (2π = 0x10000)
+  ## 
   ## `theta` Angle in [0,FFFFh] range
+  ## 
   ## Return: .12f sine value
+  FixedN[12](sinLut[(theta shr 7) and 0x1ff])
 
-proc luCos*(theta: Angle): TrigResult {.importc: "lu_cos", toncinl.}
+proc luCos*(theta: Angle): FixedN[12] {.inline.} =
   ## Look-up a cosine value (2π = 0x10000)
+  ## 
   ## `theta` Angle in [0,FFFFh] range
+  ## 
   ## Returns .12f cosine value
+  FixedN[12](sinLut[((theta shr 7) + 128) and 0x1ff])
 
-proc luDiv*(x: uint32): uint32 {.importc: "lu_div", toncinl.}
+proc luDiv*(x: range[0..255]): FixedN[16] {.inline.} =
   ## Look-up a division value between 0 and 255
+  ## 
   ## `x` reciprocal to look up.
+  ## 
   ## Returns 1/x (.16f)
+  FixedN[16](divLut[x])
 
-proc luLerp32*(lut: ptr int32; x: uint; shift: uint): int {.importc: "lu_lerp32", toncinl.}
-  ## Linear interpolator for 32bit LUTs.
-  ## A lut is essentially the discrete form of a function, f(x).
-  ## You can get values for non-integer `x` via (linear) interpolation between f(x) and f(x+1).
+proc luLerp*[A: SomeInteger, F: FixedT](lut: openArray[A]; x: F): A {.inline.} =
+  ## Linear interpolator for LUTs.
+  ## 
+  ## An LUT (lookup table) is essentially the discrete form of a function, `f(x)`.
+  ## You can get values for non-integer `x` via (linear) interpolation between `f(x)` and `f(x+1)`.
+  ## 
   ## `lut`   The LUT to interpolate from.
-  ## `x`     Fixed point number to interpolate at.
+  ## `x`     Fixed-point number to interpolate at.
   ## `shift` Number of fixed-point bits of `x`.
-
-proc luLerp16*(lut: ptr int16; x: uint; shift: uint): int {.importc: "lu_lerp16", toncinl.}
-  ## As luLerp32, but for 16bit LUTs.
+  let xa = x shr getShift(F)
+  let ya = lut[xa]
+  let yb = lut[xa+1]
+  ya + ((yb - ya) * (x - (xa shl getShift(F))) shr getShift(F))
 
 
 # Rectangle / vector types
-# -----------------------
-# [Deviating from Tonc here for something that's more usable in Nim]
-# [Added Vec2i as a replacement for Point]
-# [Added Vec2f which is like Vec2i but fixed-point]
-# [Omitted 3D 'Vector' type for now]
+# ------------------------
 
 type
   Vec2i* {.bycopy.} = object
@@ -166,7 +212,7 @@ type
     x*, y*: int
     
   Vec2f* {.bycopy.} = object
-    ## Fixed point 24:8 2D vector/point type
+    ## Fixed-point `24:8` 2D vector/point type
     x*, y*: Fixed
 
 {.push noinit, inline.}
@@ -181,32 +227,30 @@ proc vec2i*(): Vec2i =
   result.x = 0
   result.y = 0
 
+proc vec2i*(v: Vec2f): Vec2i =
+  ## Convert an integer vector to a fixed-point vector
+  result.x = toInt(v.x)
+  result.y = toInt(v.y)
 
-proc vec2f*(x, y:Fixed): Vec2f =
+proc vec2f*(x, y: Fixed): Vec2f =
   ## Initialise a fixed-point vector
   result.x = x
   result.y = y
 
-proc vec2f*(x, y: int|float32): Vec2f =
+proc vec2f*(x: int|float32; y: int|float32): Vec2f =
   ## Initialise a fixed-point vector, values converted from int or float
-  result.x = fixed(x)
-  result.y = fixed(y)
+  result.x = fp(x)
+  result.y = fp(y)
 
 proc vec2f*(): Vec2f =
   ## Initialise a fixed-point vector to 0,0
   result.x = 0.Fixed
   result.y = 0.Fixed
 
-
-proc vec2i*(v: Vec2f): Vec2i =
-  ## Convert an integer vector to a fixed-point vector
-  result.x = toInt(v.x)
-  result.y = toInt(v.y)
-
 proc vec2f*(v: Vec2i): Vec2f =
   ## Convert a fixed-point vector to an integer vector
-  result.x = fixed(v.x)
-  result.y = fixed(v.y)
+  result.x = fp(v.x)
+  result.y = fp(v.y)
 
 
 # Integer vector operations
@@ -291,16 +335,16 @@ proc `/=`*(a: var Vec2i, n: int) =
   a.y = a.y div n
 
 
-# Fixed point vector operations
+# Fixed-point vector operations
 # -----------------------------
 
 proc `+`*(a, b: Vec2i|Vec2f): Vec2f =
-  ## Add two fixed point vectors
+  ## Add two fixed-point vectors
   result.x = a.x + b.x
   result.y = a.y + b.y
 
 proc `-`*(a, b: Vec2i|Vec2f): Vec2f =
-  ## Subtract two fixed point vectors
+  ## Subtract two fixed-point vectors
   result.x = a.x - b.x
   result.y = a.y - b.y
 
@@ -315,27 +359,27 @@ proc `/`*(a: Vec2f, b: Vec2i|Vec2f): Vec2f =
   result.y = a.y / b.y
 
 proc `*`*(a: Vec2f, n: Fixed|int): Vec2f =
-  ## Scale a fixed point vector by n
+  ## Scale a fixed-point vector by n
   result.x = a.x * n
   result.y = a.y * n
 
 proc `/`*(a: Vec2f, n: Fixed|int): Vec2f =
-  ## Scale a fixed point vector by 1/n
+  ## Scale a fixed-point vector by 1/n
   result.x = a.x / n
   result.y = a.y / n
 
 proc `*`*(n: Fixed|int, a: Vec2f): Vec2f =
-  ## Scale a fixed point vector by n
+  ## Scale a fixed-point vector by n
   result.x = a.x * n
   result.y = a.y * n
 
 proc `/`*(n: Fixed|int, a: Vec2f): Vec2f =
-  ## Scale a fixed point vector by 1/n
+  ## Scale a fixed-point vector by 1/n
   result.x = a.x / n
   result.y = a.y / n
 
 proc dot*(a, b: Vec2f): Fixed =
-  ## Dot product of two fixed point vectors
+  ## Dot product of two fixed-point vectors
   (a.x * b.x) + (a.y * b.y)
 
 proc `-`*(a: Vec2f): Vec2f =
@@ -377,23 +421,32 @@ proc `/=`*(a: var Vec2f, n: Fixed|int) =
 # ----------------------
 
 proc initBgPoint*(x = 0'i16, y = 0'i16): BgPoint =
-  ## Create a new pair of values used by the BG scroll registers
-  ## e.g. ::
+  ## Create a new pair of values used by the BG scroll registers, e.g.
+  ## 
+  ## .. code-block:: nim
+  ## 
   ##  bgofs[0] = initBgPoint(10, 20)
+  ## 
   result.x = x
   result.y = y
 
 proc toBgPoint*(a: Vec2i): BgPoint =
-  ## Convert a vector to a pair of values used by the BG scroll registers
-  ## e.g. ::
+  ## Convert a vector to a pair of values used by the BG scroll registers, e.g.
+  ## 
+  ## .. code-block:: nim
+  ## 
   ##   bgofs[0] = pos.toBgPoint()
+  ## 
   result.x = a.x.int16
   result.y = a.y.int16
 
 proc toBgPoint*(a: Vec2f): BgPoint =
-  ## Convert a fixed point vector to a pair of values used by the BG scroll registers
-  ## e.g. ::
+  ## Convert a fixed-point vector to a pair of values used by the BG scroll registers, e.g.
+  ## 
+  ## .. code-block:: nim
+  ## 
   ##   bgofs[0] = pos.toBgPoint()
+  ## 
   result.x = a.x.toInt().int16
   result.y = a.y.toInt().int16
 
