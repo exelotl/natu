@@ -19,7 +19,7 @@
 ##    grit twiggy.png -gB4 -pn16
 ## 
 
-import natu/[core, bios, irq, oam]
+import natu/[core, bios, irq, oam, math]
 
 # Include the spritesheet in the build, make the data available to Nim
 {.compile: "twiggy.s".}

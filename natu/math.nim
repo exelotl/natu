@@ -34,25 +34,29 @@ template getBaseType[T, N](typ: typedesc[FixedT[T,N]]): typedesc[SomeInteger] = 
 template getShift[T, N](typ: typedesc[FixedT[T,N]]): int = N
 template getScale[T, N](typ: typedesc[FixedT[T,N]]): T = T(1) shl N
 
-template toFixed*(n: SomeNumber, F: typedesc[FixedT]): untyped =
+template toFixed*(n: SomeNumber; F: typedesc[FixedT]): untyped =
   ## Convert a number to the fixed-point type `F`.
   F(n * typeof(n)(getScale(F)))
 
-template toFixed*[T,N](n: FixedT, F: typedesc[FixedT[T,N]]): untyped =
+template toFixed*[T,N](n: FixedT; F: typedesc[FixedT[T,N]]): untyped =
   ## Convert from one fixed-point format to another.
-  const Diff = getShift(F) - getShift(typeof(n))
+  const d = getShift(F) - getShift(typeof(n))
   when sizeof(n) > sizeof(T):
-    when Diff >= 0:
-      F(raw(n) shl Diff)
+    when d >= 0:
+      F(raw(n) shl d)
     else:
-      F(raw(n) shr -Diff)
+      F(raw(n) shr -d)
   else:
-    when Diff >= 0:
-      F(T(n) shl Diff)
+    when d >= 0:
+      F(T(n) shl d)
     else:
-      F(T(n) shr -Diff)
+      F(T(n) shr -d)
 
-template toFixed*(n: SomeNumber|FixedT, N: static int): untyped =
+template toFixed*(n: SomeNumber|FixedT; T: typedesc[SomeInteger]; N: static int): untyped =
+  ## Convert a value to fixed-point, with a base type of `T` using `N` bits of precision.
+  n.toFixed(FixedT[T, N])
+
+template toFixed*(n: SomeNumber|FixedT; N: static int): untyped =
   ## Convert a value to fixed-point with `N` bits of precision.
   n.toFixed(FixedN[N])
 

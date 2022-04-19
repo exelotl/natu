@@ -15,7 +15,7 @@
 ##   grit coin.png -gB4 -pn16
 ##
 
-import natu/[core, bios, oam, irq]
+import natu/[core, bios, oam, irq, math]
 
 {.compile: "coin.s".}
 var coinTiles {.importc: "coinTiles".}: array[128, uint32]

@@ -9,7 +9,7 @@
 ## to make managing sprite tiles and palettes easier. The Graphic enum is set
 ## up to work with these allocators directly.
 
-import natu/[core, bios, irq, oam, input]
+import natu/[core, bios, irq, oam, input, math]
 import natu/kit/[pal_manager]
 import assets, audio, simple_anim
 
