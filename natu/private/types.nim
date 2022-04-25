@@ -179,13 +179,14 @@ allowUnboundedAccess(UnboundedCharblock8, 256, Tile8)
 type
   ObjAttr* {.importc: "OBJ_ATTR", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## Object attributes. i.e. a sprite.
-    ## **Note**
-    ##  The `fill` field is padding for the interlace with ObjAffine.
-    ##  It will not be copied when assigning one ObjAttr to another.
+    ## 
+    ## .. note::
+    ##    The `fill` field is padding for the interlace with `ObjAffine`.
+    ##    It will not be copied when assigning one `ObjAttr` to another.
     attr0* {.importc: "attr0".}: uint16
     attr1* {.importc: "attr1".}: uint16
     attr2* {.importc: "attr2".}: uint16
-    fill {.importc: "fill".}: int16
+    fill* {.importc: "fill".}: int16
   
   ObjAffine* {.importc: "OBJ_AFFINE", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## Object affine parameters.

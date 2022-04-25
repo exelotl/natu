@@ -9,6 +9,7 @@
 import ./private/[types, common]
 
 from ./irq import IrqIndex
+from ./math import FixedT
 
 {.compile(toncPath & "/asm/tonc_bios.s", toncAsmFlags).}
 {.compile(toncPath & "/asm/tonc_bios_ex.s", toncAsmFlags).}
@@ -187,7 +188,7 @@ proc DivArm*(den, num: int): int {.swi:"0x07", importc.}
 proc Sqrt*(num: uint): uint {.swi:"0x08", importc.}
   ## Integer Square root.
 
-proc ArcTan*(dydx: int16): int16 {.swi:"0x09", importc.}
+proc ArcTan*(dydx: FixedT[int16,14]): int16 {.swi:"0x09", importc.}
   ## Arctangent of dy/dx.
   ## 
   ## Takes a 2.14 fixed-point value representing the steepness of the slope.

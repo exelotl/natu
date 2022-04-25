@@ -64,13 +64,13 @@ template fp*(n: SomeNumber|FixedT): Fixed =
   ## Convert a value to fixed-point with 8 bits of precision.
   n.toFixed(Fixed)
 
-template toInt*(n: FixedT): int = n.int div getScale(typeof(n))
+template toInt*(n: FixedT): int = n.int shr getShift(typeof(n))
   ## Convert a fixed-point value to an integer.
 
 template toFloat32*(n: FixedT): float32 = n.float32 / getScale(typeof(n)).float32
   ## Convert a fixed-point value to floating point.
 
-proc `$`*[F: FixedT](a: F): string = $(a.toFloat32())  # TODO: better implementation?
+func `$`*[F: FixedT](a: F): string = $(a.toFloat32())  # TODO: better implementation?
 
 when (NimMajor, NimMinor) >= (1, 6):
   # Enable fixed-point numeric literals, e.g: 22.5'fp
@@ -93,6 +93,11 @@ template `<`*[F: FixedT](a, b: F): bool = (raw(a) < raw(b))
 template `<=`*[F: FixedT](a, b: F): bool = (raw(a) <= raw(b))
 template `-`*[F: FixedT](a: F): F = F(-raw(a))
 template abs*[F: FixedT](a: F): F = F(abs(raw(a)))
+
+template `+=`*[F: FixedT](a: var F, b: F) =  a = a + b
+template `-=`*[F: FixedT](a: var F, b: F) =  a = a - b
+template `*=`*[F: FixedT](a: var F, b: F) =  a = a * b
+template `/=`*[F: FixedT](a: var F, b: F) =  a = a / b
 
 template mul64*[F: FixedT](a, b: F): F = (((cast[int64](a)) * raw(b)) div getScale(typeof(a))).F
   ## Multiply two fixed-point values using 64-bit math (to help avoid overflows)
@@ -117,15 +122,13 @@ template `==`*[F: FixedT, I: SomeInteger](a: I, b: F): bool = F(getBaseType(type
 template `<`*[F: FixedT, I: SomeInteger](a: I, b: F): bool = F(getBaseType(typeof(b))(a) shl getShift(typeof(b))) < b
 template `<=`*[F: FixedT, I: SomeInteger](a: I, b: F): bool = F(getBaseType(typeof(b))(a) shl getShift(typeof(b))) <= b
 
-template `+=`*[F: FixedT](a: var F, b: F) =  a = a + b
-template `-=`*[F: FixedT](a: var F, b: F) =  a = a - b
-template `*=`*[F: FixedT](a: var F, b: F) =  a = a * b
-template `/=`*[F: FixedT](a: var F, b: F) =  a = a / b
-
 template `+=`*[F: FixedT, I: SomeInteger](a: var F, b: I) =  a = a + b
 template `-=`*[F: FixedT, I: SomeInteger](a: var F, b: I) =  a = a - b
 template `*=`*[F: FixedT, I: SomeInteger](a: var F, b: I) =  a = a * b
 template `/=`*[F: FixedT, I: SomeInteger](a: var F, b: I) =  a = a / b
+
+template `shr`*[F: FixedT, I: SomeInteger](a: F, b: I): F = F(raw(a) shr b)
+template `shl`*[F: FixedT, I: SomeInteger](a: F, b: I): F = F(raw(a) shl b)
 
 {.push inline.}
 
@@ -161,38 +164,41 @@ func approach*[T: SomeNumber|FixedT](x: var T, target, step: T) =
 # Lookup Tables
 # -------------
 
-var sinLut* {.importc: "sin_lut", tonc.}: array[514, int16]
-var divLut* {.importc: "div_lut", tonc.}: array[257, int32]
+let sinLut* {.importc: "sin_lut", tonc.}: array[514, int16]
+let divLut* {.importc: "div_lut", tonc.}: array[257, int32]
 
 ## TODO: make distinct? Add helper functions such as degrees(FixedT|int)
 type
   Angle* = uint32  ## 2π = 0x10000 (i.e. angle with 16 bits of resolution)
 
-proc luSin*(theta: Angle): FixedN[12] {.inline.} =
+func luSin*(theta: Angle): FixedN[12] {.inline.} =
   ## Look-up a sine value (2π = 0x10000)
   ## 
   ## `theta` Angle in [0,FFFFh] range
   ## 
-  ## Return: .12f sine value
-  FixedN[12](sinLut[(theta shr 7) and 0x1ff])
+  ## Returns  .12f sine value
+  {.nosideeffect.}:
+    FixedN[12](sinLut[(theta shr 7) and 0x1ff])
 
-proc luCos*(theta: Angle): FixedN[12] {.inline.} =
+func luCos*(theta: Angle): FixedN[12] {.inline.} =
   ## Look-up a cosine value (2π = 0x10000)
   ## 
   ## `theta` Angle in [0,FFFFh] range
   ## 
   ## Returns .12f cosine value
-  FixedN[12](sinLut[((theta shr 7) + 128) and 0x1ff])
+  {.nosideeffect.}:
+    FixedN[12](sinLut[((theta shr 7) + 128) and 0x1ff])
 
-proc luDiv*(x: range[0..255]): FixedN[16] {.inline.} =
-  ## Look-up a division value between 0 and 255
+func luDiv*(x: range[0..256]): FixedN[16] {.inline.} =
+  ## Look-up a division value between 0 and 256
   ## 
   ## `x` reciprocal to look up.
   ## 
   ## Returns 1/x (.16f)
-  FixedN[16](divLut[x])
+  {.nosideeffect.}:
+    FixedN[16](divLut[x])
 
-proc luLerp*[A: SomeInteger, F: FixedT](lut: openArray[A]; x: F): A {.inline.} =
+func luLerp*[A: SomeInteger|FixedT, F: FixedT](lut: openArray[A]; x: F): A {.inline.} =
   ## Linear interpolator for LUTs.
   ## 
   ## An LUT (lookup table) is essentially the discrete form of a function, `f(x)`.
@@ -200,8 +206,7 @@ proc luLerp*[A: SomeInteger, F: FixedT](lut: openArray[A]; x: F): A {.inline.} =
   ## 
   ## `lut`   The LUT to interpolate from.
   ## `x`     Fixed-point number to interpolate at.
-  ## `shift` Number of fixed-point bits of `x`.
-  let xa = x shr getShift(F)
+  let xa = x.int shr getShift(F)
   let ya = lut[xa]
   let yb = lut[xa+1]
   ya + ((yb - ya) * (x - (xa shl getShift(F))) shr getShift(F))
@@ -221,37 +226,37 @@ type
 
 {.push noinit, inline.}
 
-proc vec2i*(x, y: int): Vec2i =
+func vec2i*(x, y: int): Vec2i =
   ## Initialise an integer vector
   result.x = x
   result.y = y
 
-proc vec2i*(): Vec2i =
+func vec2i*(): Vec2i =
   ## Initialise an integer vector to 0,0
   result.x = 0
   result.y = 0
 
-proc vec2i*(v: Vec2f): Vec2i =
+func vec2i*(v: Vec2f): Vec2i =
   ## Convert an integer vector to a fixed-point vector
   result.x = toInt(v.x)
   result.y = toInt(v.y)
 
-proc vec2f*(x, y: Fixed): Vec2f =
+func vec2f*(x, y: Fixed): Vec2f =
   ## Initialise a fixed-point vector
   result.x = x
   result.y = y
 
-proc vec2f*(x: int|float32; y: int|float32): Vec2f =
+func vec2f*(x: int|float32; y: int|float32): Vec2f =
   ## Initialise a fixed-point vector, values converted from int or float
   result.x = fp(x)
   result.y = fp(y)
 
-proc vec2f*(): Vec2f =
+func vec2f*(): Vec2f =
   ## Initialise a fixed-point vector to 0,0
   result.x = 0.Fixed
   result.y = 0.Fixed
 
-proc vec2f*(v: Vec2i): Vec2f =
+func vec2f*(v: Vec2i): Vec2f =
   ## Convert a fixed-point vector to an integer vector
   result.x = fp(v.x)
   result.y = fp(v.y)
@@ -260,80 +265,80 @@ proc vec2f*(v: Vec2i): Vec2f =
 # Integer vector operations
 # -------------------------
 
-proc `+`*(a, b: Vec2i): Vec2i =
+func `+`*(a, b: Vec2i): Vec2i =
   ## Add two vectors
   result.x = a.x + b.x
   result.y = a.y + b.y
 
-proc `-`*(a, b: Vec2i): Vec2i =
+func `-`*(a, b: Vec2i): Vec2i =
   ## Subtract two vectors
   result.x = a.x - b.x
   result.y = a.y - b.y
 
-proc `*`*(a, b: Vec2i): Vec2i =
+func `*`*(a, b: Vec2i): Vec2i =
   ## Component-wise multiplication of two vectors
   result.x = a.x * b.x
   result.y = a.y * b.y
 
-proc `/`*(a, b: Vec2i): Vec2i =
+func `/`*(a, b: Vec2i): Vec2i =
   ## Component-wise division of two vectors
   result.x = a.x div b.x
   result.y = a.y div b.y
 
-proc `*`*(a: Vec2i, n: int): Vec2i =
+func `*`*(a: Vec2i, n: int): Vec2i =
   ## Scale vector by n
   result.x = a.x * n
   result.y = a.y * n
 
-proc `/`*(a: Vec2i, n: int): Vec2i =
+func `/`*(a: Vec2i, n: int): Vec2i =
   ## Scale vector by 1/n
   result.x = a.x div n
   result.y = a.y div n
 
-proc `*`*(n: int, a: Vec2i): Vec2i =
+func `*`*(n: int, a: Vec2i): Vec2i =
   ## Scale vector by n
   result.x = a.x * n
   result.y = a.y * n
 
-proc `/`*(n: int, a: Vec2i): Vec2i =
+func `/`*(n: int, a: Vec2i): Vec2i =
   ## Scale vector by 1/n
   result.x = a.x div n
   result.y = a.y div n
 
-proc dot*(a, b: Vec2i): int =
+func dot*(a, b: Vec2i): int =
   ## Dot product of two vectors
   (a.x * b.x) + (a.y * b.y)
 
-proc `-`*(a: Vec2i): Vec2i =
+func `-`*(a: Vec2i): Vec2i =
   ## Equivalent to a * -1
   vec2i(-a.x, -a.y)
 
-proc `+=`*(a: var Vec2i, b: Vec2i) =
+func `+=`*(a: var Vec2i, b: Vec2i) =
   ## Vector compound addition
   a.x += b.x
   a.y += b.y
 
-proc `-=`*(a: var Vec2i, b: Vec2i) =
+func `-=`*(a: var Vec2i, b: Vec2i) =
   ## Vector compound subtraction
   a.x -= b.x
   a.y -= b.y
 
-proc `*=`*(a: var Vec2i, b: Vec2i) =
+func `*=`*(a: var Vec2i, b: Vec2i) =
   ## Vector component-wise compound multiplicatoin
   a.x *= b.x
   a.y *= b.y
 
-proc `/=`*(a: var Vec2i, b: Vec2i) =
+func `/=`*(a: var Vec2i, b: Vec2i) =
   ## Vector component-wise compound division
   a.x = a.x div b.x
   a.y = a.x div b.y
 
-proc `*=`*(a: var Vec2i, n: int) =
+func `*=`*(a: var Vec2i, n: int) =
   ## Compound scale a vector by n
   a.x *= n
   a.y *= n
 
-proc `/=`*(a: var Vec2i, n: int) =
+func `/=`*(a: var Vec2i, n: int) =
   ## Compound scale a vector by 1/n
   a.x = a.x div n
   a.y = a.y div n
@@ -342,80 +347,80 @@ proc `/=`*(a: var Vec2i, n: int) =
 # Fixed-point vector operations
 # -----------------------------
 
-proc `+`*(a, b: Vec2i|Vec2f): Vec2f =
+func `+`*(a, b: Vec2i|Vec2f): Vec2f =
   ## Add two fixed-point vectors
   result.x = a.x + b.x
   result.y = a.y + b.y
 
-proc `-`*(a, b: Vec2i|Vec2f): Vec2f =
+func `-`*(a, b: Vec2i|Vec2f): Vec2f =
   ## Subtract two fixed-point vectors
   result.x = a.x - b.x
   result.y = a.y - b.y
 
-proc `*`*(a: Vec2f, b: Vec2i|Vec2f): Vec2f =
+func `*`*(a: Vec2f, b: Vec2i|Vec2f): Vec2f =
   ## Component-wise multiplication of two vectors
   result.x = a.x * b.x
   result.y = a.y * b.y
 
-proc `/`*(a: Vec2f, b: Vec2i|Vec2f): Vec2f =
+func `/`*(a: Vec2f, b: Vec2i|Vec2f): Vec2f =
   ## Component-wise division of two vectors
   result.x = a.x / b.x
   result.y = a.y / b.y
 
-proc `*`*(a: Vec2f, n: Fixed|int): Vec2f =
+func `*`*(a: Vec2f, n: Fixed|int): Vec2f =
   ## Scale a fixed-point vector by n
   result.x = a.x * n
   result.y = a.y * n
 
-proc `/`*(a: Vec2f, n: Fixed|int): Vec2f =
+func `/`*(a: Vec2f, n: Fixed|int): Vec2f =
   ## Scale a fixed-point vector by 1/n
   result.x = a.x / n
   result.y = a.y / n
 
-proc `*`*(n: Fixed|int, a: Vec2f): Vec2f =
+func `*`*(n: Fixed|int, a: Vec2f): Vec2f =
   ## Scale a fixed-point vector by n
   result.x = a.x * n
   result.y = a.y * n
 
-proc `/`*(n: Fixed|int, a: Vec2f): Vec2f =
+func `/`*(n: Fixed|int, a: Vec2f): Vec2f =
   ## Scale a fixed-point vector by 1/n
   result.x = a.x / n
   result.y = a.y / n
 
-proc dot*(a, b: Vec2f): Fixed =
+func dot*(a, b: Vec2f): Fixed =
   ## Dot product of two fixed-point vectors
   (a.x * b.x) + (a.y * b.y)
 
-proc `-`*(a: Vec2f): Vec2f =
+func `-`*(a: Vec2f): Vec2f =
   ## Equivalent to a * -1
   vec2f(-a.x, -a.y)
 
-proc `+=`*(a: var Vec2f, b: Vec2f) =
+func `+=`*(a: var Vec2f, b: Vec2f) =
   ## Vector compound addition
   a.x += b.x
   a.y += b.y
 
-proc `-=`*(a: var Vec2f, b: Vec2f) =
+func `-=`*(a: var Vec2f, b: Vec2f) =
   ## Vector compound subtraction
   a.x -= b.x
   a.y -= b.y
 
-proc `*=`*(a: var Vec2f, b: Vec2i|Vec2f) =
+func `*=`*(a: var Vec2f, b: Vec2i|Vec2f) =
   ## Vector component-wise compound multiplicatoin
   a.x *= b.x
   a.y *= b.y
 
-proc `/=`*(a: var Vec2f, b: Vec2i|Vec2f) =
+func `/=`*(a: var Vec2f, b: Vec2i|Vec2f) =
   ## Vector component-wise compound division
   a.x /= b.x
   a.y /= b.y
 
-proc `*=`*(a: var Vec2f, n: Fixed|int) =
+func `*=`*(a: var Vec2f, n: Fixed|int) =
   ## Compound scale a vector by n
   a.x *= n
   a.y *= n
 
-proc `/=`*(a: var Vec2f, n: Fixed|int) =
+func `/=`*(a: var Vec2f, n: Fixed|int) =
   ## Compound scale a vector by 1/n
   a.x = a.x / n
   a.y = a.y / n
@@ -424,7 +429,7 @@ proc `/=`*(a: var Vec2f, n: Fixed|int) =
 # Additional conversions
 # ----------------------
 
-proc initBgPoint*(x = 0'i16, y = 0'i16): BgPoint =
+func initBgPoint*(x = 0'i16, y = 0'i16): BgPoint =
   ## Create a new pair of values used by the BG scroll registers, e.g.
   ## 
   ## .. code-block:: nim
@@ -434,7 +439,7 @@ proc initBgPoint*(x = 0'i16, y = 0'i16): BgPoint =
   result.x = x
   result.y = y
 
-proc toBgPoint*(a: Vec2i): BgPoint =
+func toBgPoint*(a: Vec2i): BgPoint =
   ## Convert a vector to a pair of values used by the BG scroll registers, e.g.
   ## 
   ## .. code-block:: nim
@@ -444,7 +449,7 @@ proc toBgPoint*(a: Vec2i): BgPoint =
   result.x = a.x.int16
   result.y = a.y.int16
 
-proc toBgPoint*(a: Vec2f): BgPoint =
+func toBgPoint*(a: Vec2f): BgPoint =
   ## Convert a fixed-point vector to a pair of values used by the BG scroll registers, e.g.
   ## 
   ## .. code-block:: nim
@@ -463,77 +468,136 @@ type Rect* = object
   ## Ranges from `left..right-1`, `top..bottom-1`
   left*, top*, right*, bottom*: int
 
-proc rectBounds*(left, top, right, bottom: int): Rect =
+func rectBounds*(left, top, right, bottom: int): Rect =
   result.left = left
   result.top = top
   result.right = right
   result.bottom = bottom
 
-proc rectAt*(x, y, width, height: int): Rect =
+func rectAt*(x, y, width, height: int): Rect =
   result.left = x
   result.top = y
   result.right = x + width
   result.bottom = y + height
 
-template x*(r: Rect): int = r.left
-template y*(r: Rect): int = r.top
-template width*(r: Rect): int = r.right - r.left
-template height*(r: Rect): int = r.bottom - r.top
+func x*(r: Rect): int = r.left
+func y*(r: Rect): int = r.top
+func w*(r: Rect): int = r.right - r.left
+func h*(r: Rect): int = r.bottom - r.top
+func width*(r: Rect): int = r.right - r.left
+func height*(r: Rect): int = r.bottom - r.top
 
-proc `x=`*(r: var Rect, x: int) =
+func `x=`*(r: var Rect, x: int) =
   r.right += x - r.left
   r.left = x
 
-proc `y=`*(r: var Rect, y: int) = 
+func `y=`*(r: var Rect, y: int) = 
   r.bottom += y - r.top
   r.top = y
 
-proc `width=`*(r: var Rect, w: int) =
+func `w=`*(r: var Rect, w: int) =
   r.right = r.left + w
 
-proc `height=`*(r: var Rect, h: int) = 
+func `h=`*(r: var Rect, h: int) = 
   r.bottom = r.top + h
 
-proc move*(r: var Rect, dx, dy: int) =
+func `width=`*(r: var Rect, w: int) =
+  r.right = r.left + w
+
+func `height=`*(r: var Rect, h: int) = 
+  r.bottom = r.top + h
+
+func move*(r: var Rect, dx, dy: int) =
   ## Move rectangle by (`dx`, `dy`)
   r.left += dx
   r.top += dy
   r.right += dx
   r.bottom += dy
 
-proc inflate*(r: var Rect, n: int) =
+func inflate*(r: var Rect, n: int) =
   ## Increase size of rectangle by `n` on all sides
   r.left -= n
   r.top -= n
   r.right += n
   r.bottom += n
   
-proc inflate*(r: var Rect, dw, dh: int) =
+func inflate*(r: var Rect, dw, dh: int) =
   ## Increase size of rectangle by `dw` horizontally, `dh` vertically
   r.left -= dw
   r.top -= dh
   r.right += dw
   r.bottom += dh
 
-proc center*(r: Rect): Vec2i =
+func center*(r: Rect): Vec2i =
   ## Get the center point of a rectangle
-  vec2i((r.left + r.right) div 2, (r.top + r.bottom) div 2)
+  result.x = (r.left + r.right) shr 1
+  result.y = (r.top + r.bottom) shr 1
 
-proc `center=`*(r: var Rect, p: Vec2i) =
+func `center=`*(r: var Rect, p: Vec2i) =
   ## Set the center point of a rectangle
-  r.x = p.x - r.width div 2
-  r.y = p.y - r.height div 2
+  r.x = p.x - r.w shr 1
+  r.y = p.y - r.h shr 1
 
-proc topLeft*(r: Rect): Vec2i =
+func topLeft*(r: Rect): Vec2i =
   vec2i(r.left, r.top)
 
-proc topRight*(r: Rect): Vec2i =
+func topRight*(r: Rect): Vec2i =
   vec2i(r.right, r.top)
 
-proc bottomLeft*(r: Rect): Vec2i =
+func bottomLeft*(r: Rect): Vec2i =
   vec2i(r.left, r.bottom)
 
-proc bottomRight*(r: Rect): Vec2i =
+func bottomRight*(r: Rect): Vec2i =
   vec2i(r.right, r.bottom)
 
 {.pop.}
+
+
+# Matrices for affine transforms
+# ------------------------------
+
+type Mat2f* = object
+  pa*, pb*, pc*, pd*: Fixed
+
+func mat2f*(): Mat2f {.inline, noinit.} =
+  ## Returns the identity matrix.
+  result.pa = fp(1)
+  result.pb = fp(0)
+  result.pc = fp(0)
+  result.pd = fp(1)
+
+func mat2f*(pa, pb, pc, pd: Fixed): Mat2f {.inline, noinit.} =
+  result.pa = pa
+  result.pb = pb
+  result.pc = pc
+  result.pd = pd
+
+func mat2fScaled*(sx, sy: Fixed): Mat2f {.inline, noinit.} =
+  result.pa = sx
+  result.pb = fp(0)
+  result.pc = fp(0)
+  result.pd = sy
+
+func mat2fInvScaled*(sx, sy: Fixed): Mat2f {.inline, noinit.} =
+  result.pa = (luDiv(sx.uint32)).Fixed
+  result.pb = fp(0)
+  result.pc = fp(0)
+  result.pd = (luDiv(sy.uint32)).Fixed
+
+func invScale*(mat: var Mat2f, sx, sy: range[fp(0.0)..fp(1.0)]) {.inline, noinit.} =
+  mat.pa = ((mat.pa.int * luDiv(sx.int).int) shr 8).Fixed
+  mat.pd = ((mat.pd.int * luDiv(sy.int).int) shr 8).Fixed
+
+func mat2fRotated*(a: Angle): Mat2f {.inline, noinit.} =
+  let ss = luSin(a).fp
+  let cc = luCos(a).fp
+  result.pa = cc
+  result.pb = -ss
+  result.pc = ss
+  result.pd = cc
+
+func `*`*(a, b: Mat2f): Mat2f {.inline, noinit.} =
+  result.pa = ((a.pa.int * b.pa.int + a.pb.int * b.pc.int) shr 8).Fixed
+  result.pb = ((a.pa.int * b.pb.int + a.pb.int * b.pd.int) shr 8).Fixed
+  result.pc = ((a.pc.int * b.pa.int + a.pd.int * b.pc.int) shr 8).Fixed
+  result.pd = ((a.pc.int * b.pb.int + a.pd.int * b.pd.int) shr 8).Fixed
