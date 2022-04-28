@@ -7,6 +7,7 @@ import private/[common, types, core]
 import std/math as std_math
 
 export std_math.sgn
+export FixedT, FixedN, Fixed
 
 {.compile(toncPath & "/src/tonc_math.c", toncCFlags).}
 {.compile(toncPath & "/asm/div_lut.s", toncAsmFlags).}
@@ -19,16 +20,6 @@ const
   fpShift* = 8
   fpScale* = (1 shl fpShift)
   fpMask* = (fpScale - 1)
-
-type
-  FixedT*[T: SomeInteger, N: static int] = distinct T
-    ## A fixed-point number based on type `T`, with `N` bits of precision.
-  
-  FixedN*[N: static int] = FixedT[int, N]
-    ## A signed 32-bit fixed-point number with `N` bits of precision.
-  
-  Fixed* = FixedN[8]
-    ## A signed 32-bit fixed-point number with 8 bits of precision.
 
 template getBaseType[T, N](typ: typedesc[FixedT[T,N]]): typedesc[SomeInteger] = T
 template getShift[T, N](typ: typedesc[FixedT[T,N]]): int = N
@@ -241,13 +232,8 @@ func vec2i*(v: Vec2f): Vec2i =
   result.x = toInt(v.x)
   result.y = toInt(v.y)
 
-func vec2f*(x, y: Fixed): Vec2f =
+func vec2f*(x: SomeNumber|FixedT; y: SomeNumber|FixedT): Vec2f =
   ## Initialise a fixed-point vector
-  result.x = x
-  result.y = y
-
-func vec2f*(x: int|float32; y: int|float32): Vec2f =
-  ## Initialise a fixed-point vector, values converted from int or float
   result.x = fp(x)
   result.y = fp(y)
 

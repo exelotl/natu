@@ -28,11 +28,20 @@ const
 # `DataInEwram` uses the `.sbss` section to avoid section conflicts
 # when used with `ThumbCodeInEwram` in the same file.
 
+type
+  FixedT*[T: SomeInteger, N: static int] = distinct T
+    ## A fixed-point number based on type `T`, with `N` bits of precision.
+  
+  FixedN*[N: static int] = FixedT[int, N]
+    ## A signed 32-bit fixed-point number with `N` bits of precision.
+  
+  Fixed* = FixedN[8]
+    ## A signed 32-bit fixed-point number with 8 bits of precision.
 
 type
   Block* {.importc: "BLOCK", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## 8-word type for fast struct-copies
-    data* {.importc: "data".}: array[8, uint32]
+    data*: array[8, uint32]
 
 type
   Color* = distinct uint16  ## Type for colors
@@ -60,43 +69,36 @@ type
   
   AffSrc* {.importc: "AFF_SRC", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## Simple scale-rotation source struct.
-    ## This can be used with ``bios.ObjAffineSet``, and several of tonc's affine functions
-    sx* {.importc: "sx".}: int16          ## Horizontal zoom (8.8f)
-    sy* {.importc: "sy".}: int16          ## Vertical zoom (8.8f)
-    alpha* {.importc: "alpha".}: uint16   ## Counter-clockwise angle (range 0..0xffff)
+    ## This can be used with `bios.ObjAffineSet`, and several of Tonc's affine functions.
+    sx*: FixedT[int16, 8]    ## Horizontal zoom (8.8f)
+    sy*: FixedT[int16, 8]    ## Vertical zoom (8.8f)
+    alpha*: uint16           ## Counter-clockwise angle (range 0..0xffff)
   
   AffSrcEx* {.importc: "AFF_SRC_EX", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## Extended scale-rotate source struct
     ## This is used to scale/rotate around an arbitrary point. See tonc's main text for all the details.
-    texX* {.importc: "tex_x".}: int32   ## Texture-space anchor, x coordinate  (.8f)
-    texY* {.importc: "tex_y".}: int32   ## Texture-space anchor, y coordinate  (.8f)
-    scrX* {.importc: "scr_x".}: int16   ## Screen-space anchor, x coordinate  (.0f)
-    scrY* {.importc: "scr_y".}: int16   ## Screen-space anchor, y coordinate  (.0f)
-    sx* {.importc: "sx".}: int16        ## Horizontal zoom (8.8f)
-    sy* {.importc: "sy".}: int16        ## Vertical zoom (8.8f)
-    alpha* {.importc: "alpha".}: uint16 ## Counter-clockwise angle (range [0, 0xFFFF])
+    texX* {.importc: "tex_x".}: Fixed        ## Texture-space anchor, x coordinate  (.8f)
+    texY* {.importc: "tex_y".}: Fixed        ## Texture-space anchor, y coordinate  (.8f)
+    scrX* {.importc: "scr_x".}: int16        ## Screen-space anchor, x coordinate  (.0f)
+    scrY* {.importc: "scr_y".}: int16        ## Screen-space anchor, y coordinate  (.0f)
+    sx* {.importc: "sx".}: FixedT[int16, 8]  ## Horizontal zoom (8.8f)
+    sy* {.importc: "sy".}: FixedT[int16, 8]  ## Vertical zoom (8.8f)
+    alpha* {.importc: "alpha".}: uint16      ## Counter-clockwise angle (range [0, 0xFFFF])
   
   AffDst* {.importc: "AFF_DST", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## Simple scale-rotation destination struct, BG version.
-    ## This is a P-matrix with continuous elements, like the BG matrix.
+    ## This is a P-matrix with contiguous elements, like the BG matrix.
     ## It can be used with ObjAffineSet.
-    pa* {.importc: "pa".}: int16
-    pb* {.importc: "pb".}: int16
-    pc* {.importc: "pc".}: int16
-    pd* {.importc: "pd".}: int16
-
+    pa*, pb*, pc*, pd*: FixedT[int16, 8]
+  
   AffDstEx* {.importc: "AFF_DST_EX", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## Extended scale-rotate destination struct
     ## This contains the P-matrix and a fixed-point offset, the
     ##  combination can be used to rotate around an arbitrary point.
     ## Mainly intended for BgAffineSet, but the struct can be used
     ##  for object transforms too.
-    pa* {.importc: "pa".}: int16
-    pb* {.importc: "pb".}: int16
-    pc* {.importc: "pc".}: int16
-    pd* {.importc: "pd".}: int16
-    dx* {.importc: "dx".}: int32
-    dy* {.importc: "dy".}: int32
+    pa*, pb*, pc*, pd*: FixedT[int16, 8]
+    dx*, dy*: int32
 
 # Memory map structs
 # ==================
