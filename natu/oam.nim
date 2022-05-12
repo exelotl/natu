@@ -68,8 +68,8 @@ proc setToShearY(oaff: ObjAffinePtr; hy: Fixed) {.importc: "obj_aff_sheary", ton
 proc setToRotation(oaff: ObjAffinePtr; alpha: uint16) {.importc: "obj_aff_rotate", tonc.}
 proc setToScaleAndRotation(oaff: ObjAffinePtr; sx, sy: Fixed; alpha: uint16) {.importc: "obj_aff_rotscale", tonc.}
 proc setToScaleAndRotation(oaff: ObjAffinePtr; affSrc: ptr AffSrc) {.importc: "obj_aff_rotscale2", tonc.}
-proc preMul(dst: ObjAffinePtr, src: ObjAffinePtr) {.importc: "obj_aff_premul", tonc.}
-proc postMul(dst: ObjAffinePtr, src: ObjAffinePtr) {.importc: "obj_aff_postmul", tonc.}
+proc premul(dst: ObjAffinePtr, src: ObjAffinePtr) {.importc: "obj_aff_premul", tonc.}
+proc postmul(dst: ObjAffinePtr, src: ObjAffinePtr) {.importc: "obj_aff_postmul", tonc.}
 proc rotscaleEx(obj: var ObjAttr; oaff: ObjAffinePtr; asx: ptr AffSrcEx) {.importc: "obj_rotscale_ex", tonc.}
 proc setToScaleInv(oa: ObjAffinePtr; wx, wy: Fixed) {.importc: "obj_aff_scale_inv", tonc.}
 proc setToRotationInv(oa: ObjAffinePtr; theta: uint16) {.importc: "obj_aff_rotate_inv", tonc.}
@@ -107,18 +107,18 @@ proc setToScaleAndRotation*(oaff: var ObjAffine; affSrc: ptr AffSrc) {.importc: 
   ## `oaff` Object affine struct to set.
   ## `as`   Struct with scales and angle.
 
-proc preMul*(dst: var ObjAffine, src: ObjAffinePtr) {.importc: "obj_aff_premul", tonc.}
+proc premul*(dst: var ObjAffine, src: ObjAffinePtr) {.importc: "obj_aff_premul", tonc.}
   ## Pre-multiply the matrix `dst` by `src`
   ## i.e. ::
   ##   dst = src * dst
 
-proc postMul*(dst: var ObjAffine, src: ObjAffinePtr) {.importc: "obj_aff_postmul", tonc.}
+proc postmul*(dst: var ObjAffine, src: ObjAffinePtr) {.importc: "obj_aff_postmul", tonc.}
   ## Post-multiply the matrix `dst` by `src`
   ## i.e. ::
   ##   dst = dst * src
 
-template preMul*(dst: var ObjAffine, src: ObjAffine) = preMul(dst, unsafeAddr src)
-template postMul*(dst: var ObjAffine, src: ObjAffine) = postMul(dst, unsafeAddr src)
+template premul*(dst: var ObjAffine, src: ObjAffine) = preMul(dst, unsafeAddr src)
+template postmul*(dst: var ObjAffine, src: ObjAffine) = postMul(dst, unsafeAddr src)
 
 proc rotscaleEx*(obj: var ObjAttr; oaff: var ObjAffine; asx: ptr AffSrcEx) {.importc: "obj_rotscale_ex", tonc.}
   ## Rot/scale an object around an arbitrary point.

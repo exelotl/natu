@@ -64,6 +64,55 @@ const
   clrSkyBlue* = 0x7B34.Color
   clrCream* = 0x7BFF.Color
 
+## Colors
+## ------
+
+{.push inline.}
+
+proc rgb5*(red, green, blue: int): Color =
+  ## Create a 15-bit BGR color.
+  (red + (green shl 5) + (blue shl 10)).Color
+
+proc rgb5safe*(red, green, blue: int): Color =
+  ## Create a 15-bit BGR color, with proper masking of R,G,B components.
+  ((red and 31) + ((green and 31) shl 5) + ((blue and 31) shl 10)).Color
+
+proc rgb8*(red, green, blue: uint8): Color =
+  ## Create a 15-bit BGR color, using 8-bit components
+  ((red.uint shr 3) + ((green.uint shr 3) shl 5) + ((blue.uint shr 3) shl 10)).Color
+
+proc rgb8*(rgb: int): Color =
+  ## Create a 15-bit BGR color from a 24-bit RGB color of the form 0xRRGGBB
+  (((rgb and 0xff0000) shr 19) + (((rgb and 0x00ff00) shr 11) shl 5) + (((rgb and 0x0000ff) shr 3) shl 10)).Color
+
+func r*(color: Color): int =
+  ## Get the red component of a 15-bit color.
+  color.int and 0x001F
+
+func `r=`*(color: var Color, r: int) =
+  ## Set the red component of a 15-bit color.
+  uint16(color) = (color.uint16 and 0b1_11111_11111_00000) or (r.uint16 and 0x001F)
+
+
+func g*(color: Color): int =
+  ## Get the green component of a 15-bit color.
+  (color.int shr 5) and 0x001F
+
+func `g=`*(color: var Color, g: int) =
+  ## Set the green component of a 15-bit color.
+  uint16(color) = (color.uint16 and 0b1_11111_00000_11111) or (g.uint16 and 0x001F) shl 5
+
+
+func b*(color: Color): int =
+  ## Get the blue component of a 15-bit color.
+  (color.int shr 10) and 0x001F
+
+func `b=`*(color: var Color, b: int) =
+  ## Set the blue component of a 15-bit color.
+  uint16(color) = (color.uint16 and 0b1_00000_11111_11111) or (b.uint16 and 0x001F) shl 10
+
+{.pop.}
+
 
 # TODO: Rework color/pal function signatures?
 
@@ -275,149 +324,98 @@ proc clrFadeFast*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: uint; alpha
   ##   Blend weight (range: 0-32).
   ## .. note:: Handles 2 colors per loop. Very fast.
 
-## Colors
-## ------
+proc bgIsAffine*(n: int): bool {.importc: "BG_IS_AFFINE", toncinl.}
+proc bgIsAvailable*(n: int): bool {.importc: "BG_IS_AVAIL", toncinl.}
+
+proc bmp8_plot(x, y: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_plot", tonc.}
+proc bmp8_hline(x1, y, x2: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_hline", tonc.}
+proc bmp8_vline(x, y1, y2: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_vline", tonc.}
+proc bmp8_line(x1, y1, x2: int; y2: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_line", tonc.}
+proc bmp8_rect(left, top, right, bottom: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_rect", tonc.}
+proc bmp8_frame(left, top, right, bottom: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_frame", tonc.}
+proc bmp16_plot(x, y, clr: Color; dstBase: pointer; dstP: uint) {.importc:"bmp16_plot", tonc.}
+proc bmp16_hline(x1, y, x2: int; clr: Color; dstBase: pointer; dstP: uint) {.importc:"bmp16_hline", tonc.}
+proc bmp16_vline(x, y1, y2: int; clr: Color; dstBase: pointer; dstP: uint) {.importc:"bmp16_vline", tonc.}
+proc bmp16_line(x1, y1, x2, y2: int; clr: Color; dstBase: pointer; dstP: uint) {.importc:"bmp16_line", tonc.}
+proc bmp16_rect(left, top, right, bottom: int; clr: Color; dstBase: pointer; dstP: uint) {.importc:"bmp16_rect", tonc.}
+proc bmp16_frame(left, top, right, bottom: int; clr: Color; dstBase: pointer; dstP: uint) {.importc:"bmp16_frame", tonc.}
+
+
+proc clear*[T: Screenblock | Charblock | Charblock8 | Tile | Tile8 | M3Mem | M4Mem | M5Mem](dst: var T) {.inline.} =
+  ## Clear a region of VRAM (i.e. map, tiles or framebuffer).
+  memset32(addr dst, 0, sizeof(T) div 4)
+
+# Screenblock tile plotting
+# -------------------------
 
 {.push inline.}
 
-proc rgb15*(red, green, blue: int): Color {.deprecated:"Use rgb5 instead".} =
-  ## Create a 15-bit BGR color.
-  (red + (green shl 5) + (blue shl 10)).Color
+proc fill*(sbb: var Screenblock; se: ScrEntry) =
+  ## Fill screenblock `sbb` with `se`.
+  memset32(addr sbb, dup16(se.uint16), sizeof(sbb) div 4)
 
-proc rgb15safe*(red, green, blue: int): Color {.deprecated:"Use rgb5 instead".} =
-  ## Create a 15-bit BGR color, with proper masking of R,G,B components.
-  ((red and 31) + ((green and 31) shl 5) + ((blue and 31) shl 10)).Color
+proc plot*(sbb: var Screenblock; x, y: int; se: ScrEntry) =
+  ## Plot a screen entry at (`x`,`y`) of screenblock `sbb`.
+  sbb[x,y] = se
 
-proc rgb5*(red, green, blue: int): Color =
-  ## Create a 15-bit BGR color.
-  (red + (green shl 5) + (blue shl 10)).Color
+proc hline*(sbb: var Screenblock; x0, x1, y: int; se: ScrEntry) =
+  ## Draw a horizontal line on screenblock `sbb` with `se`.
+  bmp16_hline(x0, y, x1, se.Color, addr sbb, 32*2)
 
-proc rgb5safe*(red, green, blue: int): Color =
-  ## Create a 15-bit BGR color, with proper masking of R,G,B components.
-  ((red and 31) + ((green and 31) shl 5) + ((blue and 31) shl 10)).Color
+proc vline*(sbb: var Screenblock; x, y0, y1: int; se: ScrEntry) =
+  ## Draw a vertical line on screenblock `sbb` with `se`.
+  bmp16_vline(x, y0, y1, se.Color, addr sbb, 32*2)
 
-proc rgb8*(red, green, blue: uint8): Color =
-  ## Create a 15-bit BGR color, using 8-bit components
-  ((red.uint shr 3) + ((green.uint shr 3) shl 5) + ((blue.uint shr 3) shl 10)).Color
+proc rect*(sbb: var Screenblock; left, top, right, bottom: int; se: ScrEntry) =
+  ## Fill a rectangle on `sbb` with `se`.
+  bmp16_rect(left, top, right, bottom, se.Color, addr sbb, 32*2)
 
-proc rgb8*(rgb: int): Color =
-  ## Create a 15-bit BGR color from a 24-bit RGB color of the form 0xRRGGBB
-  (((rgb and 0xff0000) shr 19) + (((rgb and 0x00ff00) shr 11) shl 5) + (((rgb and 0x0000ff) shr 3) shl 10)).Color
+proc frame*(sbb: var Screenblock; left, top, right, bottom: int; se: ScrEntry) =
+  ## Create a border on `sbb` with `se`.
+  bmp16_frame(left, top, right, bottom, se.Color, addr sbb, 32*2)
 
-proc clear*[T: Screenblock | Charblock | Charblock8 | Tile | Tile8](dst: var T) =
-  ## Set all bytes in some VRAM block or tile to zero.
-  memset32(addr dst, 0, sizeof(T) div 4)
+proc window*(sbb: var Screenblock; left, top, right, bottom: int; se0: ScrEntry) {.importc: "se_window", tonc.}
+  ## Create a fancy rectangle.
+  ## 
+  ## In contrast to `frame`, this uses nine tiles starting at `se0` for the frame,
+  ## which indicate the borders and center for the window.
+  ## 
+  ## .. note::
+  ##    The rectangle is not normalized.
+  ##    You should ensure that ``left < right`` and ``bottom < top``.
 
 proc clearRow*(sbb: var Screenblock, row: range[0..31]) =
   memset32(addr sbb[row*32], 0, 32 div sizeof(ScrEntry))
 
 {.pop.}
 
-# TODO: document and/or port these two
-proc bgIsAffine*(n: int): bool {.importc: "BG_IS_AFFINE", toncinl.}
-proc bgIsAvail*(n: int): bool {.importc: "BG_IS_AVAIL", toncinl.}
 
-proc fill*(sbb: var Screenblock; se: ScrEntry) {.importc: "se_fill", toncinl.}
-  ## Fill screenblock `sbb` with `se`.
+# Mode 3 drawing routines
+# -----------------------
 
-proc plot*(sbb: var Screenblock; x, y: int; se: ScrEntry) {.importc: "se_plot", toncinl.}
-  ## Plot a screen entry at (`x`,`y`) of screenblock `sbb`.
+{.push inline.}
 
-proc rect*(sbb: var Screenblock; left, top, right, bottom: int; se: ScrEntry) {.importc: "se_rect", toncinl.}
-  ## Fill a rectangle on `sbb` with `se`.
-
-proc frame*(sbb: var Screenblock; left, top, right, bottom: int; se: ScrEntry) {.importc: "se_frame", toncinl.}
-  ## Create a border on `sbb` with `se`.
-
-proc window*(sbb: var Screenblock; left, top, right, bottom: int; se0: ScrEntry) {.importc: "se_window", tonc.}
-proc hline*(sbb: var Screenblock; x0, x1, y: int; se: ScrEntry) {.importc: "se_hline", tonc.}
-proc vline*(sbb: var Screenblock; x, y0, y1: int; se: ScrEntry) {.importc: "se_vline", tonc.}
-
-
-# TODO: rework below
-
-proc bgAffSet*(bgaff: ptr BgAffine; pa, pb, pc, pd: Fixed) {.importc: "bg_aff_set", toncinl.}
-  ## Set the elements of a bg affine matrix.
-
-proc bgAffIdentity*(bgaff: ptr BgAffine) {.importc: "bg_aff_identity", toncinl.}
-  ## Set an bg affine matrix to the identity matrix
-
-proc bgAffScale*(bgaff: ptr BgAffine; sx, sy: Fixed) {.importc: "bg_aff_scale", toncinl.}
-  ## Set an bg affine matrix for scaling.
-
-proc bgAffShearX*(bgaff: ptr BgAffine; hx: Fixed) {.importc: "bg_aff_shearx", toncinl.}
-proc bgAffShearY*(bgaff: ptr BgAffine; hy: Fixed) {.importc: "bg_aff_sheary", toncinl.}
-
-proc bgAffRotate*(bgaff: ptr BgAffine; alpha: uint16) {.importc: "bg_aff_rotate", tonc.}
-  ## Set bg matrix to counter-clockwise rotation.
-  ## 
-  ## **Parameters:**
-  ## 
-  ## bgaff
-  ##   Object affine struct to set.
-  ## 
-  ## alpha
-  ##   CCW angle. full-circle is 10000h.
-
-proc bgAffRotscale*(bgaff: ptr BgAffine; sx, sy: int; alpha: uint16) {.importc: "bg_aff_rotscale", tonc.}
-  ## Set bg matrix to 2d scaling, then counter-clockwise rotation.
-  ## 
-  ## **Parameters:**
-  ## 
-  ## bgaff
-  ##   Object affine struct to set.
-  ## 
-  ## sx
-  ##   Horizontal scale (zoom). .8 fixed point.
-  ## 
-  ## sy
-  ##   Vertical scale (zoom). .8 fixed point.
-  ## 
-  ## alpha
-  ##   CCW angle. full-circle is 10000h.
-
-proc bgAffRotscale*(bgaff: ptr BgAffine; `as`: ptr AffSrc) {.importc: "bg_aff_rotscale2", tonc.}
-  ## Set bg matrix to 2d scaling, then counter-clockwise rotation.
-  ## 
-  ## **Parameters:**
-  ## 
-  ## bgaff
-  ##   Object affine struct to set.
-  ## 
-  ## as
-  ##   Struct with scales and angle.
-
-proc bgAffPremul*(dst: ptr BgAffine; src: ptr BgAffine) {.importc: "bg_aff_premul", tonc.}
-  ## Pre-multiply `dst` by `src`: `D = S*D`
-
-proc bgAffPostmul*(dst: ptr BgAffine; src: ptr BgAffine) {.importc: "bg_aff_postmul", tonc.}
-  ## Post-multiply `dst` by `src`: `D = D*S`
-
-proc bgRotscaleEx*(bgaff: ptr BgAffine; asx: ptr AffSrcEx) {.importc: "bg_rotscale_ex", tonc.}
-  ## Set bg affine matrix to a rot/scale around an arbitrary point.
-  ## 
-  ## **Parameters:**
-  ## 
-  ## bgaff
-  ##   BG affine data to set.
-  ## 
-  ## asx
-  ##   Affine source data: screen and texture origins, scales and angle.
-
-
-proc m3Clear*() {.inline.} =
-  memset32(addr vidMem, 0, M3_SIZE div 4)
-proc m3Fill*(clr: Color) {.importc: "m3_fill", toncinl.}
+proc fill*(m: var M3Mem; clr: Color) =
   ## Fill the mode 3 background with color `clr`.
-proc m3Plot*(x, y: int; clr: Color) {.importc: "m3_plot", toncinl.}
+  memset32(addr m, dup16(clr.uint16), sizeof(m) div 4)
+
+proc plot*(m: var M3Mem; x, y: int; clr: Color) =
   ## Plot a single colored pixel in mode 3 at (`x`, `y`).
-proc m3Hline*(x1, y, x2: int; clr: Color) {.importc: "m3_hline", toncinl.}
+  m[y][x] = clr
+
+proc hline*(m: var M3Mem; x1, y, x2: int; clr: Color) =
   ## Draw a colored horizontal line in mode 3.
-proc m3Vline*(x, y1, y2: int; clr: Color) {.importc: "m3_vline", toncinl.}
+  bmp16_hline(x1, y, x2, clr, addr m, Mode3Width*2)
+
+proc vline*(m: var M3Mem; x, y1, y2: int; clr: Color) =
   ## Draw a colored vertical line in mode 3.
-proc m3Line*(x1, y1, x2, y2: int; clr: Color) {.importc: "m3_line", toncinl.}
+  bmp16_vline(x, y1, y2, clr, addr m, Mode3Width*2)
+
+proc line*(m: var M3Mem; x1, y1, x2, y2: int; clr: Color) =
   ## Draw a colored line in mode 3.
-proc m3Rect*(left, top, right, bottom: int; clr: Color) {.importc: "m3_rect", toncinl.}
+  bmp16_line(x1, y1, x2, y2, clr, addr m, Mode3Width*2)
+
+proc rect*(m: var M3Mem; left, top, right, bottom: int; clr: Color) =
   ## Draw a colored rectangle in mode 3.
   ## 
   ## **Parameters:**
@@ -437,9 +435,11 @@ proc m3Rect*(left, top, right, bottom: int; clr: Color) {.importc: "m3_rect", to
   ## clr
   ##   Color.
   ## 
-  ## .. note:: Normalized, but not clipped.
+  ## .. note::
+  ##    The rectangle is normalized, but not clipped.
+  bmp16_rect(left, top, right, bottom, clr, addr m, Mode3Width*2)
 
-proc m3Frame*(left, top, right, bottom: int; clr: Color) {.importc: "m3_frame", toncinl.}
+proc frame*(m: var M3Mem; left, top, right, bottom: int; clr: Color) =
   ## Draw a colored frame in mode 3.
   ## 
   ## **Parameters:**
@@ -459,20 +459,41 @@ proc m3Frame*(left, top, right, bottom: int; clr: Color) {.importc: "m3_frame", 
   ## clr
   ##   Color.
   ## 
-  ## .. note:: Normalized, but not clipped.
+  ## .. note::
+  ##    The rectangle is normalized, but not clipped.
+  bmp16_frame(left, top, right, bottom, clr, addr m, Mode3Width*2)
 
-proc m4Clear*() = memset32(vidPage, 0, M4_SIZE div 4)
-proc m4Fill*(clrid: uint8) {.importc: "m4_fill", toncinl.}
-  ## Fill the current mode 4 backbuffer with `clrid`
-proc m4Plot*(x, y: int; clrid: uint8) {.importc: "m4_plot", toncinl.}
-  ## Plot a `clrid` pixel on the current mode 4 backbuffer
-proc m4Hline*(x1, y, x2: int; clrid: uint8) {.importc: "m4_hline", toncinl.}
+{.pop.}
+
+
+{.push inline.}
+
+proc fill*(m: var M4Mem; clrid: uint8) =
+  ## Fill the given mode 4 buffer with `clrid`.
+  memset32(addr m, quad8(clrid), sizeof(m) div 4)
+
+proc plot*(m: var M4Mem; x, y: int; clrid: uint8) =
+  ## Plot a `clrid` pixel on the given mode 4 buffer.
+  let p = cast[ptr UncheckedArray[uint16]](addr m)
+  let dst = addr p[(y * Mode4Width + x) shr 1]
+  if (x and 0b1) != 0:
+    dst[] = (dst[] and 0x00ff) or (clrid shl 8)
+  else:
+    dst[] = (dst[] and 0xff00) or (clrid)
+
+proc hline*(m: var M4Mem; x1, y, x2: int; clrid: uint8) =
   ## Draw a `clrid` colored horizontal line in mode 4.
-proc m4Vline*(x, y1, y2: int; clrid: uint8) {.importc: "m4_vline", toncinl.}
+  bmp8_hline(x1, y, x2, clrid, addr m, Mode4Width)
+
+proc vline*(m: var M4Mem; x, y1, y2: int; clrid: uint8) =
   ## Draw a `clrid` colored vertical line in mode 4.
-proc m4Line*(x1, y1, x2, y2: int; clrid: uint8) {.importc: "m4_line", toncinl.}
+  bmp8_vline(x, y1, y2, clrid, addr m, Mode4Width)
+
+proc line*(m: var M4Mem; x1, y1, x2, y2: int; clrid: uint8) =
   ## Draw a `clrid` colored line in mode 4.
-proc m4Rect*(left, top, right, bottom: int; clrid: uint8) {.importc: "m4_rect", toncinl.}
+  bmp8_line(x1, y1, x2, y2, clrid, addr m, Mode4Width)
+
+proc rect*(m: var M4Mem; left, top, right, bottom: int; clrid: uint8) =
   ## Draw a `clrid` colored rectangle in mode 4.
   ## 
   ## **Parameters:**
@@ -490,10 +511,13 @@ proc m4Rect*(left, top, right, bottom: int; clrid: uint8) {.importc: "m4_rect", 
   ##   Bottom size, exclusive.
   ## 
   ## clrid
-  ##   color index.
+  ##   Color index.
   ## 
-  ## .. note:: Normalized, but not clipped.
-proc m4Frame*(left, top, right, bottom: int; clrid: uint8) {.importc: "m4_frame", toncinl.}
+  ## .. note::
+  ##    The rectangle is normalized, but not clipped.
+  bmp8_rect(left, top, right, bottom, clrid, addr m, Mode4Width)
+
+proc frame*(m: var M4Mem; left, top, right, bottom: int; clrid: uint8) =
   ## Draw a `clrid` colored frame in mode 4.
   ## 
   ## **Parameters:**
@@ -511,22 +535,37 @@ proc m4Frame*(left, top, right, bottom: int; clrid: uint8) {.importc: "m4_frame"
   ##   Bottom size, exclusive.
   ## 
   ## clrid
-  ##   color index.
+  ##   Color index.
   ## 
-  ## .. note:: Normalized, but not clipped.
+  ## .. note::
+  ##    The rectangle is normalized, but not clipped.
+  bmp8_frame(left, top, right, bottom, clrid, addr m, Mode4Width)
 
-proc m5Clear*() = memset32(vidPage, 0, M5_SIZE div 4)
-proc m5Fill*(clr: Color) {.importc: "m5_fill", toncinl.}
-  ## Fill the current mode 5 backbuffer with `clr`
-proc m5Plot*(x, y: int; clr: Color) {.importc: "m5_plot", toncinl.}
-  ## Plot a `clrid` pixel on the current mode 5 backbuffer
-proc m5HLine*(x1, y, x2: int; clr: Color) {.importc: "m5_hline", toncinl.}
+{.pop.}
+
+{.push inline.}
+
+proc fill*(m: var M5Mem; clr: Color) =
+  ## Fill the given mode 5 buffer with `clr`.
+  memset32(addr m, dup16(clr.uint16), sizeof(m) div 4)
+
+proc plot*(m: var M5Mem; x, y: int; clr: Color) =
+  ## Plot a `clrid` pixel on the given mode 5 buffer.
+  m[y][x] = clr
+
+proc hline*(m: var M5Mem; x1, y, x2: int; clr: Color) =
   ## Draw a colored horizontal line in mode 5.
-proc m5VLine*(x, y1, y2: int; clr: Color) {.importc: "m5_vline", toncinl.}
+  bmp16_hline(x1, y, x2, clr, addr m, Mode5Width*2)
+
+proc vline*(m: var M5Mem; x, y1, y2: int; clr: Color) =
   ## Draw a colored vertical line in mode 5.
-proc m5Line*(x1, y1, x2, y2: int; clr: Color) {.importc: "m5_line", toncinl.}
+  bmp16_vline(x, y1, y2, clr, addr m, Mode5Width*2)
+
+proc line*(m: var M5Mem; x1, y1, x2, y2: int; clr: Color) =
   ## Draw a colored line in mode 5.
-proc m5Rect*(left, top, right, bottom: int; clr: Color) {.importc: "m5_rect", toncinl.}
+  bmp16_line(x1, y1, x2, y2, clr, addr m, Mode5Width*2)
+
+proc rect*(m: var M5Mem; left, top, right, bottom: int; clr: Color) =
   ## Draw a colored rectangle in mode 5.
   ## 
   ## **Parameters:**
@@ -546,9 +585,11 @@ proc m5Rect*(left, top, right, bottom: int; clr: Color) {.importc: "m5_rect", to
   ## clr
   ##   Color.
   ## 
-  ## .. note:: Normalized, but not clipped.
+  ## .. note::
+  ##    The rectangle is normalized, but not clipped.
+  bmp16_rect(left, top, right, bottom, clr, addr m, Mode5Width*2)
 
-proc m5Frame*(left, top, right, bottom: int; clr: Color) {.importc: "m5_frame", toncinl.}
+proc frame*(m: var M5Mem; left, top, right, bottom: int; clr: Color) =
   ## Draw a colored frame in mode 5.
   ## 
   ## **Parameters:**
@@ -568,7 +609,11 @@ proc m5Frame*(left, top, right, bottom: int; clr: Color) {.importc: "m5_frame", 
   ## clr
   ##   Color.
   ## 
-  ## .. note:: Normalized, but not clipped.
+  ## .. note::
+  ##    The rectangle is normalized, but not clipped.
+  bmp16_frame(left, top, right, bottom, clr, addr m, Mode5Width*2)
+
+{.pop.}
 
 
 # Extras
@@ -578,63 +623,107 @@ proc m5Frame*(left, top, right, bottom: int; clr: Color) {.importc: "m5_frame", 
 
 {.push inline.}
 
-proc tid*(se: ScrEntry): int = (se and SE_ID_MASK).int
-proc hflip*(se: ScrEntry): bool = (se and SE_HFLIP) != 0
-proc vflip*(se: ScrEntry): bool = (se and SE_VFLIP) != 0
-proc palbank*(se: ScrEntry): int {.deprecated:"Use `pal` instead".} = ((se and SE_PALBANK_MASK) shr SE_PALBANK_SHIFT).int
-proc pal*(se: ScrEntry): int = ((se and SE_PALBANK_MASK) shr SE_PALBANK_SHIFT).int
+func tileId*(se: ScrEntry): int = (se and SE_ID_MASK).int
+func hflip*(se: ScrEntry): bool = (se and SE_HFLIP) != 0
+func vflip*(se: ScrEntry): bool = (se and SE_VFLIP) != 0
+func palId*(se: ScrEntry): int = ((se and SE_PALBANK_MASK) shr SE_PALBANK_SHIFT).int
 
-proc `tid=`*(se: var ScrEntry, val: int) =     se = ((val.uint16 shl SE_ID_SHIFT) and SE_ID_MASK) or (se and not SE_ID_MASK)
-proc `hflip=`*(se: var ScrEntry, val: bool) =  se = (val.uint16 shl 10) or (se and not SE_HFLIP)
-proc `vflip=`*(se: var ScrEntry, val: bool) =  se = (val.uint16 shl 11) or (se and not SE_VFLIP)
-proc `palbank=`*(se: var ScrEntry, val: int) {.deprecated:"Use `pal` instead".} = se = ((val.uint16 shl SE_PALBANK_SHIFT) and SE_PALBANK_MASK) or (se and not SE_PALBANK_MASK)
-proc `pal=`*(se: var ScrEntry, val: int) = se = ((val.uint16 shl SE_PALBANK_SHIFT) and SE_PALBANK_MASK) or (se and not SE_PALBANK_MASK)
+func `tileId=`*(se: var ScrEntry, val: int) =  se = ((val.uint16 shl SE_ID_SHIFT) and SE_ID_MASK) or (se and not SE_ID_MASK)
+func `hflip=`*(se: var ScrEntry, val: bool) =  se = (val.uint16 shl 10) or (se and not SE_HFLIP)
+func `vflip=`*(se: var ScrEntry, val: bool) =  se = (val.uint16 shl 11) or (se and not SE_VFLIP)
+func `palId=`*(se: var ScrEntry, val: int) =   se = ((val.uint16 shl SE_PALBANK_SHIFT) and SE_PALBANK_MASK) or (se and not SE_PALBANK_MASK)
 
 {.pop.}
 
 
-# Color component getters and setters
+# BG affine matrix functions
+# -------------------------- 
 
-{.push inline.}
+proc setTo*(bgaff: var BgAffine; pa, pb, pc, pd: Fixed) {.importc: "bg_aff_set", toncinl.}
+  ## Set the elements of a bg affine matrix.
 
-func r*(color: Color): int =
-  ## Get the red component of a 15-bit color.
-  color.int and 0x001F
+proc setToIdentity*(bgaff: var BgAffine) {.importc: "bg_aff_identity", toncinl.}
+  ## Set an bg affine matrix to the identity matrix
 
-func `r=`*(color: var Color, r: int) =
-  ## Set the red component of a 15-bit color.
-  uint16(color) = (color.uint16 and 0b1_11111_11111_00000) or (r.uint16 and 0x001F)
+proc setToScale*(bgaff: var BgAffine; sx, sy: Fixed) {.importc: "bg_aff_scale", toncinl.}
+  ## Set an bg affine matrix for scaling.
+
+proc setToShearX*(bgaff: var BgAffine; hx: Fixed) {.importc: "bg_aff_shearx", toncinl.}
+proc setToShearY*(bgaff: var BgAffine; hy: Fixed) {.importc: "bg_aff_sheary", toncinl.}
+
+proc setToRotation*(bgaff: var BgAffine; alpha: uint16) {.importc: "bg_aff_rotate", tonc.}
+  ## Set bg matrix to counter-clockwise rotation.
+  ## 
+  ## **Parameters:**
+  ## 
+  ## bgaff
+  ##   BG affine struct to set.
+  ## 
+  ## alpha
+  ##   CCW angle. full-circle is 10000h.
+
+proc setToScaleAndRotation*(bgaff: var BgAffine; sx, sy: int; alpha: uint16) {.importc: "bg_aff_rotscale", tonc.}
+  ## Set bg matrix to 2d scaling, then counter-clockwise rotation.
+  ## 
+  ## **Parameters:**
+  ## 
+  ## bgaff
+  ##   BG affine struct to set.
+  ## 
+  ## sx
+  ##   Horizontal scale (zoom). .8 fixed point.
+  ## 
+  ## sy
+  ##   Vertical scale (zoom). .8 fixed point.
+  ## 
+  ## alpha
+  ##   CCW angle. full-circle is 10000h.
+
+proc setToScaleAndRotation*(bgaff: var BgAffine; affSrc: ptr AffSrc) {.importc: "bg_aff_rotscale2", tonc.}
+  ## Set bg matrix to 2d scaling, then counter-clockwise rotation.
+  ## 
+  ## **Parameters:**
+  ## 
+  ## bgaff
+  ##   BG affine struct to set.
+  ## 
+  ## affSrc
+  ##   Struct with scales and angle.
+
+proc premul*(dst: var BgAffine; src: ptr BgAffine) {.importc: "bg_aff_premul", tonc.}
+  ## Pre-multiply the matrix `dst` by `src`
+  ## 
+  ## i.e. ::
+  ##   dst = src * dst
+  ## 
+  ## .. warning::
+  ##    Don't use this on `bgaff`_ registers, as they are write-only.
+
+proc postmul*(dst: var BgAffine; src: ptr BgAffine) {.importc: "bg_aff_postmul", tonc.}
+  ## Post-multiply the matrix `dst` by `src`
+  ## 
+  ## i.e. ::
+  ##   dst = dst * src
+  ## 
+  ## .. warning::
+  ##    Don't use this on `bgaff`_ registers, as they are write-only.
+
+proc rotscaleEx*(bgaff: var BgAffine; asx: ptr AffSrcEx) {.importc: "bg_rotscale_ex", tonc.}
+  ## Set bg affine matrix to a rot/scale around an arbitrary point.
+  ## 
+  ## **Parameters:**
+  ## 
+  ## bgaff
+  ##   BG affine data to set.
+  ## 
+  ## asx
+  ##   Affine source data: screen and texture origins, scales and angle.
 
 
-func g*(color: Color): int =
-  ## Get the green component of a 15-bit color.
-  (color.int shr 5) and 0x001F
+# Miscellaneous
+# -------------
 
-func `g=`*(color: var Color, g: int) =
-  ## Set the green component of a 15-bit color.
-  uint16(color) = (color.uint16 and 0b1_11111_00000_11111) or (g.uint16 and 0x001F) shl 5
-
-
-func b*(color: Color): int =
-  ## Get the blue component of a 15-bit color.
-  (color.int shr 10) and 0x001F
-
-func `b=`*(color: var Color, b: int) =
-  ## Set the blue component of a 15-bit color.
-  uint16(color) = (color.uint16 and 0b1_00000_11111_11111) or (b.uint16 and 0x001F) shl 10
-
-{.pop.}
-
-
-proc cbbClear*(cbb: int) {.inline, deprecated:"Use e.g. bgTileMem[i].clear() instead.".} =
-  memset32(addr bgTileMem[cbb], 0, CBB_SIZE div 4)
-
-proc sbbClear*(sbb: int) {.inline, deprecated:"Use seMem[i].clear() instead.".} =
-  memset32(addr seMem[sbb], 0, SBB_SIZE div 4)
-
-proc sbbClearRow*(sbb, row: int) {.inline, deprecated:"Use seMem[i].clearRow(n) instead.".} =
-  memset32(addr seMem[sbb][row*32], 0, 32 div 2)
-
-# proc setWindow*(id: range[0..1], bounds: Rect) {.inline.} =
-#   winh[id] = WinBoundsH(left: bounds.left.uint8, right: bounds.right.uint8)
-#   winv[id] = WinBoundsV(top: bounds.top.uint8, bottom: bounds.bottom.uint8)
+# proc setWindow*(winId: range[0..1], bounds: Rect) {.inline.} =
+#   ## Apply a rectangular window to one of the window registers.
+#   winh[winId] = WinBoundsH(left: bounds.left.uint8, right: bounds.right.uint8)
+#   winv[winId] = WinBoundsV(top: bounds.top.uint8, bottom: bounds.bottom.uint8)

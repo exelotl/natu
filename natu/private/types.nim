@@ -93,10 +93,12 @@ type
   
   AffDstEx* {.importc: "AFF_DST_EX", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## Extended scale-rotate destination struct
+    ## 
     ## This contains the P-matrix and a fixed-point offset, the
-    ##  combination can be used to rotate around an arbitrary point.
+    ## combination can be used to rotate around an arbitrary point.
+    ## 
     ## Mainly intended for BgAffineSet, but the struct can be used
-    ##  for object transforms too.
+    ## for object transforms too.
     pa*, pb*, pc*, pd*: FixedT[int16, 8]
     dx*, dy*: int32
 
@@ -141,11 +143,14 @@ type
 ## VRAM array types
 ## These types allow VRAM access as arrays or matrices in their most natural types.
 type
-  Screenline* = array[32, ScrEntry]
   M3Line* = array[240, Color]
   M4Line* = array[240, uint8]  ## NOTE: u8, not u16!! (be careful not to write single bytes to VRAM)
   M5Line* = array[160, Color]
-  ScreenMat* = array[32, array[32, ScrEntry]]
+  M3Mem* = array[160, M3Line]
+  M4Mem* = array[160, M4Line]
+  M5Mem* = array[128, M5Line]
+  Screenline* = array[32, ScrEntry]
+  ScreenMat* = array[32, Screenline]
   Screenblock* = array[1024, ScrEntry]
   Charblock* = array[512, Tile]
   Charblock8* = array[256, Tile8]
