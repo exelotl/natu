@@ -4,12 +4,15 @@ import ./private/types
 {.push inline.}
 
 proc peek*[T](address: ptr T): T =
+  ## Read a value directly from some memory location.
   volatileLoad(address)
 
 proc poke*[T](address: ptr T, value: T) =
+  ## Write a value directly to a memory location.
   volatileStore(address, value)
 
 func isPowerOfTwo*(n: SomeInteger): bool =
+  ## Return true if `n` is a power of two.
   n > 0 and (n and (n-1)) == 0
 
 func logPowerOfTwo*(n: uint): uint =
@@ -23,19 +26,26 @@ func logPowerOfTwo*(n: uint): uint =
 from ./core import qran, qranRange
 
 proc pickRandom*[T](arr: openArray[T]): T =
-  # Get a random item from a list.
+  ## Return a random item from an array.
   arr[qranRange(0, arr.len)]
 
 proc pickRandom*[T](arr: ptr UncheckedArray[T], len: int): T =
-  # Get a random item from an unchecked array with a given length.
+  ## Return a random item from an unchecked array with a given length.
   arr[qranRange(0, len)]
 
 proc rand*[T:Fixed|SomeInteger](a, b: T): T =
-  # Returns a random value between `a` and `b` inclusive.
+  ## Return a random value between `a` and `b` inclusive.
   T(qranRange(a.int, b.int+1))
 
 proc rand*[T:Fixed|SomeInteger](s: Slice[T]): T =
-  # Returns a random value from the range given by a slice (`a..b`).
+  ## Return a random value from a slice.
+  ## 
+  ## **Example:**
+  ## 
+  ## .. code-block:: nim
+  ##    
+  ##    let n = rand(0..100)
+  ## 
   T(qranRange(s.a.int, s.b.int+1))
 
 {.pop.}
