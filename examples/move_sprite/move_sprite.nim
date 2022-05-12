@@ -47,7 +47,7 @@ for obj in mitems(objMem):
 
 # set up a sprite
 let s = addr objMem[oid]
-s.init:
+s[].init:
   pos = pos
   size = s64x64
   tid = tid
@@ -67,4 +67,4 @@ while true:
   VBlankIntrWait()
   
   # update sprite position
-  s.pos = pos
+  s[].pos = pos

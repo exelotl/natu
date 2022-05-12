@@ -5,7 +5,7 @@
 ## - Each object's tile ID is set to the appropriate tile in VRAM for its current frame of animation.
 ##
 ## This can be great when you have many sprites of the same kind onscreen at once,
-##  provided that your spritesheet has relatively few frames.
+## provided your spritesheet has relatively few frames.
 ##
 ## It's also light on CPU usage compared to the streaming approach from the `anim_sprite` example.
 ##
@@ -70,12 +70,11 @@ proc update(c: var Coin) =
 proc draw(c: var Coin, oid: int) =
   # apply attributes to sprite in OAM
   # note that we point to a different tile in VRAM depending on which anim frame we are on.
-  let obj = addr objMem[oid]
-  obj.clear()
-  obj.pos = vec2i(c.pos)
-  obj.size = s16x16
-  obj.tid = tid + c.animFrame * coinNumTiles
-  obj.pal = pal
+  objMem[oid].init:
+    pos = vec2i(c.pos)
+    size = s16x16
+    tid = tid + c.animFrame * coinNumTiles
+    pal = pal
 
 
 var coins {.noinit.}: array[40, Coin]
