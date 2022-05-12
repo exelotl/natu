@@ -258,11 +258,10 @@ INLINE void se_fill(SCR_ENTRY *sbb, SCR_ENTRY se);
 INLINE void se_plot(SCR_ENTRY *sbb, int x, int y, SCR_ENTRY se);
 INLINE void se_rect(SCR_ENTRY *sbb, int left, int top, int right, int bottom, SCR_ENTRY se);
 INLINE void se_frame(SCR_ENTRY *sbb, int left, int top, int right, int bottom, SCR_ENTRY se);
+INLINE void se_hline(SCR_ENTRY *sbb, int x0, int x1, int y, SCR_ENTRY se);
+INLINE void se_vline(SCR_ENTRY *sbb, int x, int y0, int y1, SCR_ENTRY se);
 
 void se_window(SCR_ENTRY *sbb, int left, int top, int right, int bottom, SCR_ENTRY se0);
-
-void se_hline(SCR_ENTRY *sbb, int x0, int x1, int y, SCR_ENTRY se);
-void se_vline(SCR_ENTRY *sbb, int x, int y0, int y1, SCR_ENTRY se);
 
 
 // --- Prototypes -----------------------------------------------------
@@ -402,6 +401,14 @@ INLINE void se_rect(SCR_ENTRY *sbb, int left, int top, int right, int bottom,
 INLINE void se_frame(SCR_ENTRY *sbb, int left, int top, int right, int bottom, 
 	SCR_ENTRY se)
 {	bmp16_frame(left, top, right, bottom, se, sbb, 32*2);				}
+
+//! Draw a horizontal line on \a sbb with \a se.
+INLINE void se_hline(SCR_ENTRY *sbb, int x0, int x1, int y, SCR_ENTRY se)
+{	bmp16_hline(x0, y, x1, se, sbb, 32*2);				}
+
+//! Draw a vertical line on \a sbb with \a se.
+INLINE void se_vline(SCR_ENTRY *sbb, int x, int y0, int y1, SCR_ENTRY se)
+{	bmp16_vline(x, y0, y1, se, sbb, 32*2);				}
 
 
 // --- Affine ---
