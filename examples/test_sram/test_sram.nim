@@ -82,7 +82,7 @@ proc main() =
     obj.hide()
   
   # Fill a tile with white
-  palObjBank[0][1] = rgb15(31,31,31)
+  palObjBank[0][1] = rgb5(31,31,31)
   const numBytes = (8*8) div 2
   memset32(addr tileMemObj[0][0], octup(1), numBytes div sizeof(uint32))
   
