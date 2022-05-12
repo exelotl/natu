@@ -77,34 +77,34 @@ proc memcpy32*(dst: pointer, src: pointer, wcount: SomeInteger) {.importc: "memc
 
 template dup8*(x: uint8): uint16 =
   ## Duplicate a byte to form a halfword: 0x12 -> 0x1212.
-  x or (x shl 8)
+  x.uint16 or (x.uint16 shl 8)
 
 template dup16*(x: uint16): uint32 =
   ## Duplicate a halfword to form a word: 0x1234 -> 0x12341234.
-  x or (x shl 16)
+  x.uint32 or (x.uint32 shl 16)
 
 template quad8*(x: uint8): uint32 =
   ## Quadruple a byte to form a word: 0x12 -> 0x12121212.
-  x * 0x01010101
+  x.uint32 * 0x01010101
 
 template octup*(x: uint8): uint32 =
   ## Octuple a nybble to form a word: 0x1 -> 0x11111111
-  x * 0x11111111
+  x.uint32 * 0x11111111
 
 # Bit packing
 # -----------
 
 template bytes2hword*(b0, b1: uint8): uint16 =
   ## Pack 2 bytes into a word. Little-endian order.
-  b0 or b1 shl 8
+  b0.uint16 or (b1.uint16 shl 8)
 
 template bytes2word*(b0, b1, b2, b3: uint8): uint32 =
   ## Pack 4 bytes into a word. Little-endian order.
-  b0 or b1 shl 8 or b2 shl 16 or b3 shl 24
+  b0.uint32 or (b1.uint32 shl 8) or (b2.uint32 shl 16) or (b3.uint32 shl 24)
   
 template hword2word*(h0, h1: uint16): uint32 =
   ## Pack 2 halfwords into a word. Little-endian order.
-  h0 or h1 shl 16
+  h0.uint32 or (h1.uint32 shl 16)
 
 # DMA
 # ---
