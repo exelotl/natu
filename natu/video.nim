@@ -624,14 +624,22 @@ proc frame*(m: var M5Mem; left, top, right, bottom: int; clr: Color) =
 {.push inline.}
 
 func tileId*(se: ScrEntry): int = (se and SE_ID_MASK).int
+func palId*(se: ScrEntry): int = ((se and SE_PALBANK_MASK) shr SE_PALBANK_SHIFT).int
 func hflip*(se: ScrEntry): bool = (se and SE_HFLIP) != 0
 func vflip*(se: ScrEntry): bool = (se and SE_VFLIP) != 0
-func palId*(se: ScrEntry): int = ((se and SE_PALBANK_MASK) shr SE_PALBANK_SHIFT).int
 
 func `tileId=`*(se: var ScrEntry, val: int) =  se = ((val.uint16 shl SE_ID_SHIFT) and SE_ID_MASK) or (se and not SE_ID_MASK)
+func `palId=`*(se: var ScrEntry, val: int) =   se = ((val.uint16 shl SE_PALBANK_SHIFT) and SE_PALBANK_MASK) or (se and not SE_PALBANK_MASK)
 func `hflip=`*(se: var ScrEntry, val: bool) =  se = (val.uint16 shl 10) or (se and not SE_HFLIP)
 func `vflip=`*(se: var ScrEntry, val: bool) =  se = (val.uint16 shl 11) or (se and not SE_VFLIP)
-func `palId=`*(se: var ScrEntry, val: int) =   se = ((val.uint16 shl SE_PALBANK_SHIFT) and SE_PALBANK_MASK) or (se and not SE_PALBANK_MASK)
+
+# shorthands:
+
+func tid*(se: ScrEntry): int = se.tileId
+func pal*(se: ScrEntry): int = se.palId
+
+func `tid=`*(se: var ScrEntry, tid: int) =  se.tileId = tid
+func `pal=`*(se: var ScrEntry, pal: int) =  se.palId = pal
 
 {.pop.}
 

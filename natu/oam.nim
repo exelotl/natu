@@ -158,79 +158,72 @@ func mode*(obj: ObjAttr): ObjMode = (obj.attr0 and ATTR0_MODE_MASK).ObjMode
 func fx*(obj: ObjAttr): ObjFxMode = (obj.attr0 and (ATTR0_BLEND or ATTR0_WINDOW)).ObjFxMode
 func mos*(obj: ObjAttr): bool = (obj.attr0 and ATTR0_MOSAIC) != 0
 func is8bpp*(obj: ObjAttr): bool = (obj.attr0 and ATTR0_8BPP) != 0
-func aff*(obj: ObjAttr): int = ((obj.attr1 and ATTR1_AFF_ID_MASK) shr ATTR1_AFF_ID_SHIFT).int
+func affId*(obj: ObjAttr): int = ((obj.attr1 and ATTR1_AFF_ID_MASK) shr ATTR1_AFF_ID_SHIFT).int
 func size*(obj: ObjAttr): ObjSize = (((obj.attr0 and ATTR0_SHAPE_MASK) shr 12) or (obj.attr1 shr 14)).ObjSize
 func hflip*(obj: ObjAttr): bool = (obj.attr1 and ATTR1_HFLIP) != 0
 func vflip*(obj: ObjAttr): bool = (obj.attr1 and ATTR1_VFLIP) != 0
-func tid*(obj: ObjAttr): int = ((obj.attr2 and ATTR2_ID_MASK) shr ATTR2_ID_SHIFT).int
-func pal*(obj: ObjAttr): int = ((obj.attr2 and ATTR2_PALBANK_MASK) shr ATTR2_PALBANK_SHIFT).int
+func tileId*(obj: ObjAttr): int = ((obj.attr2 and ATTR2_ID_MASK) shr ATTR2_ID_SHIFT).int
+func palId*(obj: ObjAttr): int = ((obj.attr2 and ATTR2_PALBANK_MASK) shr ATTR2_PALBANK_SHIFT).int
 func prio*(obj: ObjAttr): int = ((obj.attr2 and ATTR2_PRIO_MASK) shr ATTR2_PRIO_SHIFT).int
 
-# ptr setters
+# setters
 
-func `x=`*(obj: ObjAttrPtr, x: int) =
+func `x=`*(obj: var ObjAttr; x: int) =
   obj.attr1 = (x.uint16 and ATTR1_X_MASK) or (obj.attr1 and not ATTR1_X_MASK)
 
-func `y=`*(obj: ObjAttrPtr, y: int) =
+func `y=`*(obj: var ObjAttr; y: int) =
   obj.attr0 = (y.uint16 and ATTR0_Y_MASK) or (obj.attr0 and not ATTR0_Y_MASK)
 
-func `pos=`*(obj: ObjAttrPtr, v: Vec2i) =
+func `pos=`*(obj: var ObjAttr; v: Vec2i) =
   obj.x = v.x
   obj.y = v.y
 
-func `tid=`*(obj: ObjAttrPtr, tid: int) =
-  obj.attr2 = ((tid.uint16 shl ATTR2_ID_SHIFT) and ATTR2_ID_MASK) or (obj.attr2 and not ATTR2_ID_MASK)
+func `tileId=`*(obj: var ObjAttr; tileId: int) =
+  obj.attr2 = ((tileId.uint16 shl ATTR2_ID_SHIFT) and ATTR2_ID_MASK) or (obj.attr2 and not ATTR2_ID_MASK)
 
-func `pal=`*(obj: ObjAttrPtr, pal: int) =
-  obj.attr2 = ((pal.uint16 shl ATTR2_PALBANK_SHIFT) and ATTR2_PALBANK_MASK) or (obj.attr2 and not ATTR2_PALBANK_MASK)
+func `palId=`*(obj: var ObjAttr; palId: int) =
+  obj.attr2 = ((palId.uint16 shl ATTR2_PALBANK_SHIFT) and ATTR2_PALBANK_MASK) or (obj.attr2 and not ATTR2_PALBANK_MASK)
 
-func `hflip=`*(obj: ObjAttrPtr, v: bool) =
+func `hflip=`*(obj: var ObjAttr; v: bool) =
   obj.attr1 = (v.uint16 shl 12) or (obj.attr1 and not ATTR1_HFLIP)
   
-func `vflip=`*(obj: ObjAttrPtr, v: bool) =
+func `vflip=`*(obj: var ObjAttr; v: bool) =
   obj.attr1 = (v.uint16 shl 13) or (obj.attr1 and not ATTR1_VFLIP)
 
-func `mode=`*(obj: ObjAttrPtr, v: ObjMode) =
+func `mode=`*(obj: var ObjAttr; v: ObjMode) =
   obj.attr0 = (v.uint16) or (obj.attr0 and not ATTR0_MODE_MASK)
 
-func `fx=`*(obj: ObjAttrPtr, v: ObjFxMode) =
+func `fx=`*(obj: var ObjAttr; v: ObjFxMode) =
   obj.attr0 = (v.uint16) or (obj.attr0 and not (ATTR0_BLEND or ATTR0_WINDOW))
 
-func `mos=`*(obj: ObjAttrPtr, v: bool) =
+func `mos=`*(obj: var ObjAttr; v: bool) =
   obj.attr0 = (v.uint16 shl 12) or (obj.attr0 and not ATTR0_MOSAIC)
 
-func `is8bpp=`*(obj: ObjAttrPtr, v: bool) =
+func `is8bpp=`*(obj: var ObjAttr; v: bool) =
   obj.attr0 = (v.uint16 shl 13) or (obj.attr0 and not ATTR0_8BPP)
 
-func `aff=`*(obj: ObjAttrPtr, aff: int) =
-  obj.attr1 = ((aff.uint16 shl ATTR1_AFF_ID_SHIFT) and ATTR1_AFF_ID_MASK) or (obj.attr1 and not ATTR1_AFF_ID_MASK)
+func `affId=`*(obj: var ObjAttr; affId: int) =
+  obj.attr1 = ((affId.uint16 shl ATTR1_AFF_ID_SHIFT) and ATTR1_AFF_ID_MASK) or (obj.attr1 and not ATTR1_AFF_ID_MASK)
 
-func `size=`*(obj: ObjAttrPtr, v: ObjSize) =
+func `size=`*(obj: var ObjAttr; v: ObjSize) =
   let shape = (v.uint16 shl 12) and ATTR0_SHAPE_MASK
   let size = (v.uint16 shl 14)
   obj.attr0 = shape or (obj.attr0 and not ATTR0_SHAPE_MASK)
   obj.attr1 = size or (obj.attr1 and not ATTR1_SIZE_MASK)
   
-func `prio=`*(obj: ObjAttrPtr, prio: int) =
+func `prio=`*(obj: var ObjAttr; prio: int) =
   obj.attr2 = ((prio.uint16 shl ATTR2_PRIO_SHIFT) and ATTR2_PRIO_MASK) or (obj.attr2 and not ATTR2_PRIO_MASK)
 
+# ID shorthands:
 
-# var setters
+func aff*(obj: ObjAttr): int = obj.affId
+func tid*(obj: ObjAttr): int = obj.tileId
+func pal*(obj: ObjAttr): int = obj.palId
 
-func `x=`*(obj: var ObjAttr, x: int) = (addr obj).x = x
-func `y=`*(obj: var ObjAttr, y: int) = (addr obj).y = y
-func `pos=`*(obj: var ObjAttr, pos: Vec2i) = (addr obj).pos = pos
-func `tid=`*(obj: var ObjAttr, tid: int) = (addr obj).tid = tid
-func `pal=`*(obj: var ObjAttr, pal: int) = (addr obj).pal = pal
-func `hflip=`*(obj: var ObjAttr, hflip: bool) = (addr obj).hflip = hflip
-func `vflip=`*(obj: var ObjAttr, vflip: bool) = (addr obj).vflip = vflip
-func `mode=`*(obj: var ObjAttr, mode: ObjMode) = (addr obj).mode = mode
-func `fx=`*(obj: var ObjAttr, fx: ObjFxMode) = (addr obj).fx = fx
-func `mos=`*(obj: var ObjAttr, mos: bool) = (addr obj).mos = mos
-func `is8bpp=`*(obj: var ObjAttr, is8bpp: bool) = (addr obj).is8bpp = is8bpp
-func `size=`*(obj: var ObjAttr, size: ObjSize) = (addr obj).size = size
-func `aff=`*(obj: var ObjAttr, aff: int) = (addr obj).aff = aff
-func `prio=`*(obj: var ObjAttr, prio: int) = (addr obj).prio = prio
+func `aff=`*(obj: var ObjAttr; aff: int) = obj.affId = aff
+func `tid=`*(obj: var ObjAttr; tid: int) = obj.tileId = tid
+func `pal=`*(obj: var ObjAttr; pal: int) = obj.palId = pal
+
 
 template initObj*(args: varargs[untyped]): ObjAttr =
   var obj: ObjAttr
@@ -248,8 +241,8 @@ template init*(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
   ##   objMem[0].init:
   ##     pos = vec2i(100, 100)
   ##     size = s32x32
-  ##     tid = 0
-  ##     pal = 3
+  ##     tileId = 0
+  ##     palId = 3
   obj.setAttr(0, 0, 0)
   writeFields(obj, args)
 
