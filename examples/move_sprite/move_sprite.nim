@@ -29,7 +29,6 @@ const pal = 0  # palette slot
 var pos = vec2i(50, 30)
 
 # enable VBlank interrupt so we can wait for the end of the frame without burning CPU cycles
-irq.init()
 irq.enable(iiVBlank)
 
 # enable sprites with 1d mapping

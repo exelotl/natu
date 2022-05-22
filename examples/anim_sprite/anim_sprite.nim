@@ -121,7 +121,6 @@ const frameWords = frameBytes div sizeof(uint32)
 
 proc main() =
   
-  irq.init()
   irq.enable(iiVBlank)
   
   # enable sprites with 1d mapping

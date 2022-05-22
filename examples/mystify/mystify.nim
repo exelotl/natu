@@ -22,7 +22,6 @@ bgColorMem[0] = rgb5(2,4,6)      # use dark blue for backdrop color
 bgColorMem[1] = rgb5(20,28,31)   # use light blue for ink color
 
 # enable VBlank interrupt
-irq.init()
 irq.enable(iiVBlank)
 
 # clear VRAM - only necessary to avoid visual junk when quick-launching the game

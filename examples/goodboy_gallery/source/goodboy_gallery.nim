@@ -91,7 +91,6 @@ proc main =
   
   # setup
   
-  irq.init()
   irq.put(iiVBlank, onVBlank)
   
   audio.init()

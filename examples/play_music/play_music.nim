@@ -16,8 +16,6 @@ proc main() =
     Press A for sfx
 """
   
-  irq.init()
-  
   # register maxmod VBlank handler
   irq.put(iiVBlank, maxmod.vblank)
   

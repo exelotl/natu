@@ -82,7 +82,6 @@ var coins {.noinit.}: array[40, Coin]
 
 proc main() =
   
-  irq.init()
   irq.enable(iiVBlank)
   
   # enable sprites with 1d mapping
