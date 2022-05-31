@@ -18,6 +18,9 @@ import private/[common, types]
 import ./core
 import ./utils
 
+proc init*()
+init()         # auto-init the module on import.
+
 {.compile("private/irq_handler.s", toncAsmFlags).}
 
 proc IRQ_GlobalInterruptHandler {.importc.}
