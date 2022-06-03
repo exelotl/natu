@@ -500,6 +500,13 @@ func move*(r: var Rect, dx, dy: int) =
   r.right += dx
   r.bottom += dy
 
+func move*(r: var Rect, vec: Vec2i) =
+  ## Move rectangle by `vec`
+  r.left += vec.x
+  r.top += vec.y
+  r.right += vec.x
+  r.bottom += vec.y
+
 func inflate*(r: var Rect, n: int) =
   ## Increase size of rectangle by `n` on all sides
   r.left -= n
