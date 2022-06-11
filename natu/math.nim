@@ -149,6 +149,13 @@ func approach*[T: SomeNumber|FixedT](x: var T, target, step: T) =
   else:
     x = max(x - step, target)
 
+func lerp*[A: SomeInteger|FixedT, F: FixedT](a, b: A; t: F): A =
+  ## Linear interpolation between `a` and `b` using the weight given by `t`.
+  ## 
+  ## `t` should be a fixed point value in the range of `0.0 .. 1.0`.
+  ## 
+  a + (((b - a) * t.raw) shr getShift(F))
+
 {.pop.}
 
 
@@ -197,10 +204,10 @@ func luLerp*[A: SomeInteger|FixedT, F: FixedT](lut: openArray[A]; x: F): A {.inl
   ## 
   ## `lut`   The LUT to interpolate from.
   ## `x`     Fixed-point number to interpolate at.
-  let xa = x.int shr getShift(F)
+  let xa = x.raw shr getShift(F)
   let ya = lut[xa]
   let yb = lut[xa+1]
-  ya + ((yb - ya) * (x - (xa shl getShift(F))) shr getShift(F))
+  ya + (((yb - ya) * (x.raw - (xa shl getShift(F)))) shr getShift(F))
 
 
 # Rectangle / vector types
