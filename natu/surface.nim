@@ -1,16 +1,18 @@
 ## Graphics surfaces
 ## =================
-## Tonclib's Surface system provides the basic functionality for
-## drawing onto graphic surfaces of different types. This includes
-## - *bmp16*: 16bpp bitmap surfaces
-## - *bmp8*: 8bpp bitmap surfaces.
-## - *chr4*(c/r): 4bpp tiled surfaces.
+## Libtonc's Surface system provides the basic functionality for
+## drawing onto graphic surfaces of different types. This includes:
+## 
+## - **bmp16**: 16bpp bitmap surfaces
+## - **bmp8**: 8bpp bitmap surfaces.
+## - **chr4**(c/r): 4bpp tiled surfaces.
+## 
 ## This covers almost all of the GBA graphic modes.
 ## 
-## [Note]
-## While Tonc has one Surface type, here we create several `distinct` copies of it.
-## This way, we can use overloading to get rid of all the prefixes.
-## And it becomes harder to call the wrong procedure on the wrong kind of surface.
+## .. note::
+##    While Tonc has one Surface type, here we create several `distinct` copies of it.
+##    This way, we can use overloading to get rid of all the prefixes.
+##    And it becomes harder to call the wrong procedure on the wrong kind of surface.
 ## 
 
 {.warning[UnusedImport]: off.}
@@ -33,7 +35,7 @@ type
   SurfaceChr4r* {.borrow:`.`.} = distinct Surface  ## 4bpp tiles, row-major.
   SurfaceChr4c* {.borrow:`.`.} = distinct Surface  ## 4bpp tiles, column-major.
   
-  Surface* {.importc: "TSurface", tonc, bycopy.} = object
+  Surface* {.importc: "TSurface", tonc, byref.} = object
     data*: ptr uint8                       ## Surface data pointer.
     pitch*: uint32                         ## Scanline pitch in bytes.
     width*: uint16                         ## Image width in pixels.
@@ -52,8 +54,6 @@ type
     # srfChr8 = 6,        ## 8bpp tiles, row-major. [not implemented]
     # srfAllocated = 0x80
   
-  SurfaceKind32 {.size: 4.} = SurfaceKind
-  
   SomeSurface* = Surface | SurfaceBmp16 | SurfaceBmp8 | SurfaceChr4c | SurfaceChr4r
   
   SurfacePtr* = ptr Surface
@@ -66,15 +66,15 @@ type
 # Rendering procedure types
 # [idea: Use this to create a runtime-polymorphic kind of Surface?]
 type
-  FnGetPixel* = proc (src: SurfacePtr; x, y: int): uint32 {.nimcall.}
-  FnPlot* = proc (dst: SurfacePtr; x, y: int; clr: uint32) {.nimcall.}
-  FnHLine* = proc (dst: SurfacePtr; x1, y, x2: int; clr: uint32) {.nimcall.}
-  FnVLine* = proc (dst: SurfacePtr; x, y1, y2: int; clr: uint32) {.nimcall.}
-  FnLine* = proc (dst: SurfacePtr; x1, y1, x2, y2: int; clr: uint32) {.nimcall.}
-  FnRect* = proc (dst: SurfacePtr; left, top, right, bottom: int; clr: uint32) {.nimcall.}
-  FnFrame* = proc (dst: SurfacePtr; left, top, right, bottom: int; clr: uint32) {.nimcall.}
-  FnBlit* = proc (dst: SurfacePtr; dstX, dstY: int; width, height: uint, src: SurfacePtr; srcX, srcY: int) {.nimcall.}
-  FnFlood* = proc (dst: SurfacePtr; x, y: int; clr: uint32) {.nimcall.}
+  FnGetPixel* = proc (src: Surface; x, y: int): uint32 {.nimcall.}
+  FnPlot* = proc (dst: Surface; x, y: int; clr: uint32) {.nimcall.}
+  FnHLine* = proc (dst: Surface; x1, y, x2: int; clr: uint32) {.nimcall.}
+  FnVLine* = proc (dst: Surface; x, y1, y2: int; clr: uint32) {.nimcall.}
+  FnLine* = proc (dst: Surface; x1, y1, x2, y2: int; clr: uint32) {.nimcall.}
+  FnRect* = proc (dst: Surface; left, top, right, bottom: int; clr: uint32) {.nimcall.}
+  FnFrame* = proc (dst: Surface; left, top, right, bottom: int; clr: uint32) {.nimcall.}
+  FnBlit* = proc (dst: Surface; dstX, dstY: int; width, height: uint, src: Surface; srcX, srcY: int) {.nimcall.}
+  FnFlood* = proc (dst: Surface; x, y: int; clr: uint32) {.nimcall.}
   
   SurfaceProcTab* {.importc: "TSurfaceProcTab", tonc, bycopy.} = object
     ## Rendering procedure table
@@ -93,9 +93,9 @@ type
 # Global Surfaces
 # ---------------
 
-let m3Surface* {.importc: "m3_surface", tonc.}: Surface
-var m4Surface* {.importc: "m4_surface", tonc.}: Surface
-var m5Surface* {.importc: "m5_surface", tonc.}: Surface
+let m3Surface* {.importc: "m3_surface", tonc.}: SurfaceBmp16
+var m4Surface* {.importc: "m4_surface", tonc.}: SurfaceBmp8
+var m5Surface* {.importc: "m5_surface", tonc.}: SurfaceBmp16
 
 let bmp16Tab* {.importc: "bmp16_tab", tonc.}: SurfaceProcTab
 let bmp8Tab* {.importc: "bmp8_tab", tonc.}: SurfaceProcTab
@@ -123,54 +123,54 @@ let chr4cTab* {.importc: "chr4c_tab", tonc.}: SurfaceProcTab
 # Initialisation
 # --------------
 
-proc init*(srf: SurfacePtr; ty: SurfaceKind32; data: pointer; width, height: uint; bpp: uint; pal: ptr Palette) {.importc: "srf_init", tonc.}
+proc init*(srf: var Surface; ty: SurfaceKind; data: pointer; width, height: uint; bpp: uint; pal: ptr Palette) {.importc: "srf_init", tonc.}
   ## Initalize a surface for `type` formatted graphics.
   ## [[ For these bindings, it's just used by typesafe versions below ]]
 
-proc init*(srf: SurfaceChr4cPtr; data: pointer; width, height: uint; pal: ptr Palette) =
+proc init*(srf: var SurfaceChr4c; data: pointer; width, height: uint; pal: ptr Palette) {.inline.} =
   ## Initalize a surface for 4bpp column-major tiles
   ## `srf`     Surface to initialize.
   ## `data`    Pointer to the surface memory.
   ## `width`   Width of surface.
   ## `height`  Height of surface.
   ## `pal`     Pointer to the surface's palette.
-  init(srf.SurfacePtr, srfChr4c, data, width, height, bpp=4, pal)
+  init(srf.Surface, srfChr4c, data, width, height, bpp=4, pal)
 
-proc init*(srf: SurfaceChr4rPtr; data: pointer; width, height: uint; pal: ptr Palette) =
+proc init*(srf: var SurfaceChr4r; data: pointer; width, height: uint; pal: ptr Palette) {.inline.} =
   ## Initalize a surface for 4bpp row-major tiles
   ## `srf`     Surface to initialize.
   ## `data`    Pointer to the surface memory.
   ## `width`   Width of surface.
   ## `height`  Height of surface.
   ## `pal`     Pointer to the surface's palette.
-  init(srf.SurfacePtr, srfChr4r, data, width, height, bpp=4, pal)
+  init(srf.Surface, srfChr4r, data, width, height, bpp=4, pal)
 
-proc init*(srf: SurfaceBmp16Ptr; data: pointer; width, height: uint; pal: ptr Palette) =
+proc init*(srf: var SurfaceBmp16; data: pointer; width, height: uint) {.inline.} =
   ## Initalize a 16bpp bitmap surface
   ## `srf`     Surface to initialize.
   ## `data`    Pointer to the surface memory.
   ## `width`   Width of surface.
   ## `height`  Height of surface.
   ## `pal`     Pointer to the surface's palette.
-  init(srf.SurfacePtr, srfBmp16, data, width, height, bpp=16, pal)
+  init(srf.Surface, srfBmp16, data, width, height, bpp=16, nil)
 
-proc init*(srf: SurfaceBmp8Ptr; data: pointer; width, height: uint; pal: ptr Palette) =
+proc init*(srf: var SurfaceBmp8; data: pointer; width, height: uint; pal: ptr Palette) {.inline.} =
   ## Initalize an 8bpp bitmap surface
   ## `srf`     Surface to initialize.
   ## `data`    Pointer to the surface memory.
   ## `width`   Width of surface.
   ## `height`  Height of surface.
   ## `pal`     Pointer to the surface's palette.
-  init(srf.SurfacePtr, srfBmp8, data, width, height, bpp=8, pal)
+  init(srf.Surface, srfBmp8, data, width, height, bpp=8, pal)
 
 
 # Common Procedures
 # -----------------
 
-proc palCopy*(dst, src: SomeSurfacePtr; count: uint) {.importc: "srf_pal_copy", tonc.}
+proc copyColors*(dst, src: SomeSurface; count: uint) {.importc: "srf_pal_copy", tonc.}
   ## Copy `count` colors from `src`'s palette to `dst`'s palette.
 
-proc getPtr*(srf: SomeSurfacePtr; x, y: uint): pointer {.importc: "srf_get_ptr", tonc.}
+proc getPtr*(srf: SomeSurface; x, y: uint): pointer {.importc: "srf_get_ptr", tonc.}
   ## Get the byte address of coordinates (`x`, `y`) on the surface.
 
 proc align*(width: uint; bpp: uint): uint {.importc: "srf_align", toncinl.}
@@ -178,17 +178,14 @@ proc align*(width: uint; bpp: uint): uint {.importc: "srf_align", toncinl.}
   ## `width`  Number of pixels.
   ## `bpp`    Bits per pixel.
 
-proc setPtr*(srf: SomeSurfacePtr; `ptr`: pointer) {.importc: "srf_set_ptr", toncinl.}
+proc setPtr*(srf: var SomeSurface; `ptr`: pointer) {.importc: "srf_set_ptr", toncinl.}
   ## Set Data-pointer surface for `srf`.
   
-proc setPal*(srf: SomeSurfacePtr; pal: ptr Palette; size: uint) {.importc: "srf_set_pal", toncinl.}
+proc setPal*(srf: var SomeSurface; pal: ptr Palette; size: uint) {.importc: "srf_set_pal", toncinl.}
   ## Set the palette pointer and its size.
 
-proc getPtr*(srf: SomeSurfacePtr; x: uint; y: uint; stride: uint): pointer {.importc: "_srf_get_ptr", toncinl.}
+proc getPtr*(srf: SomeSurface; x, y: uint; stride: uint): pointer {.importc: "_srf_get_ptr", toncinl.}
   ## Inline and semi-safe version of getPtr(). Use with caution.
-
-proc getPixel*(src: SurfaceBmp16Ptr; x, y: int): uint32 {.importc: "_sbmp16_get_pixel", toncinl.}
-  ## Get the pixel value of `src` at (`x`, `y`).
 
 
 ## 16bpp bitmap surfaces
@@ -196,32 +193,37 @@ proc getPixel*(src: SurfaceBmp16Ptr; x, y: int): uint32 {.importc: "_sbmp16_get_
 ## Routines for 16bpp linear surfaces. For use in modes 3 and 5. Can
 ## also be used for regular tilemaps to a point.
 
-proc plot*(dst: SurfaceBmp16Ptr; x, y: int; clr: uint32) {.importc: "_sbmp16_plot", toncinl.}
+proc getPixel*(src: SurfaceBmp16; x, y: int): uint32 {.importc: "_sbmp16_get_pixel", toncinl.}
+  ## Get the pixel value of `src` at (`x`, `y`).
+
+proc plot*(dst: SurfaceBmp16; x, y: int; clr: uint32) {.importc: "_sbmp16_plot", toncinl.}
   ## Plot a single pixel on a 16-bit buffer; inline version.
   ## `dst`  Destination surface.
   ## `x`    X-coord.
   ## `y`    Y-coord.
   ## `clr`  Color.
 
-proc hline*(dst: SurfaceBmp16Ptr; x1, y, x2: int; clr: uint32) {.importc: "sbmp16_hline", tonc.}
+proc hline*(dst: SurfaceBmp16; x1, y, x2: int; clr: uint32) {.importc: "sbmp16_hline", tonc.}
   ## Draw a horizontal line on an 16bit buffer
   ## `dst`  Destination surface.
   ## `x1`   First X-coord.
   ## `y`    Y-coord.
   ## `x2`   Second X-coord.
   ## `clr`  Color.
-  ## Note: Does normalization, but not bounds checks.
+  ## .. note::
+  ##    Does normalization, but not bounds checks.
 
-proc vline*(dst: SurfaceBmp16Ptr; x, y1, y2: int; clr: uint32) {.importc: "sbmp16_vline", tonc.}
+proc vline*(dst: SurfaceBmp16; x, y1, y2: int; clr: uint32) {.importc: "sbmp16_vline", tonc.}
   ## Draw a vertical line on an 16bit buffer
   ## `dst`  Destination surface.
   ## `x`    X-coord.
   ## `y1`   First Y-coord.
   ## `y2`   Second Y-coord.
   ## `clr`  Color.
-  ## Note: Does normalization, but not bounds checks.
+  ## .. note::
+  ##    Does normalization, but not bounds checks.
 
-proc line*(dst: SurfaceBmp16Ptr; x1, y1, x2, y2: int; clr: uint32) {.importc: "sbmp16_line", tonc.}
+proc line*(dst: SurfaceBmp16; x1, y1, x2, y2: int; clr: uint32) {.importc: "sbmp16_line", tonc.}
   ## Draw a line on an 16bit buffer.
   ## `dst`  Destination surface.
   ## `x1`   First X-coord.
@@ -229,9 +231,10 @@ proc line*(dst: SurfaceBmp16Ptr; x1, y1, x2, y2: int; clr: uint32) {.importc: "s
   ## `x2`   Second X-coord.
   ## `y2`   Second Y-coord.
   ## `clr`  Color.
-  ## Note: Does normalization, but not bounds checks.
+  ## .. note::
+  ##    Does normalization, but not bounds checks.
 
-proc rect*(dst: SurfaceBmp16Ptr; left, top, right, bottom: int; clr: uint32) {.importc: "sbmp16_rect", tonc.}
+proc rect*(dst: SurfaceBmp16; left, top, right, bottom: int; clr: uint32) {.importc: "sbmp16_rect", tonc.}
   ## Draw a rectangle in 16bit mode.
   ## `dst`     Destination surface.
   ## `left`    Left side of rectangle;
@@ -239,9 +242,10 @@ proc rect*(dst: SurfaceBmp16Ptr; left, top, right, bottom: int; clr: uint32) {.i
   ## `right`   Right side of rectangle.
   ## `bottom`  Bottom side of rectangle.
   ## `clr`     Color.
-  ## Note: Does normalization, but not bounds checks.
+  ## .. note::
+  ##    Does normalization, but not bounds checks.
 
-proc frame*(dst: SurfaceBmp16Ptr; left, top, right, bottom: int; clr: uint32) {.importc: "sbmp16_frame", tonc.}
+proc frame*(dst: SurfaceBmp16; left, top, right, bottom: int; clr: uint32) {.importc: "sbmp16_frame", tonc.}
   ## Draw a rectangle in 16bit mode.
   ## `dst`     Destination surface.
   ## `left`    Left side of rectangle;
@@ -249,10 +253,11 @@ proc frame*(dst: SurfaceBmp16Ptr; left, top, right, bottom: int; clr: uint32) {.
   ## `right`   Right side of rectangle.
   ## `bottom`  Bottom side of rectangle.
   ## `clr`     Color.
-  ## Note: Does normalization, but not bounds checks.
+  ## .. note::
+  ##    Does normalization, but not bounds checks.
   # PONDER: RB in- or exclusive?
 
-proc blit*(dst: SurfaceBmp16Ptr; dstX, dstY: int; width, height: uint; src: SurfaceBmp16Ptr; srcX, srcY: int) {.importc: "sbmp16_blit", tonc.}
+proc blit*(dst: SurfaceBmp16; dstX, dstY: int; width, height: uint; src: SurfaceBmp16; srcX, srcY: int) {.importc: "sbmp16_blit", tonc.}
   ## 16bpp blitter. Copies a rectangle from one surface to another.
   ## `dst`     Destination surface.
   ## `dstX`    Left coord of rectangle on `dst`.
@@ -262,9 +267,10 @@ proc blit*(dst: SurfaceBmp16Ptr; dstX, dstY: int; width, height: uint; src: Surf
   ## `src`     Source surface.
   ## `srcX`    Left coord of rectangle on `src`.
   ## `srcY`    Top coord of rectangle on `src`.
-  ## Note: The rectangle will be clipped to both `src` and `dst`.
+  ## .. note::
+  ##    The rectangle will be clipped to both `src` and `dst`.
 
-proc floodfill*(dst: SurfaceBmp16Ptr; x, y: int; clr: uint32) {.importc: "sbmp16_floodfill", tonc.}
+proc floodfill*(dst: SurfaceBmp16; x, y: int; clr: uint32) {.importc: "sbmp16_floodfill", tonc.}
   ## Floodfill an area of the same color with new color `clr`.
   ## `dst`  Destination surface.
   ## `x`    X-coordinate.
@@ -276,35 +282,37 @@ proc floodfill*(dst: SurfaceBmp16Ptr; x, y: int; clr: uint32) {.importc: "sbmp16
 ## --------------------
 ## Routines for 8bpp linear surfaces. For use in mode 4 and affine tilemaps.
 
-proc getPixel*(src: SurfaceBmp8Ptr; x, y: int): uint32 {.importc: "_sbmp8_get_pixel", toncinl.}
+proc getPixel*(src: SurfaceBmp8; x, y: int): uint32 {.importc: "_sbmp8_get_pixel", toncinl.}
   ## Get the pixel value of `src` at (`x`, `y`); inline version.
 
-proc plot*(dst: SurfaceBmp8Ptr; x, y: int; clr: uint32) {.importc: "_sbmp8_plot", toncinl.}
+proc plot*(dst: SurfaceBmp8; x, y: int; clr: uint32) {.importc: "_sbmp8_plot", toncinl.}
   ## Plot a single pixel on a 8-bit buffer; inline version.
   ## `dst`  Destination surface.
   ## `x`    X-coord.
   ## `y`    Y-coord.
   ## `clr`  Color.
 
-proc hline*(dst: SurfaceBmp8Ptr; x1, y, x2: int; clr: uint32) {.importc: "sbmp8_hline", tonc.}
-  ## Draw a horizontal line on an 8-bit buffer
+proc hline*(dst: SurfaceBmp8; x1, y, x2: int; clr: uint32) {.importc: "sbmp8_hline", tonc.}
+  ## Draw a horizontal line on an 8-bit buffer.
   ## `dst`  Destination surface.
   ## `x1`   First X-coord.
   ## `y`    Y-coord.
   ## `x2`   Second X-coord.
   ## `clr`  Color.
-  ## Note: Does normalization, but not bounds checks.
+  ## .. note::
+  ##    Does normalization, but not bounds checks.
 
-proc vline*(dst: SurfaceBmp8Ptr; x, y1, y2: int; clr: uint32) {.importc: "sbmp8_vline", tonc.}
-  ## Draw a vertical line on an 8-bit buffer
+proc vline*(dst: SurfaceBmp8; x, y1, y2: int; clr: uint32) {.importc: "sbmp8_vline", tonc.}
+  ## Draw a vertical line on an 8-bit buffer.
   ## `dst`  Destination surface.
   ## `x`    X-coord.
   ## `y1`   First Y-coord.
   ## `y2`   Second Y-coord.
   ## `clr`  Color.
-  ## Note: Does normalization, but not bounds checks.
+  ## .. note::
+  ##    Does normalization, but not bounds checks.
 
-proc line*(dst: SurfaceBmp8Ptr; x1, y1, x2, y2: int; clr: uint32) {.importc: "sbmp8_line", tonc.}
+proc line*(dst: SurfaceBmp8; x1, y1, x2, y2: int; clr: uint32) {.importc: "sbmp8_line", tonc.}
   ## Draw a line on an 8-bit buffer.
   ## `dst`  Destination surface.
   ## `x1`   First X-coord.
@@ -312,9 +320,10 @@ proc line*(dst: SurfaceBmp8Ptr; x1, y1, x2, y2: int; clr: uint32) {.importc: "sb
   ## `x2`   Second X-coord.
   ## `y2`   Second Y-coord.
   ## `clr`  Color.
-  ## Note: Does normalization, but not bounds checks.
+  ## .. note::
+  ##    Does normalization, but not bounds checks.
 
-proc rect*(dst: SurfaceBmp8Ptr; left, top, right, bottom: int; clr: uint32) {.importc: "sbmp8_rect", tonc.}
+proc rect*(dst: SurfaceBmp8; left, top, right, bottom: int; clr: uint32) {.importc: "sbmp8_rect", tonc.}
   ## Draw a rectangle in 8-bit mode.
   ## `dst`     Destination surface.
   ## `left`    Left side of rectangle;
@@ -322,9 +331,10 @@ proc rect*(dst: SurfaceBmp8Ptr; left, top, right, bottom: int; clr: uint32) {.im
   ## `right`   Right side of rectangle.
   ## `bottom`  Bottom side of rectangle.
   ## `clr`     Color.
-  ## Note: Does normalization, but not bounds checks.
+  ## .. note::
+  ##    Does normalization, but not bounds checks.
 
-proc frame*(dst: SurfaceBmp8Ptr; left, top, right, bottom: int; clr: uint32) {.importc: "sbmp8_frame", tonc.}
+proc frame*(dst: SurfaceBmp8; left, top, right, bottom: int; clr: uint32) {.importc: "sbmp8_frame", tonc.}
   ## Draw a rectangle in 8-bit mode.
   ## `dst`     Destination surface.
   ## `left`    Left side of rectangle;
@@ -332,10 +342,11 @@ proc frame*(dst: SurfaceBmp8Ptr; left, top, right, bottom: int; clr: uint32) {.i
   ## `right`   Right side of rectangle.
   ## `bottom`  Bottom side of rectangle.
   ## `clr`     Color.
-  ## Note: Does normalization, but not bounds checks.
+  ## .. note::
+  ##    Does normalization, but not bounds checks.
   # PONDER: RB in- or exclusive?
 
-proc blit*(dst: SurfaceBmp8Ptr; dstX, dstY: int, width, height: uint; src: SurfaceBmp8Ptr; srcX, srcY: int) {.importc: "sbmp8_blit", tonc.}
+proc blit*(dst: SurfaceBmp8; dstX, dstY: int, width, height: uint; src: SurfaceBmp8; srcX, srcY: int) {.importc: "sbmp8_blit", tonc.}
   ## 16bpp blitter. Copies a rectangle from one surface to another.
   ## `dst`     Destination surface.
   ## `dstX`    Left coord of rectangle on `dst`.
@@ -345,9 +356,10 @@ proc blit*(dst: SurfaceBmp8Ptr; dstX, dstY: int, width, height: uint; src: Surfa
   ## `src`     Source surface.
   ## `srcX`    Left coord of rectangle on `src`.
   ## `srcY`    Top coord of rectangle on `src`.
-  ## Note: The rectangle will be clipped to both `src` and `dst`.
+  ## .. note::
+  ##    The rectangle will be clipped to both `src` and `dst`.
 
-proc floodfill*(dst: SurfaceBmp8Ptr; x, y: int; clr: uint32) {.importc: "sbmp8_floodfill", tonc.}
+proc floodfill*(dst: SurfaceBmp8; x, y: int; clr: uint32) {.importc: "sbmp8_floodfill", tonc.}
   ## Floodfill an area of the same color with new color `clr`.
   ## `dst`  Destination surface.
   ## `x`    X-coordinate.
@@ -365,6 +377,7 @@ proc floodfill*(dst: SurfaceBmp8Ptr; x, y: int; clr: uint32) {.importc: "sbmp8_f
 ## There are two ways of map-layout here: row-major indexing and
 ## column-major indexing. The difference if is that tile 1 is to the
 ## right of tile 0 in the former, but under it in the latter.
+## 
 ## ::
 ##   30x20t screen:
 ##     Row-major:
@@ -381,36 +394,39 @@ proc floodfill*(dst: SurfaceBmp8Ptr; x, y: int; clr: uint32) {.importc: "sbmp8_f
 ## coordinate match up nicely with successive words. For this reason,
 ## column-major is preferred over row-major.
 
-proc getPixel*(src: SurfaceChr4cPtr; x, y: int): uint32 {.importc: "_schr4c_get_pixel", toncinl.}
+proc getPixel*(src: SurfaceChr4c; x, y: int): uint32 {.importc: "_schr4c_get_pixel", toncinl.}
   ## Get the pixel value of `src` at (`x`, `y`); inline version.
 
-proc plot*(dst: SurfaceChr4cPtr; x, y: int; clr: uint32) {.importc: "_schr4c_plot", toncinl.}
+proc plot*(dst: SurfaceChr4c; x, y: int; clr: uint32) {.importc: "_schr4c_plot", toncinl.}
   ## Plot a single pixel on a 4bpp tiled surface; inline version.
   ## `dst`  Destination surface.
   ## `x`    X-coord.
   ## `y`    Y-coord.
   ## `clr`  Color.
-  ## Note: Fairly slow. Inline plotting functionality if possible.
+  ## .. note::
+  ##    Fairly slow. Inline plotting functionality if possible.
 
-proc hline*(dst: SurfaceChr4cPtr; x1, y, x2: int; clr: uint32) {.importc: "schr4c_hline", tonc.}
-  ## Draw a horizontal line on a 4bpp tiled surface
+proc hline*(dst: SurfaceChr4c; x1, y, x2: int; clr: uint32) {.importc: "schr4c_hline", tonc.}
+  ## Draw a horizontal line on a 4bpp tiled surface.
   ## `dst`  Destination surface.
   ## `x1`   First X-coord.
   ## `y`    Y-coord.
   ## `x2`   Second X-coord.
   ## `clr`  Color.
-  ## Note: Does normalization, but not bounds checks.
+  ## .. note::
+  ##    Does normalization, but not bounds checks.
 
-proc vline*(dst: SurfaceChr4cPtr; x, y1, y2: int; clr: uint32) {.importc: "schr4c_vline", tonc.}
-  ## Draw a vertical line on a 4bpp tiled surface
+proc vline*(dst: SurfaceChr4c; x, y1, y2: int; clr: uint32) {.importc: "schr4c_vline", tonc.}
+  ## Draw a vertical line on a 4bpp tiled surface.
   ## `dst`  Destination surface.
   ## `x`    X-coord.
   ## `y1`   First Y-coord.
   ## `y2`   Second Y-coord.
   ## `clr`  Color.
-  ## Note: Does normalization, but not bounds checks.
+  ## .. note::
+  ##    Does normalization, but not bounds checks.
 
-proc line*(dst: SurfaceChr4cPtr; x1, y1, x2, y2: int; clr: uint32) {.importc: "schr4c_line", tonc.}
+proc line*(dst: SurfaceChr4c; x1, y1, x2, y2: int; clr: uint32) {.importc: "schr4c_line", tonc.}
   ## Draw a line on a 4bpp tiled surface.
   ## `dst`  Destination surface.
   ## `x1`   First X-coord.
@@ -418,9 +434,10 @@ proc line*(dst: SurfaceChr4cPtr; x1, y1, x2, y2: int; clr: uint32) {.importc: "s
   ## `x2`   Second X-coord.
   ## `y2`   Second Y-coord.
   ## `clr`  Color.
-  ## Note: Does normalization, but not bounds checks.
+  ## .. note::
+  ##    Does normalization, but not bounds checks.
 
-proc rect*(dst: SurfaceChr4cPtr; left, top, right, bottom: int; clr: uint32) {.importc: "schr4c_rect", tonc.}
+proc rect*(dst: SurfaceChr4c; left, top, right, bottom: int; clr: uint32) {.importc: "schr4c_rect", tonc.}
   ## Render a rectangle on a 4bpp tiled canvas.
   ## `dst`     Destination surface.
   ## `left`    Left side of rectangle;
@@ -429,7 +446,7 @@ proc rect*(dst: SurfaceChr4cPtr; left, top, right, bottom: int; clr: uint32) {.i
   ## `bottom`  Bottom side of rectangle.
   ## `clr`     Color-index.
 
-proc frame*(dst: SurfaceChr4cPtr; left, top, right, bottom: int; clr: uint32) {.importc: "schr4c_frame", tonc.}
+proc frame*(dst: SurfaceChr4c; left, top, right, bottom: int; clr: uint32) {.importc: "schr4c_frame", tonc.}
   ## Draw a rectangle on a 4bpp tiled surface.
   ## `dst`     Destination surface.
   ## `left`    Left side of rectangle;
@@ -437,10 +454,11 @@ proc frame*(dst: SurfaceChr4cPtr; left, top, right, bottom: int; clr: uint32) {.
   ## `right`   Right side of rectangle.
   ## `bottom`  Bottom side of rectangle.
   ## `clr`     Color.
-  ## Note: Does normalization, but not bounds checks.
+  ## .. note::
+  ##    Does normalization, but not bounds checks.
   # PONDER: RB in- or exclusive?
 
-proc blit*(dst: SurfaceChr4cPtr; dstX, dstY: int; width, height: uint; src: SurfaceChr4cPtr; srcX, srcY: int) {.importc: "schr4c_blit", tonc.}
+proc blit*(dst: SurfaceChr4c; dstX, dstY: int; width, height: uint; src: SurfaceChr4c; srcX, srcY: int) {.importc: "schr4c_blit", tonc.}
   ## Blitter for 4bpp tiled surfaces. Copies a rectangle from one surface to another.
   ## `dst`     Destination surface.
   ## `dstX`    Left coord of rectangle on `dst`.
@@ -450,25 +468,27 @@ proc blit*(dst: SurfaceChr4cPtr; dstX, dstY: int; width, height: uint; src: Surf
   ## `src`     Source surface.
   ## `srcX`    Left coord of rectangle on `src`.
   ## `srcY`    Top coord of rectangle on `src`.
-  ## Note: The rectangle will be clipped to both `src` and `dst`.
+  ## .. note::
+  ##    The rectangle will be clipped to both `src` and `dst`.
 
-proc floodfill*(dst: SurfaceChr4cPtr; x, y: int; clr: uint32) {.importc: "schr4c_floodfill", tonc.}
+proc floodfill*(dst: SurfaceChr4c; x, y: int; clr: uint32) {.importc: "schr4c_floodfill", tonc.}
   ## Floodfill an area of the same color with new color `clr`.
   ## `dst`  Destination surface.
   ## `x`    X-coordinate.
   ## `y`    Y-coordinate;
   ## `clr`  Color.
-  ## Note: This routines is probably very, very slow. 
+  ## .. note::
+  ##    This routines is probably very, very slow. 
 
 # Additional routines
 
-proc prepMap*(srf: SurfaceChr4cPtr; map: ptr uint16; se0: uint16) {.importc: "schr4c_prep_map", tonc.}
+proc prepMap*(srf: SurfaceChr4c; map: ptr UncheckedArray[ScrEntry]; se0: uint16) {.importc: "schr4c_prep_map", tonc.}
   ## Prepare a screen-entry map for use with chr4.
   ## `srf`  Surface with size information.
   ## `map`  Screen-blocked map to initialize.
   ## `se0`  Additive base screen-entry.
 
-proc getPtr*(srf: SurfaceChr4cPtr; x, y: int): ptr uint32 {.importc: "schr4c_get_ptr", tonc.}
+proc getPtr*(srf: SurfaceChr4c; x, y: int): ptr uint32 {.importc: "schr4c_get_ptr", tonc.}
   ## Special pointer getter for chr4: start of in-tile line.
 
 
@@ -484,51 +504,54 @@ proc getPtr*(srf: SurfaceChr4cPtr; x, y: int): ptr uint32 {.importc: "schr4c_get
 ## right of tile 0 in the former, but under it in the latter.
 ##
 ## ::
-## 30x20t screen:
-##   Row-major:
-##      0  1  2  3 ...
-##     30 31 32 33 ...
-##     60 61 62 63 ...
-##
-##   Column-major:
-##      0 20 40 60 ...
-##      1 21 41 61 ...
-##      2 22 41 62 ...
+##   30x20t screen:
+##     Row-major:
+##        0  1  2  3 ...
+##       30 31 32 33 ...
+##       60 61 62 63 ...
+##   
+##     Column-major:
+##        0 20 40 60 ...
+##        1 21 41 61 ...
+##        2 22 41 62 ...
 ##
 ## With 4bpp tiles, the column-major version makes the `y`
 ## coordinate match up nicely with successive words. For this reason,
 ## column-major is preferred over row-major.
 
-proc getPixel*(src: SurfaceChr4rPtr; x, y: int): uint32 {.importc: "_schr4r_get_pixel", toncinl.}
+proc getPixel*(src: SurfaceChr4r; x, y: int): uint32 {.importc: "_schr4r_get_pixel", toncinl.}
   ## Get the pixel value of `src` at (`x`, `y`); inline version.
 
-proc plot*(dst: SurfaceChr4rPtr; x, y: int; clr: uint32) {.importc: "_schr4r_plot", toncinl.}
+proc plot*(dst: SurfaceChr4r; x, y: int; clr: uint32) {.importc: "_schr4r_plot", toncinl.}
   ## Plot a single pixel on a 4bpp tiled surface; inline version.
   ## `dst`  Destination surface.
   ## `x`    X-coord.
   ## `y`    Y-coord.
   ## `clr`  Color.
-  ## Note: Slow as fuck. Inline plotting functionality if possible.
+  ## .. note::
+  ##    Slow as fuck. Inline plotting functionality if possible.
 
-proc hline*(dst: SurfaceChr4rPtr; x1, y, x2: int; clr: uint32) {.importc: "schr4r_hline", tonc.}
+proc hline*(dst: SurfaceChr4r; x1, y, x2: int; clr: uint32) {.importc: "schr4r_hline", tonc.}
   ## Draw a horizontal line on a 4bpp tiled surface
   ## `dst`  Destination surface.
   ## `x1`   First X-coord.
   ## `y`    Y-coord.
   ## `x2`   Second X-coord.
   ## `clr`  Color.
-  ## Note: Does normalization, but not bounds checks.
+  ## .. note::
+  ##    Does normalization, but not bounds checks.
 
-proc vline*(dst: SurfaceChr4rPtr; x, y1, y2: int; clr: uint32) {.importc: "schr4r_vline", tonc.}
+proc vline*(dst: SurfaceChr4r; x, y1, y2: int; clr: uint32) {.importc: "schr4r_vline", tonc.}
   ## Draw a vertical line on a 4bpp tiled surface
   ## `dst`  Destination surface.
   ## `x`    X-coord.
   ## `y1`   First Y-coord.
   ## `y2`   Second Y-coord.
   ## `clr`  Color.
-  ## Note: Does normalization, but not bounds checks.
+  ## .. note::
+  ##    Does normalization, but not bounds checks.
 
-proc line*(dst: SurfaceChr4rPtr; x1, y1, x2, y2: int; clr: uint32) {.importc: "schr4r_line", tonc.}
+proc line*(dst: SurfaceChr4r; x1, y1, x2, y2: int; clr: uint32) {.importc: "schr4r_line", tonc.}
   ## Draw a line on a 4bpp tiled surface.
   ## `dst`  Destination surface.
   ## `x1`   First X-coord.
@@ -536,9 +559,10 @@ proc line*(dst: SurfaceChr4rPtr; x1, y1, x2, y2: int; clr: uint32) {.importc: "s
   ## `x2`   Second X-coord.
   ## `y2`   Second Y-coord.
   ## `clr`  Color.
-  ## Note: Does normalization, but not bounds checks.
+  ## .. note::
+  ##    Does normalization, but not bounds checks.
 
-proc rect*(dst: SurfaceChr4rPtr; left, top, right, bottom: int; clr: uint32) {.importc: "schr4r_rect", tonc.}
+proc rect*(dst: SurfaceChr4r; left, top, right, bottom: int; clr: uint32) {.importc: "schr4r_rect", tonc.}
   ## Render a rectangle on a tiled canvas.
   ## `dst`     Destination surface.
   ## `left`    Left side of rectangle;
@@ -546,11 +570,12 @@ proc rect*(dst: SurfaceChr4rPtr; left, top, right, bottom: int; clr: uint32) {.i
   ## `right`   Right side of rectangle.
   ## `bottom`  Bottom side of rectangle.
   ## `clr`     Color-index. Octupled if > 16.
-  ## Note: For a routine like this you can strive for programmer sanity
-  ##  or speed. This is for speed. Except for very small rects, this 
-  ##  is between 5x and 300x faster than the trivial version.
+  ## .. note::
+  ##    For a routine like this you can strive for programmer sanity
+  ##    or speed. This is for speed. Except for very small rects, this 
+  ##    is between 5x and 300x faster than the trivial version.
   
-proc frame*(dst: SurfaceChr4rPtr; left, top, right, bottom: int; clr: uint32) {.importc: "schr4r_frame", tonc.}
+proc frame*(dst: SurfaceChr4r; left, top, right, bottom: int; clr: uint32) {.importc: "schr4r_frame", tonc.}
   ## Draw a rectangle on a 4bpp tiled surface.
   ## `dst`     Destination surface.
   ## `left`    Left side of rectangle;
@@ -558,17 +583,18 @@ proc frame*(dst: SurfaceChr4rPtr; left, top, right, bottom: int; clr: uint32) {.
   ## `right`   Right side of rectangle.
   ## `bottom`  Bottom side of rectangle.
   ## `clr`     Color.
-  ## Note: Does normalization, but not bounds checks.
+  ## .. note::
+  ##    Does normalization, but not bounds checks.
   # PONDER: RB in- or exclusive?
 
 # Additional routines
 
-proc prepMap*(srf: SurfaceChr4rPtr; map: ptr uint16; se0: uint16) {.importc: "schr4r_prep_map", tonc.}
+proc prepMap*(srf: SurfaceChr4r; map: ptr ScrEntry; se0: uint16) {.importc: "schr4r_prep_map", tonc.}
   ## Prepare a screen-entry map for use with chr4.
   ## `srf`   Surface with size information.
   ## `map`   Screen-blocked map to initialize.
   ## `se0`   Additive base screen-entry.
 
-proc getPtr*(srf: SurfaceChr4rPtr; x: int; y: int): ptr uint32 {.importc: "schr4r_get_ptr", tonc.}
+proc getPtr*(srf: SurfaceChr4r; x: int; y: int): ptr uint32 {.importc: "schr4r_get_ptr", tonc.}
   ## Special pointer getter for chr4: start of in-tile line.
 
