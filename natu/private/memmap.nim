@@ -119,7 +119,8 @@ var bgTileMem* {.importc:"tile_mem", tonc.}: array[4, UnboundedCharblock]
   ## **Note:** While `bgTileMem[0]` has 512 elements, it's valid to reach across
   ## into the neighbouring charblock, for example `bgTileMem[0][1000]`.
   ## 
-  ## For this reason, no bounds checking is performed on these charblocks even when 
+  ## For this reason, no bounds checking is performed on these charblocks even when
+  ## compiling with `--checks:on`.
   ## 
   ## ::
   ##   tileMem[i]      # charblock i

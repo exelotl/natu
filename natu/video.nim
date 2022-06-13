@@ -4,7 +4,7 @@
 
 {.warning[UnusedImport]: off.}
 
-import private/[common, types, core, memmap, memdef]
+import private/[common, types, core, memmap, memdef, reg]
 import ./math
 
 {.compile(toncPath & "/src/tonc_video.c", toncCFlags).}
@@ -731,7 +731,9 @@ proc rotscaleEx*(bgaff: var BgAffine; asx: ptr AffSrcEx) {.importc: "bg_rotscale
 # Miscellaneous
 # -------------
 
-# proc setWindow*(winId: range[0..1], bounds: Rect) {.inline.} =
-#   ## Apply a rectangular window to one of the window registers.
-#   winh[winId] = WinBoundsH(left: bounds.left.uint8, right: bounds.right.uint8)
-#   winv[winId] = WinBoundsV(top: bounds.top.uint8, bottom: bounds.bottom.uint8)
+proc setWindow*(winId: range[0..1]; bounds: Rect) {.inline.} =
+  ## Apply a rectangular window to one of the window registers.
+  ## 
+  ## The rectangle is clamped to the bounds of the screen.
+  winh[winId] = WinH(right: bounds.right.clamp(0, ScreenWidth).uint8, left: bounds.left.clamp(0, ScreenWidth).uint8)
+  winv[winId] = WinV(bottom: bounds.bottom.clamp(0, ScreenHeight).uint8, top: bounds.top.clamp(0, ScreenHeight).uint8)

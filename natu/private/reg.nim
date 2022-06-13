@@ -348,6 +348,9 @@ var bgcnt* {.importc:"((volatile BgCnt*)(0x04000008))", nodecl.}: array[4, BgCnt
 var bgofs* {.importc:"((volatile BG_POINT*)(0x04000010))", nodecl.}: array[4, BgOfs]        ## [Write only!] BG scroll registers
 var bgaff* {.importc:"((volatile BG_AFFINE*)(0x04000020))", nodecl.}: array[2..3, BgAffine] ## [Write only!] Affine parameters (matrix and scroll offset) for BG2 and BG3, depending on display mode.
 
+var winh* {.importc:"((volatile WinH*)(0x04000040))", nodecl.}: array[2, WinH]  ## [Write only!] Sets the left and right bounds of a window
+var winv* {.importc:"((volatile WinV*)(0x04000044))", nodecl.}: array[2, WinV]  ## [Write only!] Sets the upper and lower bounds of a window
+
 var win0h* {.importc:"(*(volatile WinH*)(0x04000040))", nodecl.}: WinH  ## [Write only!] Sets the left and right bounds of window 0
 var win1h* {.importc:"(*(volatile WinH*)(0x04000042))", nodecl.}: WinH  ## [Write only!] Sets the left and right bounds of window 1 
 var win0v* {.importc:"(*(volatile WinV*)(0x04000044))", nodecl.}: WinV  ## [Write only!] Sets the upper and lower bounds of window 0
