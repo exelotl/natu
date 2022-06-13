@@ -108,6 +108,8 @@ type
       ## VCount interrupt request.
       ## If set, an interrupt will be fired when current scanline matches the scanline trigger (`vcount` == `dispstat.vcountTrigger`)
     
+    unused {.bitsize:2.}: uint16
+    
     vcountTrigger* {.bitsize:8.}: uint16
       ## VCount trigger value.
       ## If the current scanline is at this value, bit 2 is set and an interrupt is fired if requested. 
