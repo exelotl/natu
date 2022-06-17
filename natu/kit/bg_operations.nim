@@ -9,6 +9,11 @@ type Background = concept b
   mapDataPtr(b) is pointer
   palDataPtr(b) is pointer
 
+template kind*(bg: Background): BgKind = bg.data.kind
+template flags*(bg: Background): set[BgFlag] = bg.data.flags
+template palOffset*(bg: Background): int = bg.data.palOffset.int
+template tileOffset*(bg: Background): int = bg.data.tileOffset.int
+
 template is8bpp*(bg: Background): bool =
   bg.data.kind in {bkReg8bpp, bkAff}
 
