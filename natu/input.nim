@@ -27,6 +27,10 @@ type
     _ {.bitsize:4.}: uint16
     irq* {.bitsize:1.}: bool        ## Enables the keypad interrupt.
     op* {.bitsize:1.}: KeyIntrOp    ## The condition under which the interrupt will be raised (`opOr` vs `opAnd`)
+  
+  KeyRepeat = object
+    keys, mask: KeyState
+    timer, delay, period: uint8
 
 let keyinput* {.importc:"(*(volatile KeyInput*)(0x04000130))", nodecl.}: KeyInput
   ## Keypad status register (read only).
@@ -46,6 +50,15 @@ var keyPrevState*: KeyState
 
 const allKeys*: KeyState = {kiA..kiL}
 
+
+var repeat = KeyRepeat(mask: allKeys, timer: 20, delay: 20, period: 10)
+
+proc `^`[T](a, b: set[T]): set[T] {.inline.} =
+  ## Symmetric difference between two sets, analogous to XOR.
+  when nimvm or sizeof(a) > sizeof(uint): (a + b) - (a * b)
+  else: cast[set[T]](cast[uint](a) xor cast[uint](b))
+
+
 {.push inline.}
 
 proc state*(keyinput: KeyInput): KeyState =
@@ -56,7 +69,20 @@ proc keyPoll* =
   ## Should be called once per frame to update the current key state.
   keyPrevState = keyCurrState
   keyCurrState = keyinput.state
-
+  
+  repeat.keys = {}
+  
+  if repeat.mask != {}:
+    if (keyCurrState ^ keyPrevState) != {}:
+      repeat.timer = repeat.delay
+      repeat.keys = keyCurrState
+    else:
+      dec repeat.timer
+    
+    if repeat.timer == 0:
+      repeat.timer = repeat.period
+      repeat.keys = keyCurrState * repeat.mask
+      
 proc keysDown*: KeyState =
   ## Get all the keys which are currently down.
   keyCurrState
@@ -100,5 +126,27 @@ proc keyReleased*(k: KeyIndex): bool =
 proc anyKeyHit*(s: KeyState): bool =
   ## True if any of the given keys are currently down.
   s * (keyCurrState - keyPrevState) != {}
+
+
+proc keysRepeated*(): KeyState =
+  ## Get the keys that just repeated or were newly pressed.
+  repeat.keys
+
+proc keyRepeated*(k: KeyIndex): bool =
+  ## Check if a key just repeated or was newly pressed.
+  k in repeat.keys
+
+proc setKeyRepeatMask*(mask: KeyState) =
+  ## Set which keys will be considered for repeats.
+  repeat.mask = mask
+
+proc setKeyRepeatDelay*(delay: uint8) =
+  ## Set the initial delay from when a key is pressed to when it starts repeating.
+  repeat.delay = delay
+  repeat.timer = delay
+
+proc setKeyRepeatPeriod*(period: uint8) =
+  ## Set the interval between repeated keys.
+  repeat.period = period
 
 {.pop.}
