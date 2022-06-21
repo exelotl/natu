@@ -33,11 +33,11 @@ proc pickRandom*[T](arr: ptr UncheckedArray[T], len: int): T =
   ## Return a random item from an unchecked array with a given length.
   arr[qranRange(0, len)]
 
-proc rand*[T:Fixed|SomeInteger](a, b: T): T =
+proc rand*[T:Fixed|Ordinal](a, b: T): T =
   ## Return a random value between `a` and `b` inclusive.
   T(qranRange(a.int, b.int+1))
 
-proc rand*[T:Fixed|SomeInteger](s: Slice[T]): T =
+proc rand*[T:Fixed|Ordinal](s: Slice[T]): T =
   ## Return a random value from a slice.
   ## 
   ## **Example:**
@@ -47,5 +47,9 @@ proc rand*[T:Fixed|SomeInteger](s: Slice[T]): T =
   ##    let n = rand(0..100)
   ## 
   T(qranRange(s.a.int, s.b.int+1))
+
+proc rand*(T: typedesc): T =
+  ## Return a random value from an enum
+  rand(T.low..T.high)
 
 {.pop.}
