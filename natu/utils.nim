@@ -23,22 +23,51 @@ func logPowerOfTwo*(n: uint): uint =
     ((n and 0xFF00FF00'u) != 0).uint shl 3 or
     ((n and 0xFFFF0000'u) != 0).uint shl 4
 
-from ./core import qran, qranRange
 
-proc pickRandom*[T](arr: openArray[T]): T =
-  ## Return a random item from an array.
-  arr[qranRange(0, arr.len)]
+## Random number generator
+## -----------------------
+## 
+## Uses a simple [XorShift](https://en.wikipedia.org/wiki/Xorshift) algorithm,
+## which is adequate for most games.
+## 
+## .. note::
+##    Any range supplied to these procs should be less than 2^16.
+##    
+##    For example, `rand(max=999999)`, `rand(fp(-300)..fp(300))` or `rand(Natural)`
+##    will all give inadequate results.
+##    
+##    To work around this, use `rand()` to get a raw 32-bit value instead.
 
-proc pickRandom*[T](arr: ptr UncheckedArray[T], len: int): T =
-  ## Return a random item from an unchecked array with a given length.
-  arr[qranRange(0, len)]
+var prngState: uint32 = 1979339339
 
-proc rand*[T:Fixed|Ordinal](a, b: T): T =
-  ## Return a random value between `a` and `b` inclusive.
-  T(qranRange(a.int, b.int+1))
+proc seed*(seed: uint32) =
+  ## Seed the random number generator.
+  prngState = seed
 
-proc rand*[T:Fixed|Ordinal](s: Slice[T]): T =
-  ## Return a random value from a slice.
+proc rand*(): uint32 =
+  ## Get a random 32-bit value.
+  result = prngState
+  result = result xor (result shl 13)
+  result = result xor (result shr 17)
+  result = result xor (result shl 5)
+  prngState = result
+
+proc rand*[T:Fixed|SomeInteger](max: T): T =
+  ## Get a random integer in the range `0..max`.
+  ## 
+  ## .. note::
+  ##    `max` must be less than `2^16` or `fp(256)`.
+  cast[T](((rand() and 0x7fff) * (cast[uint32](max) + 1)) shr 15)
+
+proc rand*[T:Ordinal](a, b: T): T =
+  ## Get a random value between `a` and `b` inclusive.
+  ## 
+  ## .. note::
+  ##    `a - b` must be less than `2^16`, to avoid overflow.
+  T(rand(cast[uint32](b) - cast[uint32](a)) + cast[uint32](a))
+
+proc rand*[T:Ordinal](s: Slice[T]): T =
+  ## Get a random value from a slice.
   ## 
   ## **Example:**
   ## 
@@ -46,10 +75,21 @@ proc rand*[T:Fixed|Ordinal](s: Slice[T]): T =
   ##    
   ##    let n = rand(0..100)
   ## 
-  T(qranRange(s.a.int, s.b.int+1))
+  rand(s.a, s.b)
 
-proc rand*(T: typedesc): T =
-  ## Return a random value from an enum
-  rand(T.low..T.high)
+proc rand*[T:Ordinal](t: typedesc[T]): T =
+  ## Get a random value of the given type.
+  when T is range or T is enum:
+    rand(T.low, T.high)
+  else:
+    cast[T](rand())
+
+proc pickRandom*[T](arr: openArray[T]): T =
+  ## Get a random item from an array.
+  arr[rand(arr.len-1)]
+
+proc pickRandom*[T](arr: ptr UncheckedArray[T], len: SomeInteger): T =
+  ## Get a random item from an unchecked array with a given length.
+  arr[rand(len-1)]
 
 {.pop.}
