@@ -73,7 +73,7 @@ proc keyPoll* =
   repeat.keys = {}
   
   if repeat.mask != {}:
-    if (keyCurrState ^ keyPrevState) != {}:
+    if (keyCurrState ^ keyPrevState) * repeat.mask != {}:
       repeat.timer = repeat.delay
       repeat.keys = keyCurrState
     else:
@@ -141,7 +141,9 @@ proc setKeyRepeatMask*(mask: KeyState) =
   repeat.mask = mask
 
 proc setKeyRepeatDelay*(delay: uint8) =
-  ## Set the initial delay from when a key is pressed to when it starts repeating.
+  ## Set the initial delay from when a key is first pressed to when it starts repeating.
+  ## 
+  ## If keys are already repeating, this will delay them again.
   repeat.delay = delay
   repeat.timer = delay
 
