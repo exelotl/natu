@@ -54,9 +54,14 @@ proc applyOffsets(bg8: var Bg8; flags: set[BgFlag]; palOffset, tileOffset: int) 
       if (se.tid > 0) or (bfBlankTile notin flags):
         se.tid = se.tid + tileOffset
 
-include "templates/background.c.template"
-include "templates/backgrounds.c.template"
-include "templates/backgrounds.nim.template"
+proc writeBackgroundC(f: File; name, img, map, pal: string; data: BgData) =
+  include "templates/background.c.template"
+
+proc writeBackgroundsC(f: File; bgRows: seq[BgRow]) =
+  include "templates/backgrounds.c.template"
+
+proc writeBackgroundsNim(f: File; bgRows: seq[BgRow]; bgDatas: seq[BgData]) =
+  include "templates/backgrounds.nim.template"
 
 
 proc bgConvert*(tsvPath, script, indir, outdir: string) =

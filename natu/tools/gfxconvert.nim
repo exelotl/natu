@@ -34,8 +34,11 @@ type
     s8x16, s8x32, s16x32, s32x64
 
 
-include "templates/graphics.c.template"
-include "templates/graphics.nim.template"
+proc writeGraphicsC(f: File; imgData, palData: string) =
+  include "templates/graphics.c.template"
+
+proc writeGraphicsNim(f: File; gfxRows: seq[GraphicRow]; gfxDatas: seq[GraphicData]; numPalettes, palDataLen, imgDataLen: int) =
+  include "templates/graphics.nim.template"
 
 
 proc gfxConvert*(tsvPath, script, indir, outdir: string) =

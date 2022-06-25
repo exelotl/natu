@@ -3,7 +3,8 @@ import options, os, osproc, times
 import trick
 import ./common
 
-include "templates/soundbank.nim.template"
+proc writeSoundbankNim(f: File; sfxList, modList: seq[string]) =
+  include "templates/soundbank.nim.template"
 
 proc mmConvert*(script, sfxdir, moddir, outdir: string, files: seq[string]) =
   var filePaths, sfxList, modList: seq[string]
