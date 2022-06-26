@@ -1,6 +1,6 @@
 import natu/[core, video, math]
 import natu/private/utils
-import natu/kit/[types, pal_manager, obj_tile_manager]
+import natu/kit/[pal_manager, obj_tile_manager]
 
 export pal_manager
 export obj_tile_manager
