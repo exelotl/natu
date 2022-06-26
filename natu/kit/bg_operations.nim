@@ -1,13 +1,38 @@
 import natu/[core, video]
 import natu/private/utils
-import natu/kit/[types, pal_manager]
+import natu/kit/[pal_manager]
 
-type Background = concept b
-  b is enum
-  data(b) is BgData
-  imgDataPtr(b) is pointer
-  mapDataPtr(b) is pointer
-  palDataPtr(b) is pointer
+type
+  BgKind* = enum
+    bkReg4bpp  ## Regular background, 16 colors per-tile
+    bkReg8bpp  ## Regular background, 256 colors
+    bkAff      ## Affine background, 256 colors
+  
+  BgFlag* = enum
+    bfScreenblock
+    bfBlankTile
+    bfAutoPal
+  
+  BgData* = object
+    kind*: BgKind
+    w*, h*: int
+    imgWords*: uint16
+    mapWords*: uint16
+    palHalfwords*: uint16
+    palOffset*: uint16
+    tileOffset*: uint16
+    flags*: set[BgFlag]
+
+const natuOutputDir {.strdefine.} = ""
+
+when natuOutputDir == "":
+  {.error: "natuOutputDir is not set. Did you forget to call gbaCfg() in your config.nims?".}
+
+template doInclude(path: static string) =
+  include `path`
+
+doInclude natuOutputDir & "/backgrounds.nim"
+
 
 template kind*(bg: Background): BgKind = bg.data.kind
 template flags*(bg: Background): set[BgFlag] = bg.data.flags

@@ -3,8 +3,6 @@
 
 import natu/[core, oam]
 
-from natu/kit/types import GraphicData
-
 #if gfxRows.len > 0:
 
 type

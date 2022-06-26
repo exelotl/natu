@@ -99,6 +99,7 @@ proc gbaCfg* =
   
   # Only set switches that the developer will never need to override.
   switch "define", "gba"
+  switch "define", "natuOutputDir:" & absolutePath("output")
   switch "cpu", "arm"
   switch "cc", "gcc"
   switch "lineTrace", "off"

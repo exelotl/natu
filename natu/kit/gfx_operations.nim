@@ -5,13 +5,33 @@ import natu/kit/[types, pal_manager, obj_tile_manager]
 export pal_manager
 export obj_tile_manager
 
-type Graphic = concept g
-  ## Support any user-defined Graphic type.
-  g is enum
-  data(g) is GraphicData
-  palUsage(g) is var uint16
-  palDataPtr(g) is pointer
-  imgDataPtr(g) is pointer
+from natu/oam import ObjSize
+
+export ObjSize
+
+type
+  GraphicData* = object
+    bpp*: int
+    size*: ObjSize
+    w*, h*: int
+    imgPos*: int
+    imgWords*: int
+    palNum*: int
+    palPos*: int
+    palHalfwords*: int
+    frames*: int
+    frameWords*: int
+
+const natuOutputDir {.strdefine.} = ""
+
+when natuOutputDir == "":
+  {.error: "natuOutputDir is not set. Did you forget to call gbaCfg() in your config.nims?".}
+
+template doInclude(path: static string) =
+  include `path`
+
+doInclude natuOutputDir & "/graphics.nim"
+
 
 # Implementation of useful graphic operations below:
 
