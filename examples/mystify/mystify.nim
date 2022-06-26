@@ -2,14 +2,12 @@
 ## ==============
 ## This demonstrates bitmap drawing in mode 4 with page-flipping.
 ## 
-## Based on the 'Mistify' screensaver, we have a bunch of points
+## Based on the 'Mystify' screensaver, we have a bunch of points
 ## that move around the screen and we draw lines between them.
+## 
+## Cool motion blur is left as an exercise to the reader :^)
 
 import natu/[core, video, math, utils, bios, irq]
-
-# I want to try out Nim's view types (safe pointers) for this example - they're not exactly stable though, so use with caution!
-{.experimental: "views".}
-{.experimental: "strictFuncs".}
 
 # set up points with random position and velocity:
 var vertices: array[6, tuple[pos, vel: Vec2f]]
@@ -33,12 +31,12 @@ dispcnt.init(bg2 = true, mode = dm4)
 
 while true:
   
-  # obtain a mutable view into whichever page is not currently being displayed.
-  let buf: var M4Mem =
-    if dispcnt.page: m4MemBack
-    else: m4Mem
+  # obtain a pointer to whichever page is not currently being displayed.
+  let buf: ptr M4Mem =
+    if dispcnt.page: addr m4MemBack
+    else: addr m4Mem
   
-  buf.clear()
+  buf[].clear()
   
   # begin with the final vertex.
   var prev = vertices[^1].pos
@@ -54,7 +52,7 @@ while true:
     if v.pos.y.toInt() notin 2..157: v.vel.y *= -1
     
     # draw line from last point to current point.
-    buf.line(
+    buf[].line(
       prev.x.toInt(), prev.y.toInt(),
       v.pos.x.toInt(), v.pos.y.toInt(),
       clrid = 1,
