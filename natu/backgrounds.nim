@@ -1,6 +1,6 @@
 import natu/[core, video]
 import natu/private/utils
-import natu/kit/[pal_manager]
+import natu/kit/pal_manager
 
 type
   BgKind* = enum
