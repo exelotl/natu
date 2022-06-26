@@ -43,11 +43,22 @@ const mmAsmFlags = "-g -x assembler-with-cpp -DSYS_GBA -DUSE_IWRAM -I" & mmPath 
 type
   MmSoundbankPtr* = distinct cstring
     ## Pointer to soundbank data
-  MmModuleId* = distinct uint32
-    ## ID of a song in the soundbank
-  MmSampleId* = distinct uint32
-    ## ID of a sample in the soundbank
-  
+
+
+# Soundbank is auto-included from the user's project:
+
+const natuOutputDir {.strdefine.} = ""
+
+when natuOutputDir == "":
+  {.error: "natuOutputDir is not set. Did you forget to call gbaCfg() in your config.nims?".}
+
+template doInclude(path: static string) =
+  include `path`
+
+doInclude natuOutputDir & "/soundbank.nim"
+
+
+type
   MmSfxHandle* = distinct uint16
   
   MmFnPtr* = proc () {.nimcall.}
@@ -141,8 +152,6 @@ const
   mmSizeofActCh* = 28
   mmSizeofMixCh* = 24
 
-proc `==`*(a, b: MmModuleId): bool {.borrow.}
-proc `==`*(a, b: MmSampleId): bool {.borrow.}
 proc `==`*(a, b: MmSfxHandle): bool {.borrow.}
 
 proc init*(soundbank: MmSoundbankPtr; channels: uint) {.importc:"mmInitDefault".}
@@ -166,16 +175,14 @@ proc init*(setup: ptr MmGbaSystem) {.importc:"mmInit".}
   ## Initialize system. Call once at startup.
 
 proc vblank*() {.importc:"mmVBlank".}
-  ## This function must be linked directly to the VBlank IRQ.
+  ## This procedure must be linked directly to the VBlank IRQ, or be the very first
+  ## thing that runs in your custom VBlank handler.
   ## 
-  ## During this function, the sound DMA is reset. The timing is extremely critical, so
+  ## During this procedure, the sound DMA is reset. The timing is extremely critical, so
   ## make sure that it is not interrupted, otherwise garbage may be heard in the output.
-  ## 
-  ## If you need another function to execute after this process is finished, use
-  ## `setVBlankHandler` to install your handler.
 
-proc setVBlankHandler*(function: MmFnPtr) {.importc:"mmSetVBlankHandler".}
-  ## Install user vblank handler
+proc setVBlankHandler*(function: MmFnPtr) {.importc:"mmSetVBlankHandler", deprecated:"Just make sure `maxmod.vblank` is the first thing that gets called.".}
+  ## Install user vblank handler.
   ## 
   ## **Parameters:**
   ## 
@@ -203,7 +210,7 @@ proc frame*() {.importc:"mmFrame".}
 # Module Playback
 # ---------------
 
-proc start*(id: MmModuleId; mode: MmPlaybackMode = mmPlayLoop) {.importc:"mmStart".}
+proc start*(id: Module; mode: MmPlaybackMode = mmPlayLoop) {.importc:"mmStart".}
   ## Start module playback.
   ## 
   ## **Parameters**:
@@ -237,7 +244,7 @@ proc getPosition*(): uint {.importc:"mmGetPosition".}
 proc active*(): bool {.importc:"mmActive".}
   ## Returns true if module is playing.
 
-proc jingle*(id: MmModuleId) {.importc:"mmJingle".}
+proc jingle*(id: Module) {.importc:"mmJingle".}
   ##  Play module as jingle. Jingles are limited to 4 channels only.
   ## 
   ## **Parameters**:
@@ -287,7 +294,7 @@ proc playModule*(address: pointer; mode: uint; layer: uint) {.importc:"mmPlayMod
 # Sound Effects
 # -------------
 
-proc effect*(id: MmSampleId): MmSfxHandle {.importc:"mmEffect", discardable.}
+proc effect*(id: Sample): MmSfxHandle {.importc:"mmEffect", discardable.}
   ## Play a sound effect at its default frequency with full volume and centered panning.
   ## 
   ## **Parameters:**
