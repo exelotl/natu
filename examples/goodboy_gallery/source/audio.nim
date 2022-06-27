@@ -1,6 +1,6 @@
 import natu/[core, maxmod]
 
-include ../output/soundbank
+export vblank, frame, Sample, Module
 
 const
   channels = 16
@@ -24,13 +24,10 @@ proc init* =
   )
   maxmod.init(addr config)
 
-export maxmod.vblank
-export maxmod.frame
-
-proc playSound*(sampleId: MmSampleId) {.inline.} =
+proc playSound*(sampleId: Sample) {.inline.} =
   maxmod.effect(sampleId)
 
-proc playSong*(moduleId: MmModuleId) {.inline.} =
+proc playSong*(moduleId: Module) {.inline.} =
   maxmod.start(moduleId, mmPlayLoop)
 
 proc stopSong* {.inline.} =

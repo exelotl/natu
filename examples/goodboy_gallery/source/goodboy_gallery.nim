@@ -5,13 +5,15 @@
 ## A `Graphic` enum is generated based on the "graphics.nims" config file.
 ## Graphics can be used at compile time and at runtime.
 ## 
+## Similarly, enums are generated for backgrounds, music modules and samples.
+## 
 ## While this example is still rather direct and low-level, it uses allocators
 ## to make managing sprite tiles and palettes easier. The Graphic enum is set
 ## up to work with these allocators directly.
 
 import natu/[core, bios, irq, oam, input, math]
-import natu/kit/[pal_manager]
-import assets, audio, simple_anim
+import natu/[graphics, backgrounds]
+import audio, simple_anim
 
 const anims: array[Graphic, AnimData] = [
   gfxBarrier:   AnimData(first: 0, len: 10, speed: 3),

@@ -30,6 +30,7 @@ task build, "builds the GBA rom":
 
 task clean, "removes build files":
   rmDir "nimcache"
+  rmDir "output"
   rmFile name & ".gba"
   rmFile name & ".elf"
   rmFile name & ".elf.map"
