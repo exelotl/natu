@@ -3,9 +3,6 @@ import natu/kit/[pal_manager, obj_tile_manager]
 
 export pal_manager
 export obj_tile_manager
-
-from natu/oam import ObjSize
-
 export ObjSize
 
 type

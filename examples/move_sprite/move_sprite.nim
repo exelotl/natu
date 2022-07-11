@@ -15,7 +15,7 @@
 ##
 ## This produces some raw binary files that we can embed into our project using `readBin` from the utils module.
 
-import natu/[video, bios, irq, oam, input, math, utils]
+import natu/[video, bios, irq, input, math, utils]
 
 let shipTiles = readBin("ship.img.bin")
 let shipPal = readBin("ship.pal.bin")

@@ -8,8 +8,7 @@
 ## - `irq <irq.html>`_ ⸺ Hardware interrupt manager.
 ## - `input <input.html>`_ ⸺ Button input handler.
 ## - `waitstates <waitstates.html>`_ ⸺ Waitstate control.
-## - `video <video.html>`_ ⸺ Display, BGs, colours and graphical effects.
-## - `oam <oam.html>`_ ⸺ Sprites.
+## - `video <video.html>`_ ⸺ Display, BGs, sprites, colours and graphical effects.
 ## - `surface <surface.html>`_ ⸺ Software rendering surfaces.
 ## - `posprintf <posprintf.html>`_ ⸺ Fast number-to-string conversion.
 ## - `tte <tte.html>`_ ⸺ Tonc Text Engine
@@ -26,7 +25,6 @@ when querySetting(command) in ["doc", "jsondoc"]:
   import input
   import waitstates
   import video
-  import oam
   import surface
   import timers
   import posprintf

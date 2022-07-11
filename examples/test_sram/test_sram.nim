@@ -6,7 +6,7 @@
 ## - Power off the console
 ## - Next time you launch the game, the sprite should be where you left it
 
-import natu/[bios, tte, video, irq, input, oam, math, utils, memory]
+import natu/[bios, tte, video, irq, input, math, utils, memory]
 
 # position of the sprite on the screen
 var pos = vec2i(0, 0)

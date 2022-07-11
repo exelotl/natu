@@ -7,9 +7,10 @@
 import private/[common, types, memmap, memdef, reg]
 import ./math
 import ./utils
+import ./oam
 
-export reg   # todo
-
+export reg   # TODO: move most of the exposed registers into here.
+export oam   # TODO: delete OAM module, move into here.
 
 # types
 export

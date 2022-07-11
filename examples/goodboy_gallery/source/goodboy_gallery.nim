@@ -11,7 +11,7 @@
 ## to make managing sprite tiles and palettes easier. The Graphic enum is set
 ## up to work with these allocators directly.
 
-import natu/[video, oam, bios, irq, input, math]
+import natu/[video, bios, irq, input, math]
 import natu/[graphics, backgrounds]
 import audio, simple_anim
 

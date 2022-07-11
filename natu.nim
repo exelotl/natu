@@ -1,6 +1,6 @@
 when not isMainModule:
   {.error: "Natu is now modular. " &
-    "Please import natu/[video, oam, input, irq, tte, utils]".}
+    "Please import natu/[video, input, irq, tte, utils]".}
 
 import parseopt, strutils, strscans
 import natu/tools/[gbafix, gfxconvert, bgconvert, mmconvert]
