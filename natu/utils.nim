@@ -165,7 +165,9 @@ proc rand*[T:Ordinal](s: Slice[T]): T =
 
 proc rand*[T:Ordinal](t: typedesc[T]): T =
   ## Get a random value of the given type.
-  when T is range or T is enum:
+  when T is bool:
+    (rand() and 0b1).bool
+  elif T is range or T is enum:
     rand(T.low, T.high)
   else:
     cast[T](rand())
