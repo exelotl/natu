@@ -54,11 +54,7 @@ export
   bgColorMem,
   bgPalMem,
   objColorMem,
-  objPalMem,
-  palBgMem,
-  palObjMem,
-  palBgBank,
-  palObjBank
+  objPalMem
 
 # VRAM
 export
@@ -66,12 +62,7 @@ export
   bgTileMem8,
   objTileMem,
   objTileMem8,
-  tileMem,
-  tile8Mem,
-  tileMemObj,
-  tile8MemObj,
   seMem,
-  seMat,
   vidMem,
   m3Mem,
   m4Mem,

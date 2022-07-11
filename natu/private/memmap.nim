@@ -123,14 +123,14 @@ var bgTileMem* {.importc:"tile_mem", tonc.}: array[4, UnboundedCharblock]
   ## compiling with `--checks:on`.
   ## 
   ## ::
-  ##   tileMem[i]      # charblock i
-  ##   tileMem[i][j]   # charblock i, tile j
+  ##   bgTileMem[i]      # charblock i
+  ##   bgTileMem[i][j]   # charblock i, tile j
 
 var bgTileMem8* {.importc:"tile8_mem", tonc.}: array[4, UnboundedCharblock8]
   ## BG charblocks, 8bpp tiles.
   ## ::
-  ##   tile8Mem[i]      # charblock i
-  ##   tile8Mem[i][j]   # charblock i, tile j
+  ##   bgTileMem8[i]      # charblock i
+  ##   bgTileMem8[i][j]   # charblock i, tile j
 
 var objTileMem* {.importc:"tile_mem_obj[0]", tonc.}: array[1024, Tile]
   ## Object (sprite) image data, as 4bpp tiles.
@@ -149,31 +149,31 @@ var objTileMem8* {.importc:"tile8_mem_obj[0]", tonc.}: array[512, Tile8]
 var seMem* {.importc:"se_mem", tonc.}: array[32, Screenblock]
   ## Screenblocks as arrays
   ## ::
-  ##   se_mem[i]       # screenblock i
-  ##   se_mem[i][j]    # screenblock i, entry j
-  ##   se_mem[i][x,y]  # screenblock i, entry x + y*32
+  ##   seMem[i]       # screenblock i
+  ##   seMem[i][j]    # screenblock i, entry j
+  ##   seMem[i][x,y]  # screenblock i, entry x + y*32
 
 
 var vidMem* {.importc:"vid_mem", tonc.}: array[240*160, Color]
   ## Main mode 3/5 frame as an array
   ## ::
-  ##   vid_mem[i]    # pixel i
+  ##   vidMem[i]    # pixel i
 
 var m3Mem* {.importc:"m3_mem", tonc.}: array[160, M3Line]
   ## Mode 3 frame as a matrix
   ## ::
-  ##   m3_mem[y][x]  # pixel (x, y)
+  ##   m3Mem[y][x]  # pixel (x, y)
 
 var m4Mem* {.importc:"m4_mem", tonc.}: array[160, M4Line]
   ## Mode 4 first page as a matrix
   ## Note: This is a byte-buffer. Not to be used for writing.
   ## ::
-  ##   m4_mem[y][x]  # pixel (x, y)
+  ##   m4Mem[y][x]  # pixel (x, y)
 
 var m5Mem* {.importc:"m5_mem", tonc.}: array[128, M5Line]
   ## Mode 5 first page as a matrix
   ## ::
-  ##   m5_mem[y][x]  # pixel (x, y)
+  ##   m5Mem[y][x]  # pixel (x, y)
 
 var vidMemFront* {.importc:"vid_mem_front", tonc.}: array[160*128, uint16]
   ## First page array
@@ -185,12 +185,12 @@ var m4MemBack* {.importc:"m4_mem_back", tonc.}: array[160, M4Line]
   ## Mode 4 second page as a matrix
   ## This is a byte-buffer. Not to be used for writing.
   ## ::
-  ##   m4_mem[y][x]  = pixel (x, y)          ( u8 )
+  ##   m4MemBack[y][x]  = pixel (x, y)          ( u8 )
 
 var m5MemBack* {.importc:"m5_mem_back", tonc.}: array[128, M5Line]
   ## Mode 5 second page as a matrix
   ## ::
-  ##   m5_mem[y][x]  = pixel (x, y)          ( Color )
+  ##   m5MemBack[y][x]  = pixel (x, y)          ( Color )
 
 
 # OAM
