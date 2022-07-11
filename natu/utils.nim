@@ -1,6 +1,8 @@
 import std/volatile
 import ./private/[common, types]
 
+export FnPtr
+
 {.compile(toncPath & "/src/tonc_core.c", toncCFlags).}
 {.compile(toncPath & "/asm/tonc_memcpy.s", toncAsmFlags).}
 {.compile(toncPath & "/asm/tonc_memset.s", toncAsmFlags).}
