@@ -30,7 +30,6 @@ export
   AffDstEx,
   BgPoint,
   Point16,
-  Palbank,
   Palette,
   M3Line,
   M4Line,

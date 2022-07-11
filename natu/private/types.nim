@@ -29,9 +29,6 @@ type
     data*: array[8, uint32]
 
 type
-  Color* = distinct uint16  ## Type for colors
-
-type
   ScrEntry* = uint16    ## Type for screen entries           TODO: make distinct
   ScrAffEntry* = uint8  ## Type for affine screen entries
 
@@ -119,11 +116,11 @@ type
     cnt* {.importc: "cnt".}: uint16
 
 type
-  Palbank* {.deprecated.} = array[16, Color]
-    ## Palette bank type, for 16-color palette banks
+  Color* = distinct uint16 
+    ## A 15bpp colour value. (``xbbbbbgggggrrrrr`` format)
+  
   Palette* = array[16, Color]
     ## A 16-color palette
-
 
 ## VRAM array types
 ## These types allow VRAM access as arrays or matrices in their most natural types.
