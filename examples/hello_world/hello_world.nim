@@ -1,4 +1,4 @@
-import natu/[core, tte]
+import natu/[video, tte]
 
 # show background 0
 dispcnt = initDispCnt(bg0 = true)

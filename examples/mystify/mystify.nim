@@ -7,7 +7,7 @@
 ## 
 ## Cool motion blur is left as an exercise to the reader :^)
 
-import natu/[core, video, math, utils, bios, irq]
+import natu/[video, math, utils, bios, irq]
 
 # set up points with random position and velocity:
 var vertices: array[6, tuple[pos, vel: Vec2f]]

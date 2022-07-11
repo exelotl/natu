@@ -5,9 +5,8 @@
 
 import ./math
 import private/[common, types, memdef]
-from private/core import oamSizes
 from private/memmap import objMem, objAffMem
-from private/utils import writeFields
+from private/privutils import writeFields
 
 export objMem, objAffMem
 export ObjAttr, ObjAffine, ObjAttrPtr, ObjAffinePtr
@@ -262,24 +261,24 @@ template dup*(obj: ObjAttr, args: varargs[untyped]): ObjAttr =
 
 # Size helpers:
 
+const oamSizes: array[ObjSize, array[2, uint8]] = [
+  [ 8'u8, 8'u8], [16'u8,16'u8], [32'u8,32'u8], [64'u8,64'u8], 
+  [16'u8, 8'u8], [32'u8, 8'u8], [32'u8,16'u8], [64'u8,32'u8],
+  [ 8'u8,16'u8], [ 8'u8,32'u8], [16'u8,32'u8], [32'u8,64'u8],
+]
+
 func getSize*(size: ObjSize): tuple[w, h: int] =
   ## Get the width and height in pixels of an `ObjSize` enum value.
-  {.noSideEffect.}:
-    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](unsafeAddr oamSizes)
-    let arr = sizes[size]
-    (arr[0].int, arr[1].int)
+  let arr = oamSizes[size]
+  (arr[0].int, arr[1].int)
   
 func getWidth*(size: ObjSize): int =
   ## Get the width in pixels of an `ObjSize` enum value.
-  {.noSideEffect.}:
-    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](unsafeAddr oamSizes)
-    sizes[size][0].int
+  oamSizes[size][0].int
 
 func getHeight*(size: ObjSize): int =
   ## Get the height in pixels of an `ObjSize` enum value.
-  {.noSideEffect.}:
-    let sizes = cast[ptr array[ObjSize, array[2, uint8]]](unsafeAddr oamSizes)
-    sizes[size][1].int
+  oamSizes[size][1].int
 
 func getSize*(obj: ObjAttr | ObjAttrPtr): tuple[w, h: int] =
   ## Get the width and height of an object in pixels.

@@ -2,7 +2,7 @@
 ## ==============
 ## This example demonstrates playing music and sfx with maxmod.
 
-import natu/[core, bios, irq, tte, input, maxmod]
+import natu/[video, bios, irq, tte, input, maxmod]
 
 proc main() =
   

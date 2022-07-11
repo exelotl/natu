@@ -29,7 +29,7 @@
 ##    Timer 0 is used by `maxmod <maxmod.html>`_ for audio, so don't touch it
 ##    unless you know what you're doing.
 
-from ./private/utils import writeFields
+from ./private/privutils import writeFields
 
 type
   TimerFreq* = enum
@@ -92,3 +92,20 @@ template edit*(r: Timer, args: varargs[untyped]) =
   var tmp = r
   writeFields(tmp, args)
   r = tmp
+
+
+# Timer
+# -----
+
+{.pragma: toncinl, header: "tonc_core.h".}  # indicates that the definition is in the header.
+
+proc profileStart*() {.importc: "profile_start", toncinl.}
+  ## Start a profiling run.
+  ## 
+  ## .. note::
+  ##    Routine uses timers 2 and 3; if you're already using these somewhere, chaos is going to ensue.
+
+proc profileStop*(): uint {.importc: "profile_stop", toncinl.}
+  ## Stop a profiling run and return the time since its start.
+  ## 
+  ## Returns number of CPU cycles elapsed since `profileStart` was called.

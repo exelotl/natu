@@ -3,7 +3,7 @@
 ## 
 ## **Modules:**
 ## 
-## - `core <core.html>`_ ⸺ 
+## - `utils <utils.html>`_ ⸺ 
 ## - `bios <bios.html>`_ ⸺ GBA system calls.
 ## - `irq <irq.html>`_ ⸺ Hardware interrupt manager.
 ## - `input <input.html>`_ ⸺ Button input handler.
@@ -20,7 +20,7 @@
 import std/compilesettings
 
 when querySetting(command) in ["doc", "jsondoc"]:
-  import core
+  import utils
   import bios
   import irq
   import input

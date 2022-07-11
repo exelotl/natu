@@ -3,7 +3,7 @@
 
 import ./types
 import ./memdef
-from ./utils import writeFields
+from ./privutils import writeFields
 
 {.push inline.}
 

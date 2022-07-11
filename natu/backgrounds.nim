@@ -1,5 +1,5 @@
-import natu/[core, video]
-import natu/private/utils
+import natu/[utils, video]
+import natu/private/privutils
 import natu/kit/pal_manager
 
 type

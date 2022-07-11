@@ -3,7 +3,7 @@
 
 {.warning[UnusedImport]: off.}
 
-import private/[common, types, core]
+import private/[common, types]
 import std/math as std_math
 
 export std_math.sgn

@@ -13,9 +13,9 @@
 ## ::
 ##   grit ship.png -gB4 -pn16 -ftb
 ##
-## This produces some raw binary files that we can embed into our project using `readBin` from the core module.
+## This produces some raw binary files that we can embed into our project using `readBin` from the utils module.
 
-import natu/[core, bios, irq, oam, input, math]
+import natu/[video, bios, irq, oam, input, math, utils]
 
 let shipTiles = readBin("ship.img.bin")
 let shipPal = readBin("ship.pal.bin")

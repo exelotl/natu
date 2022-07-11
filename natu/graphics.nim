@@ -1,5 +1,5 @@
-import natu/[core, video, math]
-import natu/private/utils
+import natu/[video, math, utils]
+import natu/private/privutils
 import natu/kit/[pal_manager, obj_tile_manager]
 
 export pal_manager

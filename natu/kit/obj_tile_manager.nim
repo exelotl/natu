@@ -1,4 +1,4 @@
-import natu/core
+import natu/memory
 
 type ObjTileState {.size: 1.} = enum
   otUnused

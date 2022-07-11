@@ -1,5 +1,12 @@
 import std/volatile
-import ./private/types
+import ./private/[common, types]
+
+{.compile(toncPath & "/src/tonc_core.c", toncCFlags).}
+{.compile(toncPath & "/asm/tonc_memcpy.s", toncAsmFlags).}
+{.compile(toncPath & "/asm/tonc_memset.s", toncAsmFlags).}
+
+{.pragma: tonc, header: "tonc_core.h".}
+{.pragma: toncinl, header: "tonc_core.h".}  # indicates that the definition is in the header.
 
 {.push inline.}
 
@@ -22,6 +29,83 @@ func logPowerOfTwo*(n: uint): uint =
     ((n and 0xF0F0F0F0'u) != 0).uint shl 2 or
     ((n and 0xFF00FF00'u) != 0).uint shl 3 or
     ((n and 0xFFFF0000'u) != 0).uint shl 4
+
+
+# Tonc memory functions
+# ---------------------
+
+proc memset16*(dst: pointer, hw: uint16, hwcount: SomeInteger) {.importc: "memset16", tonc.}
+  ## Fastfill for halfwords, analogous to memset()
+  ## Uses `memset32()` if `hwcount>5`
+  ## `dst`     Destination address.
+  ## `hw`      Source halfword (not address).
+  ## `hwcount` Number of halfwords to fill.
+  ## Note: `dst` *must* be halfword aligned.
+  ## Note: `r0` returns as `dst + hwcount*2`.
+
+proc memcpy16*(dst: pointer, src: pointer, hwcount: SomeInteger) {.importc: "memcpy16", tonc.}
+  ## Copy for halfwords.
+  ## Uses `memcpy32()` if `hwn > 6` and `src` and `dst` are aligned equally.
+  ## `dst`     Destination address.
+  ## `src`     Source address.
+  ## `hwcount` Number of halfwords to fill.
+  ## Note: `dst` and `src` *must* be halfword aligned.
+  ## Note: `r0` and `r1` return as `dst + hwcount*2` and `src + hwcount*2`.
+
+proc memset32*(dst: pointer, wd: uint32, wcount: SomeInteger) {.importc: "memset32", tonc.}
+  ## Fast-fill by words, analogous to memset()
+  ## Like CpuFastSet(), only without the requirement of 32byte chunks and no awkward store-value-in-memory-first issue.
+  ## `dst`     Destination address.
+  ## `wd`      Fill word (not address).
+  ## `wdcount` Number of words to fill.
+  ## Note: `dst` *must* be word aligned.
+  ## Note: `r0` returns as `dst + wdcount*4`.
+
+proc memcpy32*(dst: pointer, src: pointer, wcount: SomeInteger) {.importc: "memcpy32", tonc.}
+  ## Fast-copy by words.
+  ## Like CpuFastFill(), only without the requirement of 32byte chunks
+  ## `dst`     Destination address.
+  ## `src`     Source address.
+  ## `wdcount` Number of words.
+  ## Note: `src` and `dst` *must* be word aligned.
+  ## Note: `r0` and `r1` return as `dst + wdcount*4` and `src + wdcount*4`.
+
+
+# Repeated-value creators
+# -----------------------
+# These take a hex-value and duplicate it to all fields, like 0x88 -> 0x88888888.
+
+func dup8*(x: uint8): uint16 =
+  ## Duplicate a byte to form a halfword: 0x12 -> 0x1212.
+  x.uint16 or (x.uint16 shl 8)
+
+func dup16*(x: uint16): uint32 =
+  ## Duplicate a halfword to form a word: 0x1234 -> 0x12341234.
+  x.uint32 or (x.uint32 shl 16)
+
+func quad8*(x: uint8): uint32 =
+  ## Quadruple a byte to form a word: 0x12 -> 0x12121212.
+  x.uint32 * 0x01010101
+
+func octup*(x: uint8): uint32 =
+  ## Octuple a nybble to form a word: 0x1 -> 0x11111111
+  x.uint32 * 0x11111111
+
+
+# Bit packing
+# -----------
+
+func bytes2hword*(b0, b1: uint8): uint16 =
+  ## Pack 2 bytes into a word. Little-endian order.
+  b0.uint16 or (b1.uint16 shl 8)
+
+func bytes2word*(b0, b1, b2, b3: uint8): uint32 =
+  ## Pack 4 bytes into a word. Little-endian order.
+  b0.uint32 or (b1.uint32 shl 8) or (b2.uint32 shl 16) or (b3.uint32 shl 24)
+  
+func hword2word*(h0, h1: uint16): uint32 =
+  ## Pack 2 halfwords into a word. Little-endian order.
+  h0.uint32 or (h1.uint32 shl 16)
 
 
 ## Random number generator
@@ -92,4 +176,40 @@ proc pickRandom*[T](arr: ptr UncheckedArray[T], len: SomeInteger): T =
   ## Get a random item from an unchecked array with a given length.
   arr[rand(len-1)]
 
-{.pop.}
+
+# Sector checking
+# ---------------
+
+proc octant*(x, y: int): uint {.importc: "octant", tonc.}
+  ## Get the octant that (`x`, `y`) is in.
+  ## This function divides the circle in 8 parts. The angle starts at the `y=0` line and then moves in the direction
+  ## of the `x=0` line. On the screen, this would be like starting at the 3 o'clock position and moving clockwise.
+
+proc octantRot*(x0, y0: int): uint {.importc: "octant_rot", tonc.}
+  ## Get the rotated octant that (`x`, `y`) is in.
+  ## Like `octant()` but with a twist. The 0-octant starts 22.5° earlier so that 3 o'clock falls in the middle of 
+  ## octant 0, instead of at its start. This can be useful for 8 directional pointing.
+
+
+# Compile-time utils
+# ------------------
+
+template readBin*(path: static string): untyped =
+  ## 
+  ## Read a binary file at compile-time as an array of bytes.
+  ## 
+  ## If assigned to a top-level `let` variable, this data will be placed in ROM.
+  ## 
+  ## e.g.
+  ## 
+  ## .. code-block:: nim
+  ##   
+  ##   let shipPal = readBin("ship.pal.bin")
+  ## 
+  const data = static:
+    const str = staticRead(path)
+    var arr: array[str.len, byte]
+    for i, c in str:
+      arr[i] = c.byte
+    arr
+  data

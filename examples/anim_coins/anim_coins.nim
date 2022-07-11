@@ -15,7 +15,7 @@
 ##   grit coin.png -gB4 -pn16
 ##
 
-import natu/[core, bios, oam, irq, math]
+import natu/[video, oam, bios, irq, math, utils]
 
 {.compile: "coin.s".}
 var coinTiles {.importc: "coinTiles".}: array[128, uint32]
@@ -42,13 +42,13 @@ type
 proc init(c: var Coin) =
   ## Set up a coin object. All properties are randomized.
   c.pos = vec2f(
-    fp(qranRange(0, 224)),
-    fp(qranRange(0, 160))
+    fp(rand(0, 224)),
+    fp(rand(0, 160))
   )
-  c.fallSpeed = qranRange(200, 300).Fixed
-  c.animFrame = qranRange(coinAnimFrames.a, coinAnimFrames.b+1)
-  c.animSpeed = qranRange(4, 8)
-  c.animTimer = qranRange(1, c.animSpeed+1)
+  c.fallSpeed = rand(200, 300).Fixed
+  c.animFrame = rand(coinAnimFrames.a, coinAnimFrames.b+1)
+  c.animSpeed = rand(4, 8)
+  c.animTimer = rand(1, c.animSpeed+1)
 
 proc update(c: var Coin) =
   
@@ -64,7 +64,7 @@ proc update(c: var Coin) =
   c.pos.y += c.fallSpeed
   if c.pos.y > fp(160):
     c.pos.y = fp(-16)
-    c.pos.x = fp(qranRange(0, 224))
+    c.pos.x = fp(rand(0, 224))
 
 
 proc draw(c: var Coin, oid: int) =

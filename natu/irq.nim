@@ -15,7 +15,6 @@
 {.warning[UnusedImport]: off.}
 
 import private/[common, types]
-import ./core
 import ./utils
 
 proc init*()

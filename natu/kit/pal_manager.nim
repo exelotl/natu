@@ -1,5 +1,4 @@
-import natu/core
-from natu/video import clrRed, clrBlack
+import natu/[video, memory, utils]
 
 # Palette buffers
 # ---------------

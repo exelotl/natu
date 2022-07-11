@@ -4,8 +4,83 @@
 
 {.warning[UnusedImport]: off.}
 
-import private/[common, types, core, memmap, memdef, reg]
+import private/[common, types, memmap, memdef, reg]
 import ./math
+import ./utils
+
+export reg   # todo
+
+
+# types
+export
+  Block,
+  Color,
+  ScrEntry,
+  ScrAffEntry,
+  Tile,
+  Tile4,
+  Tile8,
+  ObjAffineSource,
+  BgAffineSource,
+  ObjAffineDest,
+  BgAffineDest,
+  AffSrc,
+  AffSrcEx,
+  AffDst,
+  AffDstEx,
+  BgPoint,
+  Point16,
+  Palbank,
+  Palette,
+  M3Line,
+  M4Line,
+  M5Line,
+  M3Mem,
+  M4Mem,
+  M5Mem,
+  Screenline,
+  ScreenMat,
+  Screenblock,
+  Charblock,
+  Charblock8,
+  UnboundedCharblock,
+  UnboundedCharblock8,
+  `[]`,
+  `[]=`,
+  toArray
+
+
+# Palette
+export
+  bgColorMem,
+  bgPalMem,
+  objColorMem,
+  objPalMem,
+  palBgMem,
+  palObjMem,
+  palBgBank,
+  palObjBank
+
+# VRAM
+export
+  bgTileMem,
+  bgTileMem8,
+  objTileMem,
+  objTileMem8,
+  tileMem,
+  tile8Mem,
+  tileMemObj,
+  tile8MemObj,
+  seMem,
+  seMat,
+  vidMem,
+  m3Mem,
+  m4Mem,
+  m5Mem,
+  vidMemFront,
+  vidMemBack,
+  m4MemBack,
+  m5MemBack
 
 {.compile(toncPath & "/src/tonc_video.c", toncCFlags).}
 {.compile(toncPath & "/src/tonc_bg_affine.c", toncCFlags).}

@@ -1,4 +1,4 @@
-import natu/[core, maxmod]
+import natu/[maxmod, memory]
 
 export vblank, frame, Sample, Module
 
