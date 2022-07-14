@@ -1,6 +1,8 @@
-## Hardware interrupt manager from Tonc (see `the chapter on interrupts <https://www.coranac.com/tonc/text/interrupts.htm>`_).
+## Hardware interrupt manager from [libugba](https://github.com/AntonioND/libugba).
 ## 
-## This module does expose the registers directly, but for most purposes you don't need to
+## Importing this module will automatically enable interrupts.
+## 
+## The registers are exposed directly, but for most purposes you don't need to
 ## worry about them as the IRQ management procs can take care of everything:
 ## 
 ## =================================== ================================================
@@ -69,7 +71,11 @@ var ime* {.importc:"(*(volatile NU8*)(0x4000208))", nodecl.}: bool
   ## Setting this to `false` will disable all interrupts.
   ## 
   ## .. note::
-  ##   Calling `irq.init()` will set this to true.
+  ##   This is automatically set to `true` when the module is initialised, and
+  ##   temporarily set to `false` while one of your handlers is being called.
+  ##   
+  ##   Setting `ime = true` within a handler will allow that handler to be
+  ##   interrupted by another interrupt. i.e. nested interrupts are supported.
 
 var ifbios* {.importc:"(*(volatile NU16*)(0x03FFFFF8))", nodecl.}: set[IrqIndex]
   ## "BIOS Interrupt Flags" register.
