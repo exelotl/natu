@@ -82,6 +82,7 @@ template `/`*[F: FixedT](a, b: F): F = F((raw(a) shl getShift(typeof(a))) div ra
 template `==`*[F: FixedT](a, b: F): bool = (raw(a) == raw(b))
 template `<`*[F: FixedT](a, b: F): bool = (raw(a) < raw(b))
 template `<=`*[F: FixedT](a, b: F): bool = (raw(a) <= raw(b))
+template `+`*[F: FixedT](a: F): F = a
 template `-`*[F: FixedT](a: F): F = F(-raw(a))
 template abs*[F: FixedT](a: F): F = F(abs(raw(a)))
 
@@ -153,7 +154,7 @@ func approach*[T: SomeNumber|FixedT](x: var T, target, step: T) =
   else:
     x = max(x - step, target)
 
-func lerp*[A: SomeInteger|FixedT, F: FixedT](a, b: A; t: F): A =
+func lerp*[A: SomeNumber|FixedT, F: FixedT](a, b: A; t: F): A =
   ## Linear interpolation between `a` and `b` using the weight given by `t`.
   ## 
   ## `t` should be a fixed point value in the range of `0.0 .. 1.0`.
