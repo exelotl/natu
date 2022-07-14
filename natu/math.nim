@@ -128,7 +128,7 @@ func flr*(n: FixedT): int =
   n.int shr getShift(typeof(n))
 
 func ceil*(n: FixedT): int =
-  ## Convert a fixed-point number to an integer, always rounding down.
+  ## Convert a fixed-point number to an integer, always rounding up.
   (n.int + (getScale(typeof(n)) - 1)) shr getShift(typeof(n))
 
 func sgn*(x: FixedT): int =
