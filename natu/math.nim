@@ -127,6 +127,10 @@ func flr*(n: FixedT): int =
   ## Convert a fixed-point number to an integer, always rounding down.
   n.int shr getShift(typeof(n))
 
+func ceil*(n: FixedT): int =
+  ## Convert a fixed-point number to an integer, always rounding down.
+  (n.int + (getScale(typeof(n)) - 1)) shr getShift(typeof(n))
+
 func sgn*(x: FixedT): int =
   ## Get the sign of a fixed-point number.
   ## 
