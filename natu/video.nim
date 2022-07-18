@@ -188,7 +188,7 @@ proc clrRotate*(clrs: ptr Color; nclrs: uint; ror: int) {.importc: "clr_rotate",
 proc clrBlend*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs, alpha: uint32) {.importc: "clr_blend", tonc.}
   ## Blends color arrays `srca` and `srcb` into `dst`.
   ## Specific transitional blending effects can be created by making a 'target' color array
-  ##  with other routines, then using `alpha` to morph into it.
+  ## with other routines, then using `alpha` to morph into it.
   ## 
   ## **Parameters:**
   ## 
@@ -767,16 +767,22 @@ proc setToScaleAndRotation*(bgaff: var BgAffine; affSrc: ptr AffSrc) {.importc: 
 proc premul*(dst: var BgAffine; src: ptr BgAffine) {.importc: "bg_aff_premul", tonc.}
   ## Pre-multiply the matrix `dst` by `src`
   ## 
-  ## i.e. ::
+  ## i.e.
+  ## 
+  ## .. code-block::
+  ## 
   ##   dst = src * dst
   ## 
   ## .. warning::
-  ##    Don't use this on `bgaff`_ registers, as they are write-only.
+  ##    Don't use this on `bgaff <#bgaff>`_ registers, as they are write-only.
 
 proc postmul*(dst: var BgAffine; src: ptr BgAffine) {.importc: "bg_aff_postmul", tonc.}
   ## Post-multiply the matrix `dst` by `src`
   ## 
-  ## i.e. ::
+  ## i.e.
+  ## 
+  ## .. code-block::
+  ## 
   ##   dst = dst * src
   ## 
   ## .. warning::

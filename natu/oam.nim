@@ -107,13 +107,19 @@ proc setToScaleAndRotation*(oaff: var ObjAffine; affSrc: ptr AffSrc) {.importc: 
   ## `as`   Struct with scales and angle.
 
 proc premul*(dst: var ObjAffine, src: ObjAffinePtr) {.importc: "obj_aff_premul", tonc.}
-  ## Pre-multiply the matrix `dst` by `src`
-  ## i.e. ::
+  ## Pre-multiply the matrix `dst` by `src`.
+  ## i.e.
+  ## 
+  ## .. code-block::
+  ## 
   ##   dst = src * dst
 
 proc postmul*(dst: var ObjAffine, src: ObjAffinePtr) {.importc: "obj_aff_postmul", tonc.}
-  ## Post-multiply the matrix `dst` by `src`
-  ## i.e. ::
+  ## Post-multiply the matrix `dst` by `src`.
+  ## i.e.
+  ## 
+  ## .. code-block::
+  ## 
   ##   dst = dst * src
 
 template premul*(dst: var ObjAffine, src: ObjAffine) = preMul(dst, unsafeAddr src)
@@ -225,35 +231,67 @@ func `pal=`*(obj: var ObjAttr; pal: int) = obj.palId = pal
 
 
 template initObj*(args: varargs[untyped]): ObjAttr =
+  ## Create a new ObjAttr value.
+  ## 
+  ## **Example:**
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   objMem[0] = initObj(
+  ##     pos = vec2i(100, 100),
+  ##     size = s32x32,
+  ##     tileId = 0,
+  ##     palId = 3
+  ##   )
   var obj: ObjAttr
   writeFields(obj, args)
   obj
 
 template init*(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
-  ## Initialise an object.
+  ## Initialise an object in-place.
   ## 
   ## Omitted fields will default to zero.
   ## 
   ## **Example:**
   ## 
   ## .. code-block:: nim
-  ##   objMem[0].init:
-  ##     pos = vec2i(100, 100)
-  ##     size = s32x32
-  ##     tileId = 0
+  ## 
+  ##   objMem[0].init(
+  ##     pos = vec2i(100, 100),
+  ##     size = s32x32,
+  ##     tileId = 0,
   ##     palId = 3
+  ##   )
   obj.setAttr(0, 0, 0)
   writeFields(obj, args)
 
 template edit*(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
-  ## Update some fields of an object.
+  ## Change some fields of an object.
   ## 
   ## Like `obj.init`, but omitted fields will be left unchanged.
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   objMem[0].edit(
+  ##     pos = vec2i(100, 100),
+  ##     size = s32x32,
+  ##     tileId = 0,
+  ##     palId = 3
+  ##   )
   ## 
   writeFields(obj, args)
 
 
 template dup*(obj: ObjAttr, args: varargs[untyped]): ObjAttr =
+  ## Duplicate an object, modifying some fields and returning the copy.
+  ## 
+  ## **Example:**
+  ## 
+  ## .. code-block:: nim
+  ##    
+  ##    # Make a copy of Obj 0, but change some properties:
+  ##    objMem[1] = objMem[0].dup(x = 100, hflip = true)
+  ##    
   var tmp = obj
   writeFields(tmp, args)
   tmp

@@ -170,7 +170,7 @@ type
     ## Object attributes. i.e. a sprite.
     ## 
     ## .. note::
-    ##    The `fill` field is padding for the interlace with `ObjAffine`.
+    ##    The `fill` field exists as padding for the interlace with `ObjAffine`.
     ##    It will not be copied when assigning one `ObjAttr` to another.
     attr0* {.importc: "attr0".}: uint16
     attr1* {.importc: "attr1".}: uint16

@@ -87,25 +87,33 @@ var objPalMem* {.importc:"pal_obj_bank", tonc.}: array[16, Palette]
 
 var palBgMem* {.deprecated:"Use bgColorMem instead", importc:"pal_bg_mem", tonc.}: array[256, Color]
   ## Background palette.
-  ## ::
+  ## 
+  ## .. code-block:: nim
+  ## 
   ##   palBgMem[i] = color i
 
 var palObjMem* {.deprecated:"Use objColorMem instead", importc:"pal_obj_mem", tonc.}: array[256, Color]
   ## Object palette.
-  ## ::
+  ## 
+  ## .. code-block:: nim
+  ## 
   ##   palObjMem[i] = color i
 
 {.push warning[Deprecated]: off.}
 
 var palBgBank* {.deprecated:"Use bgPalMem instead", importc:"pal_bg_bank", tonc.}: array[16, Palette]
   ## Background palette matrix.
-  ## ::
+  ## 
+  ## .. code-block:: nim
+  ## 
   ##   palBgBank[i] = bank i
   ##   palBgBank[i][j] = color i*16+j
 
 var palObjBank* {.deprecated:"Use objPalMem instead", importc:"pal_obj_bank", tonc.}: array[16, Palette]
   ## Object palette matrix.
-  ## ::
+  ## 
+  ## .. code-block:: nim
+  ## 
   ##   palObjBank[i] = bank i
   ##   palObjBank[i][j] = color i*16+j
 
@@ -116,19 +124,23 @@ var palObjBank* {.deprecated:"Use objPalMem instead", importc:"pal_obj_bank", to
 var bgTileMem* {.importc:"tile_mem", tonc.}: array[4, UnboundedCharblock]
   ## BG charblocks, 4bpp tiles.
   ## 
-  ## **Note:** While `bgTileMem[0]` has 512 elements, it's valid to reach across
-  ## into the neighbouring charblock, for example `bgTileMem[0][1000]`.
+  ## .. note::
+  ##    While `bgTileMem[0]` has 512 elements, it's valid to reach across
+  ##    into the neighbouring charblock, for example `bgTileMem[0][1000]`.
   ## 
   ## For this reason, no bounds checking is performed on these charblocks even when
   ## compiling with `--checks:on`.
   ## 
-  ## ::
+  ## .. code-block:: nim
+  ## 
   ##   bgTileMem[i]      # charblock i
   ##   bgTileMem[i][j]   # charblock i, tile j
 
 var bgTileMem8* {.importc:"tile8_mem", tonc.}: array[4, UnboundedCharblock8]
   ## BG charblocks, 8bpp tiles.
-  ## ::
+  ## 
+  ## .. code-block:: nim
+  ## 
   ##   bgTileMem8[i]      # charblock i
   ##   bgTileMem8[i][j]   # charblock i, tile j
 
@@ -148,7 +160,9 @@ var objTileMem8* {.importc:"tile8_mem_obj[0]", tonc.}: array[512, Tile8]
 
 var seMem* {.importc:"se_mem", tonc.}: array[32, Screenblock]
   ## Screenblocks as arrays
-  ## ::
+  ## 
+  ## .. code-block:: nim
+  ## 
   ##   seMem[i]       # screenblock i
   ##   seMem[i][j]    # screenblock i, entry j
   ##   seMem[i][x,y]  # screenblock i, entry x + y*32
@@ -156,23 +170,31 @@ var seMem* {.importc:"se_mem", tonc.}: array[32, Screenblock]
 
 var vidMem* {.importc:"vid_mem", tonc.}: array[240*160, Color]
   ## Main mode 3/5 frame as an array
-  ## ::
+  ## 
+  ## .. code-block:: nim
+  ## 
   ##   vidMem[i]    # pixel i
 
 var m3Mem* {.importc:"m3_mem", tonc.}: array[160, M3Line]
   ## Mode 3 frame as a matrix
-  ## ::
+  ## 
+  ## .. code-block:: nim
+  ## 
   ##   m3Mem[y][x]  # pixel (x, y)
 
 var m4Mem* {.importc:"m4_mem", tonc.}: array[160, M4Line]
   ## Mode 4 first page as a matrix
   ## Note: This is a byte-buffer. Not to be used for writing.
-  ## ::
+  ## 
+  ## .. code-block:: nim
+  ## 
   ##   m4Mem[y][x]  # pixel (x, y)
 
 var m5Mem* {.importc:"m5_mem", tonc.}: array[128, M5Line]
   ## Mode 5 first page as a matrix
-  ## ::
+  ## 
+  ## .. code-block:: nim
+  ## 
   ##   m5Mem[y][x]  # pixel (x, y)
 
 var vidMemFront* {.importc:"vid_mem_front", tonc.}: array[160*128, uint16]
@@ -184,12 +206,16 @@ var vidMemBack* {.importc:"vid_mem_back", tonc.}: array[160*128, uint16]
 var m4MemBack* {.importc:"m4_mem_back", tonc.}: array[160, M4Line]
   ## Mode 4 second page as a matrix
   ## This is a byte-buffer. Not to be used for writing.
-  ## ::
+  ## 
+  ## .. code-block:: nim
+  ## 
   ##   m4MemBack[y][x]  = pixel (x, y)          ( u8 )
 
 var m5MemBack* {.importc:"m5_mem_back", tonc.}: array[128, M5Line]
   ## Mode 5 second page as a matrix
-  ## ::
+  ## 
+  ## .. code-block:: nim
+  ## 
   ##   m5MemBack[y][x]  = pixel (x, y)          ( Color )
 
 
@@ -197,12 +223,16 @@ var m5MemBack* {.importc:"m5_mem_back", tonc.}: array[128, M5Line]
 
 var objMem* {.importc:"oam_mem", tonc.}: array[128, ObjAttr]
   ## Object attribute memory
-  ## ::
+  ## 
+  ## .. code-block:: nim
+  ## 
   ##   objMem[i] = object i            (ObjAttr)
 
 var objAffMem* {.importc:"obj_aff_mem", tonc.}: array[32, ObjAffine]
   ## Object affine memory
-  ## ::
+  ## 
+  ## .. code-block:: nim
+  ## 
   ##   objAffMem[i] = object matrix i      ( OBJ_AFFINE )  
 
 

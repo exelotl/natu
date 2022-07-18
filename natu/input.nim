@@ -35,12 +35,16 @@ type
 let keyinput* {.importc:"(*(volatile KeyInput*)(0x04000130))", nodecl.}: KeyInput
   ## Keypad status register (read only).
   ## 
-  ## Usually you don't want to read this directly.
+  ## This can be used to obtain the current state (up or down) of
+  ## all the buttons on the GBA. Note that the state is inverted.
+  ## 
+  ## It is generally preferable to call `keyPoll` and use the various input
+  ## procedures (`keyIsDown` etc.) rather than reading this directly.
 
 var keycnt* {.importc:"(*(volatile KeyCnt*)(0x04000132))", nodecl.}: KeyCnt
   ## Key interrupt control register.
   ## 
-  ## See the `irq <irq.html>`_ module
+  ## See the `irq <irq.html>`_ module for details.
 
 var keyCurrState*: KeyState
   ## The set of keys that are currently down on this frame.
