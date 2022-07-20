@@ -1,18 +1,7 @@
-## Hardware interrupt manager from [libugba](https://github.com/AntonioND/libugba).
+## Hardware interrupt manager from `libugba <https://github.com/AntonioND/libugba>`_.
 ## 
-## Importing this module will automatically enable interrupts.
-## 
-## The registers are exposed directly, but for most purposes you don't need to
-## worry about them as the IRQ management procs can take care of everything:
-## 
-## =================================== ================================================
-## Procedure                           Description
-## =================================== ================================================
-## `irq.enable <#enable,IrqIndex>`_    Enable an interrupt.
-## `irq.put <#put,IrqIndex,FnPtr>`_    Enable an interrupt and register a handler for it.
-## `irq.disable <#disable,IrqIndex>`_  Disable an interrupt.
-## `irq.delete <#delete,IrqIndex>`_    Disable an interrupt and remove its handler.
-## =================================== ================================================
+## .. note::
+##    Importing this module will automatically enable interrupts and register the master :abbr:`ISR (Interrupt Service Routine)`.
 
 {.warning[UnusedImport]: off.}
 
@@ -42,6 +31,8 @@ type
 
 # Register definitions
 # --------------------
+# The registers are exposed directly, but for most purposes you don't need to
+# worry about them as the IRQ management procs can take care of everything.
 
 var ie* {.importc:"(*(volatile NU16*)(0x4000200))", nodecl.}: set[IrqIndex]
   ## "Interrupt Enable" register.
@@ -86,8 +77,8 @@ var ifbios* {.importc:"(*(volatile NU16*)(0x03FFFFF8))", nodecl.}: set[IrqIndex]
   ## .. note::
   ##   The master ISR will take care of this for you.
 
-var `isr`* {.importc:"(*(volatile FnPtr*)(0x03FFFFFC))", nodecl.}: FnPtr
-  ## Contains the address of the master Interrupt Service Routine.
+var isr* {.importc:"(*(volatile FnPtr*)(0x03FFFFFC))", nodecl.}: FnPtr
+  ## Contains the address of the master interrupt service routine.
 
 
 # Interrupt management procedures
@@ -125,12 +116,8 @@ template doDisable(i: IrqIndex) =
   ie.excl(i)
 
 proc init*() =
-  ## Initialize the interrupt manager.
-  ## 
-  ## .. note::
-  ##    This is called automatically as long as the module is imported.
-  ##    
-  ##    You don't usually need to call it yourself.
+  ## Initialize the interrupt manager. This is called automatically if the module is imported.
+  ## You don't usually need to call it yourself.
   ## 
   ime = false
   

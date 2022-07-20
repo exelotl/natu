@@ -238,15 +238,17 @@ var objAffMem* {.importc:"obj_aff_mem", tonc.}: array[32, ObjAffine]
 
 # ROM
 
-const maxRomSize = 0x2000000  # 32MB
-var romMem* {.importc:"rom_mem", tonc.}: array[maxRomSize div sizeof(uint16), uint16]
-  ## ROM pointer
+var romMem* {.importc:"rom_mem", tonc.}: array[0x1000000, uint16]
+  ## Access to ROM as an array of halfwords.
+  ## 
+  ## The max ROM size is ``32MiB``.
 
 # SRAM
 
-const maxSramSize = 0x10000  # 64KB
-var sramMem* {.importc:"sram_mem", tonc.}: array[maxSramSize, uint8]
-  ## SRAM pointer
+var sramMem* {.importc:"sram_mem", tonc.}: array[0x10000, uint8]
+  ## Access to SRAM as an array of bytes.
+  ## 
+  ## This has a maximum size of ``64KiB``, though many carts don't actually have that much available.
 
 # deprecated
 var tileMem* {.deprecated:"Use bgTileMem", importc:"tile_mem", tonc.}: array[6, Charblock]

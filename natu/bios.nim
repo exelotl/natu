@@ -1,10 +1,13 @@
 ## This module exposes the GBA system calls (aka. BIOS functions).
 ## 
-## The function names are `PascalCase` as is the convention used by Tonc, GBATek and others,
-## which also helps to avoid clashing with Nim's reserved keywords such as `div` and `mod`.
+## The function names are `PascalCase` as is the convention used by Tonc,
+## GBATek and others, which also conveniently helps to avoid clashing with
+## Nim's reserved keywords such as `div` and `mod`.
 ## 
 ## .. attention::
-##   These aren't fully documented yet - please refer to `GBATek <https://rust-console.github.io/gbatek-gbaonly/#biosfunctions>`_ in the meantime.
+##   These aren't fully documented yet - please refer to
+##   `GBATek <https://rust-console.github.io/gbatek-gbaonly/#biosfunctions>`_
+##   in the meantime.
 
 import ./private/[types, common]
 
@@ -110,6 +113,12 @@ template swi(n: string) {.pragma.}
 proc SoftReset*() {.swi:"0x00", importc, noreturn.}
 
 proc RegisterRamReset*(flags: ResetFlags) {.swi:"0x01", importc.}
+  ## Performs a selective reset of memory and I/O registers.
+  ## 
+  ## .. note::
+  ##    This also enables the "forced blank" bit of the display control register
+  ##    (:xref:`dispcnt.blank`), which will turn the screen white until you set
+  ##    it to `false`.
 
 # Halt functions
 # --------------
@@ -166,9 +175,9 @@ proc Div*(num, den: int): int {.swi:"0x06", importc.}
   ## den
   ##   Denominator.
   ## 
-  ## Returns num / den
+  ## Returns ``num / den``.
   ## 
-  ## .. note:: Dividing by zero results in an infinite loop. Try `DivSafe <#DivSafe,int,int>`_ instead.
+  ## .. note:: Dividing by zero results in an infinite loop. Try :ref:`DivSafe` instead.
 
 proc DivArm*(den, num: int): int {.swi:"0x07", importc.}
   ## Basic integer division, but with switched arguments.
@@ -181,7 +190,7 @@ proc DivArm*(den, num: int): int {.swi:"0x07", importc.}
   ## num
   ##   Numerator.
   ## 
-  ## Returns `num / den`
+  ## Returns ``num / den``.
   ## 
   ## .. note:: Dividing by 0 results in an infinite loop.
 
@@ -206,17 +215,17 @@ proc ArcTan*(dydx: FixedT[int16,14]): int16 {.swi:"0x09", importc.}
 proc ArcTan2*(x, y: int16): uint16 {.swi:"0x0A", importc.}
   ## Full-circle arctangent of a coordinate pair.
   ## 
-  ## ```
-  ##           +Y
-  ##            │  . (x,y)
-  ##            │ ╱
-  ##            │╱╮θ
-  ## -X ────────┼──────── +X
-  ##            │
-  ##            │
-  ##            │
-  ##           -Y
-  ## ```
+  ## .. code-block:: text
+  ##   
+  ##             +Y
+  ##              │  . (x,y)
+  ##              │ /
+  ##              │/╮θ
+  ##   -X ────────┼──────── +X
+  ##              │
+  ##              │
+  ##              │
+  ##             -Y
   ## 
   ## This calculates the angle between the positive X axis and the point `(x, y)`.
   ## 
@@ -283,8 +292,9 @@ proc BiosChecksum*(): uint32 {.swi:"0x0D", importc:"BiosCheckSum".}
   ## Calculate the checksum of the BIOS.
   ## 
   ## Returns:
-  ## - `0xbaae187f` for GBA / GBA SP / Game Boy Micro / Game Boy Player
-  ## - `0xbaae1880` for DS / DS Lite / DSi / 3DS Family.
+  ## 
+  ## * `0xbaae187f` for GBA / GBA SP / Game Boy Micro / Game Boy Player
+  ## * `0xbaae1880` for DS / DS Lite / DSi / 3DS Family.
 
 
 # Rot/scale functions
@@ -301,15 +311,13 @@ proc ObjAffineSet*(src: ptr ObjAffineSource; dst: pointer; num: int; offset: int
   ## Sets up a simple scale-then-rotate affine transformation.
   ## Uses a single `ObjAffineSource` struct to set up an array of affine
   ## matrices (either BG or Object) with a certain transformation. The
-  ## matrix created is:
+  ## matrix created is::
   ## 
-  ## ```
-  ## ┌───────────┬────────────┐
-  ## | sx·cos(α) | -sx·sin(α) |
-  ## ├───────────┼────────────┤
-  ## | sy·sin(α) | sy·cos(α)  |
-  ## └───────────┴────────────┘
-  ## ```
+  ##   ┌───────────┬────────────┐
+  ##   | sx·cos(α) | -sx·sin(α) |
+  ##   ├───────────┼────────────┤
+  ##   | sy·sin(α) | sy·cos(α)  |
+  ##   └───────────┴────────────┘
   ## 
   ## **Parameters:**
   ##
@@ -398,12 +406,12 @@ proc SoundDriverVSyncOn*() {.swi:"0x29", importc.}
 # You can find these in ``tonc_bios_ex.s``
 
 proc VBlankIntrDelay*(count: uint) {.importc.}
-  ## Wait for `count` frames
+  ## Wait for `count` frames.
 
 proc DivSafe*(num, den: int): int {.importc.}
   ## Divide-by-zero safe division.
   ## 
-  ## The standard `Div <#Div,int,int>`_ hangs when `den == 0`. This version will return `int.high` or `int.low`,
+  ## The standard :ref:`Div` hangs when `den == 0`. This version will return `int.high` or `int.low`,
   ## depending on the sign of `num`.
   ## 
   ## **Parameters:**
@@ -414,7 +422,7 @@ proc DivSafe*(num, den: int): int {.importc.}
   ## den
   ##   Denominator.
   ## 
-  ## Returns `num / den`
+  ## Returns `num / den`.
 
 proc Mod*(num, den: int): int {.importc.}
   ## Modulo: `num % den`.
@@ -423,13 +431,13 @@ proc DivMod*(num, den: int): int {.importc.}
   ## Modulo: `num % den`.
 
 proc DivAbs*(num, den: int): uint {.importc.}
-  ## Absolute value of `num / den`
+  ## Absolute value of `num / den`.
 
 proc DivArmMod*(den, num: int): int {.importc.}
   ## Modulo: `num % den`.
 
 proc DivArmAbs*(den, num: int): uint {.importc.}
-  ## Absolute value of `num / den`
+  ## Absolute value of `num / den`.
 
 proc CpuFastFill*(wd: uint32; dst: pointer; words: uint) {.importc.}
   ## A fast word fill.
@@ -447,4 +455,4 @@ proc CpuFastFill*(wd: uint32; dst: pointer; words: uint) {.importc.}
   ##   Destination address.
   ## 
   ## words
-  ##   Number of words to transfer
+  ##   Number of words to transfer.

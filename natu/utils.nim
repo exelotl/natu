@@ -38,59 +38,75 @@ func logPowerOfTwo*(n: uint): uint =
 
 proc memset16*(dst: pointer, hw: uint16, hwcount: SomeInteger) {.importc: "memset16", tonc.}
   ## Fastfill for halfwords, analogous to memset()
-  ## Uses `memset32()` if `hwcount>5`
-  ## `dst`     Destination address.
-  ## `hw`      Source halfword (not address).
-  ## `hwcount` Number of halfwords to fill.
-  ## Note: `dst` *must* be halfword aligned.
-  ## Note: `r0` returns as `dst + hwcount*2`.
+  ## 
+  ## Uses `memset32()` if `hwcount > 5`
+  ## 
+  ## :dst:     Destination address.
+  ## :hw:      Source halfword (not address).
+  ## :hwcount: Number of halfwords to fill.
+  ## 
+  ## .. note::
+  ##    | `dst` *must* be halfword aligned.
+  ##    | `r0` returns as `dst + hwcount*2`.
 
 proc memcpy16*(dst: pointer, src: pointer, hwcount: SomeInteger) {.importc: "memcpy16", tonc.}
   ## Copy for halfwords.
-  ## Uses `memcpy32()` if `hwn > 6` and `src` and `dst` are aligned equally.
-  ## `dst`     Destination address.
-  ## `src`     Source address.
-  ## `hwcount` Number of halfwords to fill.
-  ## Note: `dst` and `src` *must* be halfword aligned.
-  ## Note: `r0` and `r1` return as `dst + hwcount*2` and `src + hwcount*2`.
+  ## 
+  ## Uses `memcpy32()` if `hwcount > 6` and `src` and `dst` are aligned equally.
+  ## 
+  ## :dst:     Destination address.
+  ## :src:     Source address.
+  ## :hwcount: Number of halfwords to fill.
+  ## 
+  ## .. note::
+  ##    | `dst` and `src` *must* be halfword aligned.
+  ##    | `r0` and `r1` return as `dst + hwcount*2` and `src + hwcount*2`.
 
 proc memset32*(dst: pointer, wd: uint32, wcount: SomeInteger) {.importc: "memset32", tonc.}
   ## Fast-fill by words, analogous to memset()
+  ## 
   ## Like CpuFastSet(), only without the requirement of 32byte chunks and no awkward store-value-in-memory-first issue.
-  ## `dst`     Destination address.
-  ## `wd`      Fill word (not address).
-  ## `wdcount` Number of words to fill.
-  ## Note: `dst` *must* be word aligned.
-  ## Note: `r0` returns as `dst + wdcount*4`.
+  ## 
+  ## :dst:     Destination address.
+  ## :wd:      Fill word (not address).
+  ## :wcount:  Number of words to fill.
+  ## 
+  ## .. note::
+  ##    | `dst` *must* be word aligned.
+  ##    | `r0` returns as `dst + wcount*4`.
 
 proc memcpy32*(dst: pointer, src: pointer, wcount: SomeInteger) {.importc: "memcpy32", tonc.}
   ## Fast-copy by words.
-  ## Like CpuFastFill(), only without the requirement of 32byte chunks
-  ## `dst`     Destination address.
-  ## `src`     Source address.
-  ## `wdcount` Number of words.
-  ## Note: `src` and `dst` *must* be word aligned.
-  ## Note: `r0` and `r1` return as `dst + wdcount*4` and `src + wdcount*4`.
+  ## 
+  ## Like :ref:`CpuFastFill`, only without the requirement of 32byte chunks
+  ## 
+  ## :dst:     Destination address.
+  ## :src:     Source address.
+  ## :wcount:  Number of words.
+  ## 
+  ## .. note ::
+  ##    | `src` and `dst` *must* be word aligned.
+  ##    | `r0` and `r1` return as `dst + wcount*4` and `src + wcount*4`.
 
 
 # Repeated-value creators
 # -----------------------
-# These take a hex-value and duplicate it to all fields, like 0x88 -> 0x88888888.
+# These take a hex-value and duplicate it to all fields, like ``0x88 -> 0x88888888``.
 
 func dup8*(x: uint8): uint16 =
-  ## Duplicate a byte to form a halfword: 0x12 -> 0x1212.
+  ## Duplicate a byte to form a halfword: ``0x12 -> 0x1212``.
   x.uint16 or (x.uint16 shl 8)
 
 func dup16*(x: uint16): uint32 =
-  ## Duplicate a halfword to form a word: 0x1234 -> 0x12341234.
+  ## Duplicate a halfword to form a word: ``0x1234 -> 0x12341234``.
   x.uint32 or (x.uint32 shl 16)
 
 func quad8*(x: uint8): uint32 =
-  ## Quadruple a byte to form a word: 0x12 -> 0x12121212.
+  ## Quadruple a byte to form a word: ``0x12 -> 0x12121212``.
   x.uint32 * 0x01010101
 
 func octup*(x: uint8): uint32 =
-  ## Octuple a nybble to form a word: 0x1 -> 0x11111111
+  ## Octuple a nybble to form a word: ``0x1 -> 0x11111111``
   x.uint32 * 0x11111111
 
 
@@ -128,7 +144,7 @@ var prngState: uint32 = 1979339339
 
 proc seed*(seed: uint32) =
   ## Seed the random number generator.
-  prngState = seed
+  prngState = if seed == 0: (1979339339) else: (seed)
 
 proc rand*(): uint32 =
   ## Get a random 32-bit value.
@@ -186,11 +202,13 @@ proc pickRandom*[T](arr: ptr UncheckedArray[T], len: SomeInteger): T =
 
 proc octant*(x, y: int): uint {.importc: "octant", tonc.}
   ## Get the octant that (`x`, `y`) is in.
+  ## 
   ## This function divides the circle in 8 parts. The angle starts at the `y=0` line and then moves in the direction
   ## of the `x=0` line. On the screen, this would be like starting at the 3 o'clock position and moving clockwise.
 
 proc octantRot*(x0, y0: int): uint {.importc: "octant_rot", tonc.}
   ## Get the rotated octant that (`x`, `y`) is in.
+  ## 
   ## Like `octant()` but with a twist. The 0-octant starts 22.5° earlier so that 3 o'clock falls in the middle of 
   ## octant 0, instead of at its start. This can be useful for 8 directional pointing.
 
