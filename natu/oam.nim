@@ -91,20 +91,23 @@ proc setToShearY*(oaff: var ObjAffine; hy: Fixed) {.importc: "obj_aff_sheary", t
 
 proc setToRotation*(oaff: var ObjAffine; alpha: uint16) {.importc: "obj_aff_rotate", tonc.}
   ## Set obj matrix to counter-clockwise rotation.
-  ## `oaff`  Object affine struct to set.
-  ## `alpha` CCW angle. full-circle is 10000h.
+  ## 
+  ## :oaff:  Object affine struct to set.
+  ## :alpha: CCW angle. full-circle is `0x10000`.
   
 proc setToScaleAndRotation*(oaff: var ObjAffine; sx, sy: Fixed; alpha: uint16) {.importc: "obj_aff_rotscale", tonc.}
   ## Set obj matrix to 2d scaling, then counter-clockwise rotation.
-  ## `oaff`  Object affine struct to set.
-  ## `sx`    Horizontal scale (zoom). .8 fixed point.
-  ## `sy`    Vertical scale (zoom). .8 fixed point.
-  ## `alpha` CCW angle. full-circle is 10000h.
+  ## 
+  ## :oaff:  Object affine struct to set.
+  ## :sx:    Horizontal scale (zoom). .8 fixed point.
+  ## :sy:    Vertical scale (zoom). .8 fixed point.
+  ## :alpha: CCW angle. full-circle is `0x10000`.
 
 proc setToScaleAndRotation*(oaff: var ObjAffine; affSrc: ptr AffSrc) {.importc: "obj_aff_rotscale2", tonc.}
   ## Set obj matrix to 2d scaling, then counter-clockwise rotation.
-  ## `oaff` Object affine struct to set.
-  ## `as`   Struct with scales and angle.
+  ## 
+  ## :oaff: Object affine struct to set.
+  ## :as:   Struct with scales and angle.
 
 proc premul*(dst: var ObjAffine, src: ObjAffinePtr) {.importc: "obj_aff_premul", tonc.}
   ## Pre-multiply the matrix `dst` by `src`.
@@ -128,9 +131,10 @@ template postmul*(dst: var ObjAffine, src: ObjAffine) = postMul(dst, unsafeAddr 
 proc rotscaleEx*(obj: var ObjAttr; oaff: var ObjAffine; asx: ptr AffSrcEx) {.importc: "obj_rotscale_ex", tonc.}
   ## Rot/scale an object around an arbitrary point.
   ## Sets up `obj` and `oaff` for rot/scale transformation around an arbitrary point using the `asx` data.
-  ## `obj`  Object to set.
-  ## `oaff` Object affine data to set.
-  ## `asx`  Affine source data: screen and texture origins, scales and angle.
+  ## 
+  ## :obj:  Object to set.
+  ## :oaff: Object affine data to set.
+  ## :asx:  Affine source data: screen and texture origins, scales and angle.
 
 template rotscaleEx*(obj: var ObjAttr; oaff: var ObjAffine; asx: AffSrcEx) =
   rotscaleEx(obj, oaff, unsafeAddr asx)

@@ -142,11 +142,11 @@ proc IntrWait*(clear: bool; irq: set[IrqIndex]) {.swi:"0x04", importc.}
   ##   Which interrupt(s) to wait for.
 
 proc VBlankIntrWait*() {.swi:"0x05", importc.}
-  ## Wait for the next VBlank.
+  ## Wait for the next VBlank period.
   ## 
   ## This is equivalent to `IntrWait(true, {iiVBlank})`.
   ## 
-  ## This will hang unless the VBlank interrupt is enabled.
+  ## If the VBlank interrupt is not enabled, then this will hang.
   ## 
   ## **Example:**
   ## 
@@ -154,7 +154,6 @@ proc VBlankIntrWait*() {.swi:"0x05", importc.}
   ##    
   ##    import natu/[irq, bios]
   ##    
-  ##    irq.init()
   ##    irq.enable(iiVBlank)
   ##    
   ##    while true:

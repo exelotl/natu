@@ -1,7 +1,7 @@
 ## Hardware interrupt manager from `libugba <https://github.com/AntonioND/libugba>`_.
 ## 
 ## .. note::
-##    Importing this module will automatically enable interrupts and register the master :abbr:`ISR (Interrupt Service Routine)`.
+##    Importing this module will automatically enable interrupts and set up the master :abbr:`ISR (Interrupt Service Routine)`.
 
 {.warning[UnusedImport]: off.}
 
