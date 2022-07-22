@@ -32,9 +32,20 @@ doInclude natuOutputDir & "/graphics.nim"
 # Implementation of useful graphic operations below:
 
 template width*(g: Graphic): int = g.data.w
+  ## The width of the graphic in pixels.
+
 template height*(g: Graphic): int = g.data.h
-template bpp*(g: Graphic): int = g.data.bpp
+  ## The height of the graphic in pixels.
+
 template size*(g: Graphic): ObjSize = g.data.size
+  ## The size value for the graphic, as required by hardware sprites.
+  ## 
+  ## For example a 16x32 sprite will have a size value of `s16x32`.
+
+template bpp*(g: Graphic): int = g.data.bpp
+  ## The number of bits-per-pixel used by the sprite's gfx data.
+  ## 
+  ## This will be either 2, 4 or 8.
 
 const tileWords = (sizeof(Tile4) div sizeof(uint32))
 
