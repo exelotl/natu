@@ -12,8 +12,6 @@
 ## 
 ##    import natu/[irq, timers, mgba]
 ##    
-##    irq.init()
-##    
 ##    proc myHandler() =
 ##      mgba.printf("Bonk!")
 ##    

@@ -60,7 +60,6 @@ proc main() =
   readSave()
   
   # Enable VBlank interrupt so we can wait for the next frame
-  irq.init()
   irq.enable(iiVBlank)
   
   # Show background 0 and sprites
