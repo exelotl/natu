@@ -10,7 +10,143 @@ export FnPtr
 {.pragma: tonc, header: "tonc_core.h".}
 {.pragma: toncinl, header: "tonc_core.h".}  # indicates that the definition is in the header.
 
+proc panic(msg1: cstring; msg2: cstring = nil) {.importc: "natuPanic", noreturn.}
+
 {.push inline.}
+
+# Lists
+# -----
+
+type List*[N:static[int],T] = object
+  ## A list with a max capacity.
+  arr*: array[N, T]
+  len*: int
+
+template rawGet[N,T](list: List[N,T]; i: int): T =
+  cast[ptr UncheckedArray[T]](unsafeaddr list.arr)[i]
+
+template rawPut[N,T](list: var List[N,T]; i: int; val: T) =
+  cast[ptr UncheckedArray[T]](addr list.arr)[i] = val
+
+proc `=destroy`[N,T](list: var List[N,T]) =
+  for i in 0..<list.len:
+    `=destroy`(list.rawGet(i))
+
+when compileOption("boundchecks"):
+  template boundCheck(cond) =
+    if not cond: panic("List bounds exceeded.")
+else:
+  template boundCheck(cond) = discard
+
+proc `[]`*[N,T](list: var List[N,T]; i: int): var T =
+  ## Get the element at the given index (mutable version).
+  boundCheck(i in 0 .. list.len-1)
+  list.rawGet(i)
+
+proc `[]`*[N,T](list: List[N,T]; i: int): T =
+  ## Get the element at the given index.
+  boundCheck(i in 0 .. list.len-1)
+  list.rawGet(i)
+
+proc `[]=`*[N,T](list: var List[N,T]; i: int; val: T) =
+  ## Set the element at the given index to a certain value.
+  boundCheck(i in 0 .. list.len-1)
+  list.rawPut(i)
+
+template cap*[N,T](list: List[N,T]): int =
+  ## The maximum capacity of the list.
+  N
+
+proc add*[N,T](list: var List[N,T]; item: sink T) =
+  boundCheck(list.len < N)
+  list.rawPut list.len, move(item)
+  inc list.len
+
+proc del*[N,T](list: var List[N,T]; i: int) =
+  ## Remove an element by index, putting the last element in its place.
+  boundCheck(i in 0 .. list.len-1)
+  list.rawPut i, move(list.rawGet(list.len-1))
+  dec list.len
+
+proc delete*[N,T](list: var List[N,T]; i: int) =
+  ## Remove an element by index, shifting all other elements down.
+  boundCheck(i in 0 .. list.len-1)
+  let length = list.len
+  for j in i.int..length-2:
+    list.rawPut j, move(list.rawGet(j+1))
+  list.len = length-1
+
+proc insert*[N,T](list: var List[N,T]; item: sink T; i = 0.Natural) =
+  ## Insert an item into the list at the given index, shifting later elements along to make space.
+  boundCheck(list.len < N)
+  boundCheck(i in 0 .. list.len)
+  var j = list.len-1
+  while j >= i:
+    list.rawPut j+1, move(list.rawGet(j))
+    dec j
+  list.rawPut i, move(item)
+  inc list.len
+
+proc clear*[N,T](list: var List[N,T]) =
+  ## Empty the list.
+  for i in 0..<list.len:
+    reset(list.rawGet(i))
+  list.len = 0
+
+proc qcreate*[N,T](list: var List[N,T]): ptr T =
+  ## Increase the length of the list and return a pointer to the new element.
+  ## 
+  ## The new element is uninitialised, so be sure to completely reset it.
+  boundCheck(list.len < N)
+  result = addr list.rawGet(list.len)
+  inc list.len
+
+proc qdel*[N,T](list: var List[N,T]; i: int) =
+  ## Remove an element by index, quicker version.
+  ## 
+  ## The last element won't be deinitialised, so only do this if you know there'll be no resource leakage.
+  boundCheck(i in 0 .. list.len-1)
+  list.rawPut i, list.rawGet(list.len-1)
+  dec list.len
+
+proc qclear*[N,T](list: var List[N,T]) =
+  ## Empty the list, quicker version.
+  ## 
+  ## Elements won't be deinitialised, so only do this if you know there'll be no resource leakage.
+  list.len = 0
+
+proc isFull*[N,T](list: var List[N,T]): bool =
+  ## Returns true if the list is at its maximum capacity.
+  list.len == N
+
+proc contains*[N,T](list: var List[N,T]; val: T): bool =
+  ## Check whether an value exists in the list.
+  for i in 0..<list.len:
+    if list.rawGet(i) == val: return true
+  false
+
+
+iterator items*[N,T](list: List[N,T]): lent T =
+  ## Loop over each element in the list.
+  for i in 0..<list.len:
+    yield list.rawGet(i)
+
+iterator pairs*[N,T](list: List[N,T]): tuple[key: int, val: lent T] =
+  ## Loop over each element in the list along with its index.
+  for i in 0..<list.len:
+    yield (i, list.rawGet(i))
+
+iterator mitems*[N,T](list: var List[N,T]): var T =
+  for i in 0..<list.len:
+    yield list.rawGet(i)
+    
+iterator mpairs*[N,T](list: var List[N,T]): tuple[key: int, val: var T] =
+  for i in 0..<list.len:
+    yield (i, list.rawGet(i))
+
+
+# Memory, math
+# ------------
 
 proc peek*[T](address: ptr T): T =
   ## Read a value directly from some memory location.
