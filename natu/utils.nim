@@ -318,27 +318,19 @@ proc rand*[T:Ordinal](s: Slice[T]): T =
 proc rand*[T:Ordinal](t: typedesc[T]): T =
   ## Get a random value of the given type.
   when T is bool:
-    (rand() and 0b01).bool
+    (rand() and 0b1).bool
   elif T is range or T is enum:
     rand(T.low, T.high)
   else:
     cast[T](rand())
 
-
-proc sample*[T](arr: openArray[T]): T =
+proc pickRandom*[T](arr: openArray[T]): T =
   ## Get a random item from an array.
   arr[rand(arr.len-1)]
 
-proc sample*[T](arr: ptr UncheckedArray[T], len: SomeInteger): T =
+proc pickRandom*[T](arr: ptr UncheckedArray[T], len: SomeInteger): T =
   ## Get a random item from an unchecked array with a given length.
   arr[rand(len-1)]
-
-
-proc pickRandom*[T](arr: openArray[T]): T {.deprecated: "Use `sample` instead.".} =
-  sample(arr)
-
-proc pickRandom*[T](arr: ptr UncheckedArray[T], len: SomeInteger): T {.deprecated: "Use `sample` instead.".} =
-  sample(arr, len)
 
 
 # Sector checking
