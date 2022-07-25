@@ -280,7 +280,7 @@ var prngState: uint32 = 1979339339
 
 proc seed*(seed: uint32) =
   ## Seed the random number generator.
-  prngState = if seed == 0: (1979339339) else: (seed)
+  prngState = if seed == 0: (1979339339'u32) else: (seed)
 
 proc rand*(): uint32 =
   ## Get a random 32-bit value.
