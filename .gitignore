@@ -1,10 +1,6 @@
 .vscode/
 .sync/
 wip/
-docs/
-examples/*/output/
-examples/*/build/
-examples/*/nimcache/
 *.elf
 *.elf.map
 *.gba
