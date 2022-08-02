@@ -31,8 +31,19 @@ type
   
   DispCnt* {.exportc.} = object
     
-    mode* {.bitsize:3.}: DisplayMode
-      ## Video mode. `dm0`, `dm1`, `dm2` are tiled modes; `dm3`, `dm4`, `dm5` are bitmap modes. 
+    mode* {.bitsize:3.}: range[0..5]
+      ## Video mode. `0`, `1`, `2` are tiled modes; `3`, `4`, `5` are bitmap modes. 
+      ## 
+      ## ===== ===============================================================
+      ## Mode  Description
+      ## ===== ===============================================================
+      ## 0     Tile mode: BG0 = text, BG1 = text, BG2 = text,   BG3 = text
+      ## 1     Tile mode: BG0 = text, BG1 = text, BG2 = affine, BG3 = off
+      ## 2     Tile mode: BG0 = off,  BG1 = off,  BG2 = affine, BG3 = affine
+      ## 3     Bitmap mode: 240x160, BGR555 color
+      ## 4     Bitmap mode: 240x160, 256 color palette
+      ## 5     Bitmap mode: 160x128, BGR555 color
+      ## ===== ===============================================================
     
     gb {.bitsize:1.}: bool
       ## True if cartridge is a GBC game. Read-only. 
@@ -77,6 +88,9 @@ proc `layers=`*(dcnt: var DispCnt, layers: DisplayLayers) =
   var v = dcnt as uint32
   v = ((v and not DCNT_LAYER_MASK) or (cast[uint32](layers) shl DCNT_LAYER_SHIFT))
   dcnt = v as DispCnt
+
+converter dmToIntRange*(dm: DisplayMode): range[0..5] {.inline.} =
+  ord(dm)
 
 const allDisplayLayers* = { lBg0, lBg1, lBg2, lBg3, lObj }
 
