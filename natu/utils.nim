@@ -58,6 +58,7 @@ template cap*[N,T](list: List[N,T]): int =
   N
 
 proc add*[N,T](list: var List[N,T]; item: sink T) =
+  ## Add an item to the end of the list.
   boundCheck(list.len < N)
   list.rawPut list.len, move(item)
   inc list.len
@@ -120,7 +121,20 @@ proc isFull*[N,T](list: var List[N,T]): bool =
   list.len == N
 
 proc contains*[N,T](list: var List[N,T]; val: T): bool =
-  ## Check whether an value exists in the list.
+  ## Check whether a value exists in the list.
+  ## 
+  ## This can also be invoked using the `in` or `notin` keywords.
+  ## 
+  ## **Example:**
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##    let n = 123
+  ##    var nums: List[16, int]
+  ##    
+  ##    if n in nums:
+  ##      prinf("123 is in the list.")
+  ## 
   for i in 0..<list.len:
     if list.rawGet(i) == val: return true
   false

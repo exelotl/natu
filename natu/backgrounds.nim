@@ -45,13 +45,8 @@ proc loadTiles*(bg: Background, cbb: range[0..3]) {.inline.} =
   ## 
   ## Copy a background's tile image data into memory.
   ## 
-  ## **Parameters:**
-  ## 
-  ## bg
-  ##   The background asset to use.
-  ## 
-  ## cbb
-  ##   Character Base Block: The tileset will be copied to this location.
+  ## :bg:  The background asset to use.
+  ## :cbb: Character Base Block: The tileset will be copied to this location.
   ## 
   let tileOffset = bg.data.tileOffset.int * (if bg.is8bpp: 2 else: 1)
   memcpy32(addr bgTileMem[cbb][tileOffset], bg.imgDataPtr, bg.data.imgWords)
@@ -62,10 +57,10 @@ proc loadMap*(bg: Background, sbb: range[0..31]) {.inline.} =
   ## 
   ## **Parameters:**
   ## 
-  ## bg
+  ## :bg:
   ##   The background asset to use.
   ## 
-  ## sbb
+  ## :sbb:
   ##   Screen Base Block: The map will be copied to this location.
   ##   If there is more than 1 screenblock of data, it will be copied
   ##   over into the next screenblocks.
@@ -76,13 +71,8 @@ proc loadPal*(bg: Background, palId: range[0..15]) {.inline.} =
   ## 
   ## Copy a background's palette into memory.
   ## 
-  ## **Parameters:**
-  ## 
-  ## bg
-  ##   The background asset to use.
-  ## 
-  ## palId
-  ##   The palette will be copied to this location.
+  ## :bg:    The background asset to use.
+  ## :palId: The palette will be copied to this location in `bgPalBuf`.
   ## 
   memcpy16(addr bgPalBuf[palId], bg.palDataPtr, bg.data.palHalfwords)
 
@@ -95,12 +85,9 @@ template load*(bgcnt: BgCnt; bg: Background) =
   ## 
   ## **Parameters:**
   ## 
-  ## bgcnt
-  ##   A BG control register value which determines
-  ##   where to copy the tiles and map.
-  ## 
-  ## bg
-  ##   The asset to be loaded.
+  ## :bgcnt: A BG control register value which determines
+  ##         where to copy the tiles and map.
+  ## :bg:    The asset to be loaded.
   ## 
   ## **Example:**
   ## 
