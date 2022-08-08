@@ -46,11 +46,12 @@ type
 
 
 proc parseRegions*(regions: string): seq[BgRegion] =
-   for s in regions[2..^2].split("), ("):
-    var layout: string
-    var x1, y1, x2, y2: int
-    doAssert scanf(s, "$w, $i, $i, $i, $i", layout, x1, y1, x2, y2), "Could not parse BgRegion '" & s & "'"
-    result.add (parseEnum[BgRegionLayout](layout), x1, y1, x2, y2)
+  if regions.len > 2:
+    for s in regions[2..^2].split("), ("):
+      var layout: string
+      var x1, y1, x2, y2: int
+      doAssert scanf(s, "$w, $i, $i, $i, $i", layout, x1, y1, x2, y2), "Could not parse BgRegion '" & s & "'"
+      result.add (parseEnum[BgRegionLayout](layout), x1, y1, x2, y2)
 
 proc applyRegion*(bg4: var Bg4, region: BgRegion) =
   
