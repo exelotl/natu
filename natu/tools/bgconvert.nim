@@ -1,4 +1,4 @@
-import strutils, strformat, parseopt, marshal
+import strutils, strformat, parseopt, strscans, algorithm, marshal
 import options, os, times
 import trick
 import ./common
@@ -22,8 +22,12 @@ type
     palOffset: int      ## First palette ID
     tileOffset: int     ## First tile ID
     flags: set[BgFlag]  ## Misc. conversion options
+    regions: seq[BgRegion]
   
   BgData = object
+    # Everything in this object will be serialised (marshalled) and stored in
+    # the generated .c file. When reading the backgrounds it's then compared
+    # to the stored version, and the BG will be regenerated if they differ.
     kind: BgKind
     w, h: int
     imgWords: uint16
@@ -32,7 +36,97 @@ type
     palOffset: uint16
     tileOffset: uint16
     flags: set[BgFlag]
+    regions: seq[BgRegion]
+  
+  BgRegionLayout = enum
+    Chr4c
+    Chr4r
+  
+  BgRegion = (BgRegionLayout, int, int, int, int)
 
+
+proc parseRegions*(regions: string): seq[BgRegion] =
+   for s in regions[2..^2].split("), ("):
+    var layout: string
+    var x1, y1, x2, y2: int
+    doAssert scanf(s, "$w, $i, $i, $i, $i", layout, x1, y1, x2, y2), "Could not parse BgRegion '" & s & "'"
+    result.add (parseEnum[BgRegionLayout](layout), x1, y1, x2, y2)
+
+proc applyRegion*(bg4: var Bg4, region: BgRegion) =
+  
+  # todo: assert region is within bounds of bg4.
+  
+  let (layout, x1, y1, x2, y2) = region
+  let (gx1, gy1, gx2, gy2) = (x1 shr 3, y1 shr 3, x2 shr 3, y2 shr 3)
+  var regionTiles: seq[Tile4]
+  var deleteList: seq[int]
+  var refCount = newSeq[int](bg4.img.len)
+  
+  # Count how many times each tile in the image data is referred to.
+  for se in bg4.map:
+    inc refCount[se.tid]
+  
+  template addTile(x, y: int) =
+    
+    # Decrease the ref count for a tile in the region, and
+    # mark for deletion if nobody else is referring to it.
+    let i = x + y * bg4.w
+    var se = bg4.map[i]
+    let tid = se.tid
+    dec refCount[tid]
+    if refCount[tid] == 0:
+      deleteList.add(tid)
+    
+    # Make a copy of the img data for a tile in the region.
+    var tile = bg4.img[tid]
+    if se.hflip:
+      tile = tile.flipX()
+    if se.vflip:
+      tile = tile.flipY()
+    regionTiles.add(tile)
+  
+  template replaceTileInMap(x, y, startTid, j: int) =
+    let i = x + y * bg4.w
+    var se = bg4.map[i]
+    se.hflip = false
+    se.vflip = false
+    se.tid = startTid + j
+    bg4.map[i] = se
+    bg4.img.add regionTiles[j]
+  
+  case layout
+  of Chr4c:
+    for x in gx1..gx2:
+      for y in gy1..gy2:
+        addTile(x, y)
+  of Chr4r:
+    for y in gy1..gy2:
+      for x in gx1..gx2:
+        addTile(x, y)
+  
+  # Delete tiles from the map and img data.
+  deleteList.sort(Descending)
+  for tid in deleteList:
+    bg4.img.delete(tid)
+    for se in mitems(bg4.map):
+      if se.tid >= tid:
+        se.tid = se.tid - 1
+  
+  let startTid = bg4.img.len
+  
+  case layout
+  of Chr4c:
+    var j = 0
+    for x in gx1..gx2:
+      for y in gy1..gy2:
+        replaceTileInMap(x, y, startTid, j)
+        inc j
+  of Chr4r:
+    var j = 0
+    for y in gy1..gy2:
+      for x in gx1..gx2:
+        replaceTileInMap(x, y, startTid, j)
+        inc j
 
 proc applyOffsets(bg4: var Bg4; flags: set[BgFlag]; palOffset, tileOffset: int) =
   if palOffset > 0:
@@ -96,6 +190,7 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
       palOffset: parseInt(row[2]),
       tileOffset: parseInt(row[3]),
       flags: cast[set[BgFlag]](parseUInt(row[4])),
+      regions: parseRegions(row[5])
     )
     oldestModifiedOut = oldest(oldestModifiedOut, outputBgDir / bgName & ".c")
   
@@ -134,7 +229,11 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
         echo row.pngPath
 
         # convert the BG
-      
+        
+        if row.regions.len > 0:
+          doAssert row.kind == bkReg4bpp,
+            "Regions can only be used with 4bpp backgrounds."
+        
         var w, h: int
         var img, map, pal: string
         
@@ -145,8 +244,14 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
             indexed = (bfAutoPal notin row.flags),
             firstBlank = (bfBlankTile in row.flags),
           )
+          for region in row.regions:
+            bg4.applyRegion(region)
           bg4.applyOffsets(row.flags, row.palOffset, row.tileOffset)
           (w, h) = (bg4.w, bg4.h)
+          
+          if row.regions.len > 0 and bfScreenblock in row.flags:
+            doAssert w == 32, "Regions cannot be used with backgrounds arranged into screenblocks that are wider than 1 screenblock."
+          
           img = bg4.img.toBytes()
           pal = joinPalettes(bg4.pals).toBytes()
           map = if bfScreenblock in row.flags:
@@ -185,6 +290,7 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
           palOffset: row.palOffset.uint16,
           tileOffset: row.tileOffset.uint16,
           flags: row.flags,
+          regions: row.regions,
         )
         withFile bgCPath, fmWrite:
           file.writeBackgroundC(row.name, img, map, pal, data)

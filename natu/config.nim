@@ -213,6 +213,29 @@ type
       ## For 4bpp BGs, attempt to build a set of 16-color palettes from the image.
       ## If this flag is omitted, the PNG's own palette will be strictly followed, and
       ## each 8x8 tile in the image must only refer to colors from a single group of 16.
+  
+  BgRegionLayout* = enum
+    Chr4c
+      ## The tiles in the region are arranged in column-major order,
+      ## 
+      ## e.g::
+      ## 
+      ##    00  04  08  .
+      ##    01  05  09  .
+      ##    02  06  10  .
+      ##    03  07  11
+      ## 
+    Chr4r
+      ## The tiles in the region are arranged in row-major order,
+      ## 
+      ## e.g::
+      ## 
+      ##    00  01  02  03
+      ##    04  05  06  07
+      ##    08  09  10  11
+      ##    . . .
+  
+  BgRegion* = (BgRegionLayout, int, int, int, int)
 
 proc toUInt[T](s: set[T]): uint =
   ## Get internal representation of a (<= 32 bits) set in Nimscript.
@@ -233,10 +256,11 @@ proc readBackgrounds*(script: static string) =
     palOffset = 0,
     tileOffset = 0,
     flags: set[BgFlag] = {},
+    regions: openArray[BgRegion] = @[],
   ) =
     let path = name.absolutePath.relativePath(natuCurrentDir)
     doAssert({'\t', '\n'} notin path, path & " contains invalid characters.")
-    natuBackgrounds.add row(path, kind, palOffset, tileOffset, flags.toUInt())
+    natuBackgrounds.add row(path, kind, palOffset, tileOffset, flags.toUInt(), regions)
   
   doInclude(script)
   cd natuCurrentDir

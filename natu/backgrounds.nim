@@ -21,6 +21,14 @@ type
     palOffset*: uint16
     tileOffset*: uint16
     flags*: set[BgFlag]
+    regions*: seq[BgRegion]
+  
+  BgRegionLayout* = enum
+    Chr4c
+    Chr4r
+  
+  BgRegion* = tuple[layout: BgRegionLayout; x1, y1, x2, y2: int]
+
 
 const natuOutputDir {.strdefine.} = ""
 
@@ -35,6 +43,7 @@ doInclude natuOutputDir & "/backgrounds.nim"
 
 template kind*(bg: Background): BgKind = bg.data.kind
 template flags*(bg: Background): set[BgFlag] = bg.data.flags
+template regions*(bg: Background): seq[BgRegion] = bg.data.regions
 template palOffset*(bg: Background): int = bg.data.palOffset.int
 template tileOffset*(bg: Background): int = bg.data.tileOffset.int
 
