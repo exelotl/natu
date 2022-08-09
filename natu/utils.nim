@@ -346,6 +346,9 @@ proc pickRandom*[T](arr: ptr UncheckedArray[T], len: SomeInteger): T =
   ## Get a random item from an unchecked array with a given length.
   arr[rand(len-1)]
 
+proc pickRandom*[N,T](arr: List[N,T]): T =
+  ## Get a random item from a list.
+  arr[rand(arr.len-1)]
 
 # Sector checking
 # ---------------
