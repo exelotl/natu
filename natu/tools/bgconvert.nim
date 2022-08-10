@@ -26,8 +26,8 @@ type
   
   BgData = object
     # Everything in this object will be serialised (marshalled) and stored in
-    # the generated .c file. When reading the backgrounds it's then compared
-    # to the stored version, and the BG will be regenerated if they differ.
+    # the generated .c file. On the next build, some of these fields will be
+    # compared to the stored ones, and the BG will be regenerated if they differ.
     kind: BgKind
     w, h: int
     imgWords: uint16
@@ -217,12 +217,13 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
           # re-read properties from last time we converted this BG
           withFile bgCPath, fmRead:
             file.setFilePos(3)
-            data = file.readLine().to[:BgData]()
+            data = to[BgData](file.readLine())
             convert =
               row.kind != data.kind or
               row.flags != data.flags or
               row.palOffset != data.palOffset.int or
-              row.tileOffset != data.tileOffset.int
+              row.tileOffset != data.tileOffset.int or
+              row.regions != data.regions
       else:
         convert = true
       
