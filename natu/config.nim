@@ -105,6 +105,7 @@ proc gbaCfg* =
   switch "lineTrace", "off"
   switch "stackTrace", "off"
   switch "excessiveStackTrace", "off"
+  switch "threads", "off"
   switch "cincludes", natuDir/"vendor/libtonc/include"
   switch "cincludes", natuDir/"vendor/maxmod/include"
   
