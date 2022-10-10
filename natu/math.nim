@@ -423,6 +423,9 @@ func `/=`*(a: var Vec2f, n: Fixed|int) =
   a.x = a.x / n
   a.y = a.y / n
 
+func lerp*[A: Vec2i|Vec2f, F: FixedT](a, b: A; t: F): A =
+  result.x = lerp(a.x,b.x,t)
+  result.y = lerp(a.y,b.y,t)
 
 # Additional conversions
 # ----------------------
