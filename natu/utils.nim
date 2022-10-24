@@ -129,11 +129,12 @@ proc contains*[N,T](list: var List[N,T]; val: T): bool =
   ## 
   ## .. code-block:: nim
   ## 
-  ##    let n = 123
-  ##    var nums: List[16, int]
+  ##    var nums: List[10, int]
   ##    
-  ##    if n in nums:
-  ##      prinf("123 is in the list.")
+  ##    # ...
+  ##    
+  ##    if 123 in nums:
+  ##      printf("123 is in the list.")
   ## 
   for i in 0..<list.len:
     if list.rawGet(i) == val: return true
