@@ -37,6 +37,10 @@ template width*(g: Graphic): int = g.data.w
 template height*(g: Graphic): int = g.data.h
   ## The height of the graphic in pixels.
 
+# shorthands
+template w*(g: Graphic): int = g.data.w
+template h*(g: Graphic): int = g.data.h
+
 template size*(g: Graphic): ObjSize = g.data.size
   ## The size value for the graphic, as required by hardware sprites.
   ## 
