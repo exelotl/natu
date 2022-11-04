@@ -276,6 +276,7 @@ func hword2word*(h0, h1: uint16): uint32 =
   ## Pack 2 halfwords into a word. Little-endian order.
   h0.uint32 or (h1.uint32 shl 16)
 
+{.push checks: off.}
 
 ## Random number generator
 ## -----------------------
@@ -310,14 +311,14 @@ proc rand*[T:Fixed|SomeInteger](max: T): T =
   ## 
   ## .. note::
   ##    `max` must be less than `2^16` or `fp(256)`.
-  cast[T](((rand() and 0x7fff) * (cast[uint32](max) + 1)) shr 15)
+  T(((rand() and 0x7fff) * (uint32(max) + 1)) shr 15)
 
 proc rand*[T:Ordinal](a, b: T): T =
   ## Get a random value between `a` and `b` inclusive.
   ## 
   ## .. note::
   ##    `a - b` must be less than `2^16`, to avoid overflow.
-  cast[T](rand(cast[uint32](b) - cast[uint32](a)) + cast[uint32](a))
+  T(rand(uint32(b) - uint32(a)) + uint32(a))
 
 proc rand*[T:Ordinal](s: Slice[T]): T =
   ## Get a random value from a slice.
@@ -350,6 +351,10 @@ proc pickRandom*[T](arr: ptr UncheckedArray[T], len: SomeInteger): T =
 proc pickRandom*[N,T](arr: List[N,T]): T =
   ## Get a random item from a list.
   arr[rand(arr.len-1)]
+
+
+{.pop.} # checks: off
+
 
 # Sector checking
 # ---------------
