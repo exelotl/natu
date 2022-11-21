@@ -177,10 +177,10 @@ proc readGraphics*(script: static string) =
     natuIsSharingPal = false
     inc natuPalCounter
   
-  proc graphic(name: string, size: ObjSize, bpp = 4) =
+  proc graphic(name: string, size: ObjSize, bpp = 4, strictPal = false) =
     let path = name.absolutePath.relativePath(natuCurrentDir)
     doAssert({'\t', '\n'} notin path, path & " contains invalid characters.")
-    natuGraphics.add row(path, size, bpp, natuPalCounter)
+    natuGraphics.add row(path, size, bpp, natuPalCounter, strictPal)
     if not natuIsSharingPal:
       inc natuPalCounter
   

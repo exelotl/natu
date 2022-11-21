@@ -14,6 +14,7 @@ type
     w, h: int
     bpp: GfxBpp
     palNum: int
+    strictPal: bool
   
   GraphicData = object
     ## Data to be output as Nim code
@@ -71,7 +72,8 @@ proc gfxConvert*(tsvPath, script, indir, outdir: string) =
       w: w,
       h: h,
       bpp: parseEnum[GfxBpp](fmt"gfx{row[2]}bpp"),
-      palNum: parseInt(row[3])
+      palNum: parseInt(row[3]),
+      strictPal: parseBool(row[4])
     )
   
   # regenerate the output files if any input files have changed:
@@ -129,7 +131,7 @@ proc gfxConvert*(tsvPath, script, indir, outdir: string) =
         bpp: g.bpp,
         layout: gfxTiles,
       )
-      let data = pngToBin(g.pngPath, info, buildPal=true)
+      let data = pngToBin(g.pngPath, info, if g.strictPal: StrictGrowth else: LaxGrowth)
       
       doAssert(info.width == g.w, "PNG width ({info.width}) should match the graphic width ({g.w}). Spritesheets must be provided as a vertical strip.".fmt)
       
