@@ -182,10 +182,10 @@ func `b=`*(color: var Color, b: int) =
 
 # TODO: Rework color/pal function signatures?
 
-proc clrRotate*(clrs: ptr Color; nclrs: uint; ror: int) {.importc: "clr_rotate", tonc.}
+proc clrRotate*(clrs: ptr Color; nclrs: int; ror: int) {.importc: "clr_rotate", tonc.}
   ## Rotate `nclrs` colors at `clrs` to the right by `ror`.
 
-proc clrBlend*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs, alpha: uint32) {.importc: "clr_blend", tonc.}
+proc clrBlend*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_blend", tonc.}
   ## Blends color arrays `srca` and `srcb` into `dst`.
   ## Specific transitional blending effects can be created by making a 'target' color array
   ## with other routines, then using `alpha` to morph into it.
@@ -207,7 +207,7 @@ proc clrBlend*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs, alpha: u
   ## alpha
   ##   Blend weight (range: 0-32). 0 Means full `srca`
 
-proc clrFade*(src: ptr Color; clr: Color; dst: ptr Color; nclrs, alpha: uint32) {.importc: "clr_fade", tonc.}
+proc clrFade*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_fade", tonc.}
   ## Fades color arrays `srca` to `clr` into `dst`.
   ## 
   ## **Parameters:**
@@ -227,7 +227,7 @@ proc clrFade*(src: ptr Color; clr: Color; dst: ptr Color; nclrs, alpha: uint32) 
   ## alpha
   ##   Blend weight (range: 0-32). 0 Means full `srca`
 
-proc clrGrayscale*(dst: ptr Color; src: ptr Color; nclrs: uint) {.importc: "clr_grayscale", tonc.}
+proc clrGrayscale*(dst: ptr Color; src: ptr Color; nclrs: int) {.importc: "clr_grayscale", tonc.}
   ## Transform colors to grayscale.
   ## 
   ## **Parameters:**
@@ -241,7 +241,7 @@ proc clrGrayscale*(dst: ptr Color; src: ptr Color; nclrs: uint) {.importc: "clr_
   ## nclrs
   ##   Number of colors.
 
-proc clrRgbscale*(dst: ptr Color; src: ptr Color; nclrs: uint; clr: Color) {.importc: "clr_rgbscale", tonc.}
+proc clrRgbscale*(dst: ptr Color; src: ptr Color; nclrs: int; clr: Color) {.importc: "clr_rgbscale", tonc.}
   ## Transform colors to an rgb-scale.
   ## .. note:: `clr` indicates a color vector in RGB-space. Each source color is converted to a brightness value (i.e. grayscale) and then mapped 
   ## onto that color vector. A grayscale is a special case of this, using a color with R=G=B.
@@ -260,7 +260,7 @@ proc clrRgbscale*(dst: ptr Color; src: ptr Color; nclrs: uint; clr: Color) {.imp
   ## clr
   ##   Destination color vector.
 
-proc clrAdjBrightness*(dst: ptr Color; src: ptr Color; nclrs: uint; bright: Fixed) {.importc: "clr_adj_brightness", tonc.}
+proc clrAdjBrightness*(dst: ptr Color; src: ptr Color; nclrs: int; bright: Fixed) {.importc: "clr_adj_brightness", tonc.}
   ## Adjust brightness by `bright`
   ## Operation: `color= color+dB`;
   ## 
@@ -278,7 +278,7 @@ proc clrAdjBrightness*(dst: ptr Color; src: ptr Color; nclrs: uint; bright: Fixe
   ## bright
   ##   Brightness difference, dB (in .8f)
 
-proc clrAdjContrast*(dst: ptr Color; src: ptr Color; nclrs: uint; contrast: Fixed) {.importc: "clr_adj_contrast", tonc.}
+proc clrAdjContrast*(dst: ptr Color; src: ptr Color; nclrs: int; contrast: Fixed) {.importc: "clr_adj_contrast", tonc.}
   ## Adjust contrast by `contrast`
   ## Operation: `color = color*(1+dC) - MAX*dC/2`
   ## 
@@ -296,7 +296,7 @@ proc clrAdjContrast*(dst: ptr Color; src: ptr Color; nclrs: uint; contrast: Fixe
   ## contrast
   ##   Contrast differencem dC (in .8f)
 
-proc clrAdjIntensity*(dst: ptr Color; src: ptr Color; nclrs: uint; intensity: Fixed) {.importc: "clr_adj_intensity", tonc.}
+proc clrAdjIntensity*(dst: ptr Color; src: ptr Color; nclrs: int; intensity: Fixed) {.importc: "clr_adj_intensity", tonc.}
   ## Adjust intensity by `intensity`. 
   ## Operation: `color = (1+dI)*color`.
   ## 
@@ -348,7 +348,7 @@ proc palGradient*(pal: ptr Color; first: int; last: int; clr_first: Color; clr_l
   ## clr_last
   ##   Color of last index.
 
-proc clrBlendFast*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: uint; alpha: uint32) {.importc: "clr_blend_fast", tonc.}
+proc clrBlendFast*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_blend_fast", tonc.}
   ## Blends color arrays `srca` and `srcb` into `dst`.
   ## 
   ## **Parameters:**
@@ -369,7 +369,7 @@ proc clrBlendFast*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: uint
   ##   Blend weight (range: 0-32).
   ## .. note:: Handles 2 colors per loop. Very fast.
 
-proc clrFadeFast*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: uint; alpha: uint32) {.importc: "clr_fade_fast", tonc.}
+proc clrFadeFast*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_fade_fast", tonc.}
   ## Fades color arrays `srca` to `clr` into `dst`.
   ## 
   ## **Parameters:**
