@@ -94,6 +94,7 @@ u16 MSL_AddSampleC( Sample* samp )
 	u32 samp_len;
 	u32 samp_llen;
 	u8 sformat;
+	u8 target_sformat;
 
 	u32 h_filesize;
 	int samp_id;
@@ -113,15 +114,20 @@ u16 MSL_AddSampleC( Sample* samp )
 		read32f( F_SAMP );
 		samp_len = read32f( F_SAMP );
 		samp_llen = read32f( F_SAMP );
-		sformat = read8f( F_SAMP );		/////// BUG! GBA DOESNLT WRITE FORMAT!?
+		sformat = read8f( F_SAMP );
 		skip8f( 3, F_SAMP );
 		if( target_system == SYSTEM_NDS )
 		{
+			target_sformat = sample_dsformat( samp );
 			skip8f(4,F_SAMP);
+		}
+		else
+		{
+			target_sformat = SAMP_FORMAT_U8;
 		}
 
 		samp_match=true;
-		if( samp->sample_length == samp_len && ( samp->loop_type ? samp->loop_end-samp->loop_start : 0xFFFFFFFF ) == samp_llen && sformat == sample_dsformat( samp ) )
+		if( samp->sample_length == samp_len && ( samp->loop_type ? samp->loop_end-samp->loop_start : 0xFFFFFFFF ) == samp_llen && sformat == target_sformat )
 		{
 			// verify sample data
 			if( samp->format & SAMPF_16BIT )
