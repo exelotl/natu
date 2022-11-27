@@ -312,7 +312,7 @@ proc effectEx*(sound: ptr MmSoundEffect): MmSfxHandle {.importc:"mmEffectEx", di
   ## sound
   ##   Sound effect attributes.
 
-proc setVolume*(handle: MmSfxHandle; volume: FixedN[16]) {.importc:"mmEffectVolume".}
+proc setVolume*(handle: MmSfxHandle; volume: FixedN[8]) {.importc:"mmEffectVolume".}
   ## Set the volume of a sound effect.
   ## 
   ## **Parameters:**
@@ -321,7 +321,7 @@ proc setVolume*(handle: MmSfxHandle; volume: FixedN[16]) {.importc:"mmEffectVolu
   ##   Sound effect handle.
   ## 
   ## volume
-  ##   Effect volume ranging from `0.0 ..< 1.0` (underlying value from `0 .. 65535`)
+  ##   Effect volume ranging from `0.0 ..< 1.0` (underlying value from `0 .. 255`)
 
 proc setPanning*(handle: MmSfxHandle; panning: FixedN[8]) {.importc:"mmEffectPanning".}
   ## Set the panning of a sound effect.
