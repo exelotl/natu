@@ -6,18 +6,18 @@ import std/volatile
 
 # To be used with codegenDecl pragma:
 const
-  IWRAM_DATA* = "__attribute__((section(\".iwram\"))) $# $#"    ## Put variable in IWRAM (default).
-  EWRAM_DATA* = "__attribute__((section(\".ewram\"))) $# $#"    ## Put variable in EWRAM.
+  IWRAM_DATA* = "__attribute__((section(\".iwram.data\"))) $# $#"    ## Put variable in IWRAM (default).
+  EWRAM_DATA* = "__attribute__((section(\".ewram.data\"))) $# $#"    ## Put variable in EWRAM.
   EWRAM_BSS* = "__attribute__((section(\".sbss\"))) $# $#"      ## Put non-initialized variable in EWRAM.
-  IWRAM_CODE* = "__attribute__((section(\".iwram\"), target(\"arm\"), long_call)) $# $#$#"  ## Put procedure in IWRAM.
-  EWRAM_CODE* = "__attribute__((section(\".ewram\"), long_call)) $# $#$#"  ## Put procedure in EWRAM.
+  IWRAM_CODE* = "__attribute__((section(\".iwram.text\"), target(\"arm\"), long_call)) $# $#$#"  ## Put procedure in IWRAM.
+  EWRAM_CODE* = "__attribute__((section(\".ewram.text\"), long_call)) $# $#$#"  ## Put procedure in EWRAM.
 
 # Newer alternatives:
 const
-  DataInIwram* = "__attribute__((section(\".data\"))) $# $#"    ## Put variable in IWRAM (default).
-  DataInEwram* = "__attribute__((section(\".sbss\"))) $# $#"    ## Put variable in EWRAM
-  ArmCodeInIwram* = "__attribute__((section(\".iwram\"), target(\"arm\"), long_call)) $# $#$#"      ## Put procedure in IWRAM.
-  ThumbCodeInEwram* = "__attribute__((section(\".ewram\"), target(\"thumb\"), long_call)) $# $#$#"  ## Put procedure in EWRAM.
+  DataInIwram* = "__attribute__((section(\".iwram.data\"))) $# $#"    ## Put variable in IWRAM (default).
+  DataInEwram* = "__attribute__((section(\".ewram.data\"))) $# $#"    ## Put variable in EWRAM
+  ArmCodeInIwram* = "__attribute__((section(\".iwram.text\"), target(\"arm\"), long_call)) $# $#$#"      ## Put procedure in IWRAM.
+  ThumbCodeInEwram* = "__attribute__((section(\".ewram.text\"), target(\"thumb\"), long_call)) $# $#$#"  ## Put procedure in EWRAM.
 
 # ROM
 export romMem
