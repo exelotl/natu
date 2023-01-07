@@ -148,6 +148,10 @@ proc setToShearXInv*(oa: var ObjAffine; hx: Fixed) {.importc: "obj_aff_shearx_in
 
 proc setToShearYInv*(oa: var ObjAffine; hy: Fixed) {.importc: "obj_aff_sheary_inv", tonc.}
 
+proc setToScaleAndRotationInv*(oa: var ObjAffine; wx, wy: Fixed; theta: uint16) {.inline.} =
+  let x = ((1 shl 24) div wx.int) shr 8
+  let y = ((1 shl 24) div wy.int) shr 8
+  setToScaleAndRotation(oa, x.Fixed, y.Fixed, 0'u16 - theta)
 
 # SPRITE GETTERS/SETTERS
 # ----------------------

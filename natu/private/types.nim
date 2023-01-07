@@ -8,11 +8,6 @@ static:
 type
   FnPtr* {.exportc.} = proc () {.nimcall.}    ## Function pointer, used for interrupt handlers etc.
 
-# Note:
-#
-# `DataInEwram` uses the `.sbss` section to avoid section conflicts
-# when used with `ThumbCodeInEwram` in the same file.
-
 type
   FixedT*[T: SomeInteger, N: static int] = distinct T
     ## A fixed-point number based on type `T`, with `N` bits of precision.
