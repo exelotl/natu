@@ -51,7 +51,7 @@ proc `[]`*[N,T](list: List[N,T]; i: int): T =
 proc `[]=`*[N,T](list: var List[N,T]; i: int; val: T) =
   ## Set the element at the given index to a certain value.
   boundCheck(i in 0 .. list.len-1)
-  list.rawPut(i)
+  list.rawPut(i, val)
 
 template cap*[N,T](list: List[N,T]): int =
   ## The maximum capacity of the list.
