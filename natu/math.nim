@@ -307,6 +307,16 @@ func dot*(a, b: Vec2i): int =
   ## Dot product of two vectors
   (a.x * b.x) + (a.y * b.y)
 
+func `shr`*(a: Vec2i, n: int): Vec2i =
+  ## Component-wise bit shift right an integer vector.
+  result.x = a.x shr n
+  result.y = a.y shr n
+
+func `shl`*(a: Vec2i, n: int): Vec2i =
+  ## Component-wise bit shift left an integer vector.
+  result.x = a.x shl n
+  result.y = a.y shl n
+
 func `-`*(a: Vec2i): Vec2i =
   ## Equivalent to a * -1
   vec2i(-a.x, -a.y)
@@ -388,6 +398,16 @@ func `/`*(n: Fixed|int, a: Vec2f): Vec2f =
 func dot*(a, b: Vec2f): Fixed =
   ## Dot product of two fixed-point vectors
   (a.x * b.x) + (a.y * b.y)
+
+func `shr`*(a: Vec2f, n: int): Vec2f =
+  ## Component-wise bit shift right a fixed-point vector.
+  result.x = a.x shr n
+  result.y = a.y shr n
+
+func `shl`*(a: Vec2f, n: int): Vec2f =
+  ## Component-wise bit shift left a fixed-point vector.
+  result.x = a.x shl n
+  result.y = a.y shl n
 
 func `-`*(a: Vec2f): Vec2f =
   ## Equivalent to a * -1
