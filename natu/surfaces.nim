@@ -154,7 +154,6 @@ proc init*(srf: var SurfaceBmp16; data: pointer; width, height: uint) {.inline.}
   ## :data:    Pointer to the surface memory.
   ## :width:   Width of surface.
   ## :height:  Height of surface.
-  ## :pal:     Pointer to the surface's palette.
   init(srf.Surface, srfBmp16, data, width, height, bpp=16, nil)
 
 proc init*(srf: var SurfaceBmp8; data: pointer; width, height: uint; pal: ptr Palette) {.inline.} =

@@ -190,204 +190,103 @@ proc clrBlend*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: int; alp
   ## Specific transitional blending effects can be created by making a 'target' color array
   ## with other routines, then using `alpha` to morph into it.
   ## 
-  ## **Parameters:**
-  ## 
-  ## srca
-  ##   Source array A.
-  ## 
-  ## srcb
-  ##   Source array B
-  ## 
-  ## dst
-  ##   Destination array.
-  ## 
-  ## nclrs
-  ##   Number of colors.
-  ## 
-  ## alpha
-  ##   Blend weight (range: 0-32). 0 Means full `srca`
+  ## :srca: Source array A.
+  ## :srcb: Source array B.
+  ## :dst: Destination array.
+  ## :nclrs: Number of colors.
+  ## :alpha: Blend weight (range: 0-32). 0 Means full `srca`
 
 proc clrFade*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_fade", tonc.}
   ## Fades color arrays `srca` to `clr` into `dst`.
   ## 
-  ## **Parameters:**
-  ## 
-  ## src
-  ##   Source array.
-  ## 
-  ## clr
-  ##   Final color (at alpha=32).
-  ## 
-  ## dst
-  ##   Destination array.
-  ## 
-  ## nclrs
-  ##   Number of colors.
-  ## 
-  ## alpha
-  ##   Blend weight (range: 0-32). 0 Means full `srca`
+  ## :src: Source array.
+  ## :clr: Final color (at alpha=32).
+  ## :dst: Destination array.
+  ## :nclrs: Number of colors.
+  ## :alpha: Blend weight (range: 0-32). 0 Means full `srca`
 
 proc clrGrayscale*(dst: ptr Color; src: ptr Color; nclrs: int) {.importc: "clr_grayscale", tonc.}
   ## Transform colors to grayscale.
   ## 
-  ## **Parameters:**
-  ## 
-  ## dst
-  ##   Destination color array
-  ## 
-  ## src
-  ##   Source color array.
-  ## 
-  ## nclrs
-  ##   Number of colors.
+  ## :dst: Destination color array
+  ## :src: Source color array.
+  ## :nclrs: Number of colors.
 
 proc clrRgbscale*(dst: ptr Color; src: ptr Color; nclrs: int; clr: Color) {.importc: "clr_rgbscale", tonc.}
   ## Transform colors to an rgb-scale.
   ## .. note:: `clr` indicates a color vector in RGB-space. Each source color is converted to a brightness value (i.e. grayscale) and then mapped 
   ## onto that color vector. A grayscale is a special case of this, using a color with R=G=B.
   ## 
-  ## **Parameters:**
-  ## 
-  ## dst
-  ##   Destination color array
-  ## 
-  ## src
-  ##   Source color array.
-  ## 
-  ## nclrs
-  ##   Number of colors.
-  ## 
-  ## clr
-  ##   Destination color vector.
+  ## :dst: Destination color array
+  ## :src: Source color array.
+  ## :nclrs: Number of colors.
+  ## :clr: Destination color vector.
 
 proc clrAdjBrightness*(dst: ptr Color; src: ptr Color; nclrs: int; bright: Fixed) {.importc: "clr_adj_brightness", tonc.}
   ## Adjust brightness by `bright`
   ## Operation: `color= color+dB`;
   ## 
-  ## **Parameters:**
-  ## 
-  ## dst
-  ##   Destination color array
-  ## 
-  ## src
-  ##   Source color array.
-  ## 
-  ## nclrs
-  ##   Number of colors.
-  ## 
-  ## bright
-  ##   Brightness difference, dB (in .8f)
+  ## :dst: Destination color array
+  ## :src: Source color array.
+  ## :nclrs: Number of colors.
+  ## :bright: Brightness difference, dB (in .8f)
 
 proc clrAdjContrast*(dst: ptr Color; src: ptr Color; nclrs: int; contrast: Fixed) {.importc: "clr_adj_contrast", tonc.}
   ## Adjust contrast by `contrast`
   ## Operation: `color = color*(1+dC) - MAX*dC/2`
   ## 
-  ## **Parameters:**
-  ## 
-  ## dst
-  ##   Destination color array
-  ## 
-  ## src
-  ##   Source color array.
-  ## 
-  ## nclrs
-  ##   Number of colors.
-  ## 
-  ## contrast
-  ##   Contrast differencem dC (in .8f)
+  ## :dst: Destination color array
+  ## :src: Source color array.
+  ## :nclrs: Number of colors.
+  ## :contrast: Contrast differencem dC (in .8f)
 
 proc clrAdjIntensity*(dst: ptr Color; src: ptr Color; nclrs: int; intensity: Fixed) {.importc: "clr_adj_intensity", tonc.}
   ## Adjust intensity by `intensity`. 
   ## Operation: `color = (1+dI)*color`.
   ## 
-  ## **Parameters:**
-  ## 
-  ## dst
-  ##   Destination color array
-  ## 
-  ## src
-  ##   Source color array.
-  ## 
-  ## nclrs
-  ##   Number of colors.
-  ## 
-  ## intensity
-  ##   Intensity difference, dI (in .8f)
+  ## :dst: Destination color array
+  ## :src: Source color array.
+  ## :nclrs: Number of colors.
+  ## :intensity: Intensity difference, dI (in .8f)
 
 proc palGradient*(pal: ptr Color; first: int; last: int) {.importc: "pal_gradient", tonc.}
   ## Create a gradient between `pal[first]` and `pal[last]`.
   ## 
-  ## **Parameters:**
-  ## 
-  ## pal
-  ##   Palette to work on.
-  ## 
-  ## first
-  ##   First index of gradient.
-  ## 
-  ## last
-  ##   Last index of gradient.
+  ## :pal: Palette to work on.
+  ## :first: First index of gradient.
+  ## :last: Last index of gradient.
 
-proc palGradient*(pal: ptr Color; first: int; last: int; clr_first: Color; clr_last: Color) {.importc: "pal_gradient_ex", tonc.}
+proc palGradient*(pal: ptr Color; first, last: int; clrFirst, clrLast: Color) {.importc: "pal_gradient_ex", tonc.}
   ## Create a gradient between `pal[first]` and `pal[last]`.
   ## 
-  ## **Parameters:**
-  ## 
-  ## pal
-  ##   Palette to work on.
-  ## 
-  ## first
-  ##   First index of gradient.
-  ## 
-  ## last
-  ##   Last index of gradient.
-  ## 
-  ## clr_first
-  ##   Color of first index.
-  ## 
-  ## clr_last
-  ##   Color of last index.
+  ## :pal: Palette to work on.
+  ## :first: First index of gradient.
+  ## :last: Last index of gradient.
+  ## :clrFirst: Color of first index.
+  ## :clrLast: Color of last index.
 
 proc clrBlendFast*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_blend_fast", tonc.}
   ## Blends color arrays `srca` and `srcb` into `dst`.
   ## 
-  ## **Parameters:**
+  ## This is an ARM assembly routine 
   ## 
-  ## srca
-  ##   Source array A.
+  ## :srca: Source array A.
+  ## :srcb: Source array B.
+  ## :dst: Destination array.
+  ## :nclrs: Number of colors.
+  ## :alpha: Blend weight (range: 0-32).
   ## 
-  ## srcb
-  ##   Source array B
-  ## 
-  ## dst
-  ##   Destination array.
-  ## 
-  ## nclrs
-  ##   Number of colors.
-  ## 
-  ## alpha
-  ##   Blend weight (range: 0-32).
   ## .. note:: Handles 2 colors per loop. Very fast.
 
 proc clrFadeFast*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_fade_fast", tonc.}
   ## Fades color arrays `srca` to `clr` into `dst`.
   ## 
-  ## **Parameters:**
+  ## :src: Source array.
+  ## :clr: Final color (at alpha=32).
+  ## :dst: Destination array.
+  ## :nclrs: Number of colors.
+  ## :alpha: Blend weight (range: 0-32).
   ## 
-  ## src
-  ##   Source array.
-  ## 
-  ## clr
-  ##   Final color (at alpha=32).
-  ## 
-  ## dst
-  ##   Destination array.
-  ## 
-  ## nclrs
-  ##   Number of colors.
-  ## 
-  ## alpha
-  ##   Blend weight (range: 0-32).
   ## .. note:: Handles 2 colors per loop. Very fast.
 
 proc bgIsAffine*(n: int): bool {.importc: "BG_IS_AFFINE", toncinl.}
@@ -485,21 +384,11 @@ proc rect*(m: var M3Mem; left, top, right, bottom: int; clr: Color) =
   ## Draw a colored rectangle in mode 3.
   ## 
   ## **Parameters:**
-  ## 
-  ## left
-  ##   Left side, inclusive.
-  ## 
-  ## top
-  ##   Top size, inclusive.
-  ## 
-  ## right
-  ##   Right size, exclusive.
-  ## 
-  ## bottom
-  ##   Bottom size, exclusive.
-  ## 
-  ## clr
-  ##   Color.
+  ## :left: Left side, inclusive.
+  ## :top: Top size, inclusive.
+  ## :right: Right size, exclusive.
+  ## :bottom: Bottom size, exclusive.
+  ## :clr: Color.
   ## 
   ## .. note::
   ##    The rectangle is normalized, but not clipped.
@@ -508,22 +397,11 @@ proc rect*(m: var M3Mem; left, top, right, bottom: int; clr: Color) =
 proc frame*(m: var M3Mem; left, top, right, bottom: int; clr: Color) =
   ## Draw a colored frame in mode 3.
   ## 
-  ## **Parameters:**
-  ## 
-  ## left
-  ##   Left side, inclusive.
-  ## 
-  ## top
-  ##   Top size, inclusive.
-  ## 
-  ## right
-  ##   Right size, exclusive.
-  ## 
-  ## bottom
-  ##   Bottom size, exclusive.
-  ## 
-  ## clr
-  ##   Color.
+  ## :left: Left side, inclusive.
+  ## :top: Top size, inclusive.
+  ## :right: Right size, exclusive.
+  ## :bottom: Bottom size, exclusive.
+  ## :clr: Color.
   ## 
   ## .. note::
   ##    The rectangle is normalized, but not clipped.
@@ -562,22 +440,11 @@ proc line*(m: var M4Mem; x1, y1, x2, y2: int; clrid: uint8) =
 proc rect*(m: var M4Mem; left, top, right, bottom: int; clrid: uint8) =
   ## Draw a `clrid` colored rectangle in mode 4.
   ## 
-  ## **Parameters:**
-  ## 
-  ## left
-  ##   Left side, inclusive.
-  ## 
-  ## top
-  ##   Top size, inclusive.
-  ## 
-  ## right
-  ##   Right size, exclusive.
-  ## 
-  ## bottom
-  ##   Bottom size, exclusive.
-  ## 
-  ## clrid
-  ##   Color index.
+  ## :left: Left side, inclusive.
+  ## :top: Top size, inclusive.
+  ## :right: Right size, exclusive.
+  ## :bottom: Bottom size, exclusive.
+  ## :clrid: Color index.
   ## 
   ## .. note::
   ##    The rectangle is normalized, but not clipped.
@@ -586,22 +453,11 @@ proc rect*(m: var M4Mem; left, top, right, bottom: int; clrid: uint8) =
 proc frame*(m: var M4Mem; left, top, right, bottom: int; clrid: uint8) =
   ## Draw a `clrid` colored frame in mode 4.
   ## 
-  ## **Parameters:**
-  ## 
-  ## left
-  ##   Left side, inclusive.
-  ## 
-  ## top
-  ##   Top size, inclusive.
-  ## 
-  ## right
-  ##   Right size, exclusive.
-  ## 
-  ## bottom
-  ##   Bottom size, exclusive.
-  ## 
-  ## clrid
-  ##   Color index.
+  ## :left: Left side, inclusive.
+  ## :top: Top size, inclusive.
+  ## :right: Right size, exclusive.
+  ## :bottom: Bottom size, exclusive.
+  ## :clrid: Color index.
   ## 
   ## .. note::
   ##    The rectangle is normalized, but not clipped.
@@ -634,22 +490,11 @@ proc line*(m: var M5Mem; x1, y1, x2, y2: int; clr: Color) =
 proc rect*(m: var M5Mem; left, top, right, bottom: int; clr: Color) =
   ## Draw a colored rectangle in mode 5.
   ## 
-  ## **Parameters:**
-  ## 
-  ## left
-  ##   Left side, inclusive.
-  ## 
-  ## top
-  ##   Top size, inclusive.
-  ## 
-  ## right
-  ##   Right size, exclusive.
-  ## 
-  ## bottom
-  ##   Bottom size, exclusive.
-  ## 
-  ## clr
-  ##   Color.
+  ## :left: Left side, inclusive.
+  ## :top: Top size, inclusive.
+  ## :right: Right size, exclusive.
+  ## :bottom: Bottom size, exclusive.
+  ## :clr: Color.
   ## 
   ## .. note::
   ##    The rectangle is normalized, but not clipped.
@@ -658,22 +503,11 @@ proc rect*(m: var M5Mem; left, top, right, bottom: int; clr: Color) =
 proc frame*(m: var M5Mem; left, top, right, bottom: int; clr: Color) =
   ## Draw a colored frame in mode 5.
   ## 
-  ## **Parameters:**
-  ## 
-  ## left
-  ##   Left side, inclusive.
-  ## 
-  ## top
-  ##   Top size, inclusive.
-  ## 
-  ## right
-  ##   Right size, exclusive.
-  ## 
-  ## bottom
-  ##   Bottom size, exclusive.
-  ## 
-  ## clr
-  ##   Color.
+  ## :left: Left side, inclusive.
+  ## :top: Top size, inclusive.
+  ## :right: Right size, exclusive.
+  ## :bottom: Bottom size, exclusive.
+  ## :clr: Color.
   ## 
   ## .. note::
   ##    The rectangle is normalized, but not clipped.
@@ -728,50 +562,27 @@ proc setToShearY*(bgaff: var BgAffine; hy: Fixed) {.importc: "bg_aff_sheary", to
 proc setToRotation*(bgaff: var BgAffine; alpha: uint16) {.importc: "bg_aff_rotate", tonc.}
   ## Set bg matrix to counter-clockwise rotation.
   ## 
-  ## **Parameters:**
-  ## 
-  ## bgaff
-  ##   BG affine struct to set.
-  ## 
-  ## alpha
-  ##   CCW angle. full-circle is 10000h.
+  ## :bgaff: BG affine struct to set.
+  ## :alpha: CCW angle. full-circle is 10000h.
 
 proc setToScaleAndRotation*(bgaff: var BgAffine; sx, sy: int; alpha: uint16) {.importc: "bg_aff_rotscale", tonc.}
   ## Set bg matrix to 2d scaling, then counter-clockwise rotation.
   ## 
-  ## **Parameters:**
-  ## 
-  ## bgaff
-  ##   BG affine struct to set.
-  ## 
-  ## sx
-  ##   Horizontal scale (zoom). .8 fixed point.
-  ## 
-  ## sy
-  ##   Vertical scale (zoom). .8 fixed point.
-  ## 
-  ## alpha
-  ##   CCW angle. full-circle is 10000h.
+  ## :bgaff: BG affine struct to set.
+  ## :sx:    Horizontal scale (zoom). .8 fixed point.
+  ## :sy:    Vertical scale (zoom). .8 fixed point.
+  ## :alpha: CCW angle. full-circle is 10000h.
 
 proc setToScaleAndRotation*(bgaff: var BgAffine; affSrc: ptr AffSrc) {.importc: "bg_aff_rotscale2", tonc.}
   ## Set bg matrix to 2d scaling, then counter-clockwise rotation.
   ## 
-  ## **Parameters:**
-  ## 
-  ## bgaff
-  ##   BG affine struct to set.
-  ## 
-  ## affSrc
-  ##   Struct with scales and angle.
+  ## :bgaff: BG affine struct to set.
+  ## :affSrc: Struct with scales and angle.
 
 proc premul*(dst: var BgAffine; src: ptr BgAffine) {.importc: "bg_aff_premul", tonc.}
   ## Pre-multiply the matrix `dst` by `src`
   ## 
-  ## i.e.
-  ## 
-  ## .. code-block::
-  ## 
-  ##   dst = src * dst
+  ## i.e. ``dst = src * dst``
   ## 
   ## .. warning::
   ##    Don't use this on `bgaff <#bgaff>`_ registers, as they are write-only.
@@ -779,11 +590,7 @@ proc premul*(dst: var BgAffine; src: ptr BgAffine) {.importc: "bg_aff_premul", t
 proc postmul*(dst: var BgAffine; src: ptr BgAffine) {.importc: "bg_aff_postmul", tonc.}
   ## Post-multiply the matrix `dst` by `src`
   ## 
-  ## i.e.
-  ## 
-  ## .. code-block::
-  ## 
-  ##   dst = dst * src
+  ## i.e. ``dst = dst * src``
   ## 
   ## .. warning::
   ##    Don't use this on `bgaff`_ registers, as they are write-only.
@@ -791,13 +598,8 @@ proc postmul*(dst: var BgAffine; src: ptr BgAffine) {.importc: "bg_aff_postmul",
 proc rotscaleEx*(bgaff: var BgAffine; asx: ptr AffSrcEx) {.importc: "bg_rotscale_ex", tonc.}
   ## Set bg affine matrix to a rot/scale around an arbitrary point.
   ## 
-  ## **Parameters:**
-  ## 
-  ## bgaff
-  ##   BG affine data to set.
-  ## 
-  ## asx
-  ##   Affine source data: screen and texture origins, scales and angle.
+  ## :bgaff: BG affine data to set.
+  ## :asx:   Affine source data: screen and texture origins, scales and angle.
 
 
 # Miscellaneous

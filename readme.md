@@ -28,7 +28,7 @@ For docs and setup instructions go to [natu.exelo.tl](https://natu.exelo.tl)
 
 The examples can be found at [git.sr.ht/~exelotl/natu-examples](https://git.sr.ht/~exelotl/natu-examples)
 
-Happy coding! And if you need any help you can reach me (exelotl) on the [gbadev](https://discord.gg/2WS7bpJ) discord.
+Happy coding! And if you need any help you can reach me (exelotl) on the [gbadev](https://discord.gg/2WS7bpJ) discord, `#natu` irc channel on EFnet, or ask a question on [the natu mailing list](https://lists.sr.ht/~exelotl/natu).
 
 ### Thanks
 

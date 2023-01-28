@@ -230,6 +230,8 @@ proc ArcTan2*(x, y: int16): uint16 {.swi:"0x0A", importc.}
   ## 
   ## The value returned is in the range `0x0000..0xffff` (0 to 2𝜋).
   ## 
+  ## .. warning::
+  ##    In most mathematical libraries the parameters to atan2 are ordered as `y, x`, but here they're `x, y`.
 
 
 # Memory copiers/fillers

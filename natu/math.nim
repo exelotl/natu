@@ -172,32 +172,31 @@ let divLut* {.importc: "div_lut", tonc.}: array[257, int32]
 
 ## TODO: make distinct? Add helper functions such as degrees(FixedT|int)
 type
-  Angle* = uint32  ## 2π = 0x10000 (i.e. angle with 16 bits of resolution)
+  Angle* = uint32
+    ## An angle value, where `0x10000` is equivalent to 2π.
 
 func luSin*(theta: Angle): FixedN[12] {.inline.} =
-  ## Look-up a sine value (2π = 0x10000)
+  ## Look-up a sine value.
   ## 
-  ## `theta` Angle in [0,FFFFh] range
+  ## :theta: An unsigned integer angle, where `0x10000` is a full turn.
   ## 
-  ## Returns  .12f sine value
+  ## Returns a 20.12 fixed-point number between `-1.0` and `1.0`.
   {.nosideeffect.}:
     FixedN[12](sinLut[(theta shr 7) and 0x1ff])
 
 func luCos*(theta: Angle): FixedN[12] {.inline.} =
-  ## Look-up a cosine value (2π = 0x10000)
+  ## Look-up a cosine value.
   ## 
-  ## `theta` Angle in [0,FFFFh] range
+  ## :theta: An unsigned integer angle, where `0x10000` is a full turn.
   ## 
-  ## Returns .12f cosine value
+  ## Returns a 20.12 fixed-point number between `-1.0` and `1.0`.
   {.nosideeffect.}:
     FixedN[12](sinLut[((theta shr 7) + 128) and 0x1ff])
 
 func luDiv*(x: range[0..256]): FixedN[16] {.inline.} =
-  ## Look-up a division value between 0 and 256
+  ## Look-up a division value between 0 and 256.
   ## 
-  ## `x` reciprocal to look up.
-  ## 
-  ## Returns 1/x (.16f)
+  ## Returns `1/x`, represented as a 16.16 fixed point number.
   {.nosideeffect.}:
     FixedN[16](divLut[x])
 
@@ -207,8 +206,17 @@ func luLerp*[A: SomeInteger|FixedT, F: FixedT](lut: openArray[A]; x: F): A {.inl
   ## An LUT (lookup table) is essentially the discrete form of a function, `f(x)`.
   ## You can get values for non-integer `x` via (linear) interpolation between `f(x)` and `f(x+1)`.
   ## 
-  ## `lut`   The LUT to interpolate from.
-  ## `x`     Fixed-point number to interpolate at.
+  ## :lut:   The LUT to interpolate from.
+  ## :x:     Fixed-point number to interpolate at.
+  ## 
+  ## **Example:**
+  ## 
+  ## .. code-block:: nim
+  ##    
+  ##    let myLut* {.importc.}: array[100, int16]  # some array of data.
+  ##    
+  ##    let n: int16 = luLerp(myLut, fp(10.75))    # get a value ¾ between the 10th and 11th entry of `myLut`.
+  ## 
   let xa = x.raw shr getShift(F)
   let ya = lut[xa]
   let yb = lut[xa+1]
