@@ -130,6 +130,12 @@ proc gbaFix*(gbaFile: string) =
     " -c:" & get("natu.gameCode") &
     " -t:" & get("natu.gameTitle").toUpperAscii()
 
+proc printMemInfo*(elfFile: string) =
+  ## Invoke natu info to print out GBA memory usage info about an elf using objdump.
+  echo "-------------------------------"
+  exec natuExe() & " info " & elfFile
+  echo "-------------------------------"
+
 
 # Asset conversion
 # ----------------

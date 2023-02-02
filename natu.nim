@@ -3,7 +3,7 @@ when not isMainModule:
     "Please import natu/[video, input, irq, tte, utils]".}
 
 import parseopt, strutils, strscans
-import natu/tools/[gbafix, gfxconvert, bgconvert, mmconvert]
+import natu/tools/[gbafix, gfxconvert, bgconvert, mmconvert, meminfo]
 
 const version = static:
   var res = "0.0.0"
@@ -27,6 +27,7 @@ Extras:
   natu bgconvert           Generate background data from a .tsv file
   natu mmconvert           Generate maxmod soundbank from a .tsv file
   natu fix <file.gba>      Fix a GBA ROM's header (logo + checksum)
+  natu info <file.elf>     Show how much ROM, IWRAM and EWRAM are in use by a game.
   natu help                Show this dialogue
   natu help <command>      Show help for a specific command
 
@@ -69,5 +70,6 @@ of "gfxconvert": gfxConvert(p, "natu gfxconvert")
 of "bgconvert": bgConvert(p, "natu bgconvert")
 of "mmconvert": mmConvert(p, "natu mmconvert")
 of "fix": gbafix(p, "natu fix")
+of "info": meminfo(p, "natu info")
 of "help": help(p)
 else: quit(helpMsg, 0)
