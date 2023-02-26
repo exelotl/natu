@@ -565,13 +565,13 @@ proc setToRotation*(bgaff: var BgAffine; alpha: uint16) {.importc: "bg_aff_rotat
   ## :bgaff: BG affine struct to set.
   ## :alpha: CCW angle. full-circle is 10000h.
 
-proc setToScaleAndRotation*(bgaff: var BgAffine; sx, sy: int; alpha: uint16) {.importc: "bg_aff_rotscale", tonc.}
+proc setToScaleAndRotation*(bgaff: var BgAffine; sx, sy: Fixed; alpha: uint16) {.importc: "bg_aff_rotscale", tonc.}
   ## Set bg matrix to 2d scaling, then counter-clockwise rotation.
   ## 
   ## :bgaff: BG affine struct to set.
-  ## :sx:    Horizontal scale (zoom). .8 fixed point.
-  ## :sy:    Vertical scale (zoom). .8 fixed point.
-  ## :alpha: CCW angle. full-circle is 10000h.
+  ## :sx:    Horizontal scale (zoom). 24.8 fixed point.
+  ## :sy:    Vertical scale (zoom). 24.8 fixed point.
+  ## :alpha: CCW angle. full-circle is 0x10000.
 
 proc setToScaleAndRotation*(bgaff: var BgAffine; affSrc: ptr AffSrc) {.importc: "bg_aff_rotscale2", tonc.}
   ## Set bg matrix to 2d scaling, then counter-clockwise rotation.
