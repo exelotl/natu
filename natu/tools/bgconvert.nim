@@ -149,6 +149,20 @@ proc applyOffsets(bg8: var Bg8; flags: set[BgFlag]; palOffset, tileOffset: int) 
       if (se.tid > 0) or (bfBlankTile notin flags):
         se.tid = se.tid + tileOffset
 
+proc applyOffsets(bgAff: var BgAff; flags: set[BgFlag]; palOffset, tileOffset: int) =
+  if palOffset > 0:
+    for tile in mitems(bgAff.img):
+      for pixel in mitems(tile):
+        if pixel != 0:
+          pixel += (palOffset * 16).uint8
+  if tileOffset > 0:
+    for id in mitems(bgAff.map):
+      var n = id.int
+      if (n > 0) or (bfBlankTile notin flags):
+        n += tileOffset
+        doAssert(n in 0..255, &"tileOffset of {tileOffset} pushes tile {id} outside the range 0..255")
+      id = n.uint8
+
 proc writeBackgroundC(f: File; name, img, map, pal: string; data: BgData) =
   include "templates/background.c.template"
 
@@ -280,7 +294,17 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
         
         of bkAff:
           doAssert(bfScreenblock notin row.flags, "Affine BGs don't use screenblocks.")
-          raiseAssert("Affine not supported for now.")
+          doAssert(bfAutoPal notin row.flags, "Auto palette reduction is for 4bpp backgrounds only.")
+          
+          var bgAff = loadBgAff(
+            row.pngPath,
+            firstBlank = (bfBlankTile in row.flags),
+          )
+          bgAff.applyOffsets(row.flags, row.palOffset, row.tileOffset)
+          (w, h) = (bgAff.w, bgAff.h)
+          img = bgAff.img.toBytes()
+          pal = bgAff.pal.toBytes()
+          map = bgAff.map.toBytes()
         
         # update and write data
         data = BgData(
