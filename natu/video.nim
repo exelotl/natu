@@ -214,8 +214,9 @@ proc clrGrayscale*(dst: ptr Color; src: ptr Color; nclrs: int) {.importc: "clr_g
 
 proc clrRgbscale*(dst: ptr Color; src: ptr Color; nclrs: int; clr: Color) {.importc: "clr_rgbscale", tonc.}
   ## Transform colors to an rgb-scale.
-  ## .. note:: `clr` indicates a color vector in RGB-space. Each source color is converted to a brightness value (i.e. grayscale) and then mapped 
-  ## onto that color vector. A grayscale is a special case of this, using a color with R=G=B.
+  ## .. note::
+  ##    `clr` indicates a color vector in RGB-space. Each source color is converted to a brightness value (i.e. grayscale)
+  ##    and then mapped onto that color vector. A grayscale is a special case of this, using a color with R=G=B.
   ## 
   ## :dst: Destination color array
   ## :src: Source color array.
@@ -229,7 +230,7 @@ proc clrAdjBrightness*(dst: ptr Color; src: ptr Color; nclrs: int; bright: Fixed
   ## :dst: Destination color array
   ## :src: Source color array.
   ## :nclrs: Number of colors.
-  ## :bright: Brightness difference, dB (in .8f)
+  ## :bright: Brightness difference, dB (in 24.8f)
 
 proc clrAdjContrast*(dst: ptr Color; src: ptr Color; nclrs: int; contrast: Fixed) {.importc: "clr_adj_contrast", tonc.}
   ## Adjust contrast by `contrast`
@@ -238,7 +239,7 @@ proc clrAdjContrast*(dst: ptr Color; src: ptr Color; nclrs: int; contrast: Fixed
   ## :dst: Destination color array
   ## :src: Source color array.
   ## :nclrs: Number of colors.
-  ## :contrast: Contrast differencem dC (in .8f)
+  ## :contrast: Contrast difference, dC (in 24.8f)
 
 proc clrAdjIntensity*(dst: ptr Color; src: ptr Color; nclrs: int; intensity: Fixed) {.importc: "clr_adj_intensity", tonc.}
   ## Adjust intensity by `intensity`. 
@@ -247,7 +248,7 @@ proc clrAdjIntensity*(dst: ptr Color; src: ptr Color; nclrs: int; intensity: Fix
   ## :dst: Destination color array
   ## :src: Source color array.
   ## :nclrs: Number of colors.
-  ## :intensity: Intensity difference, dI (in .8f)
+  ## :intensity: Intensity difference, dI (in 24.8f)
 
 proc palGradient*(pal: ptr Color; first: int; last: int) {.importc: "pal_gradient", tonc.}
   ## Create a gradient between `pal[first]` and `pal[last]`.
@@ -268,15 +269,14 @@ proc palGradient*(pal: ptr Color; first, last: int; clrFirst, clrLast: Color) {.
 proc clrBlendFast*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_blend_fast", tonc.}
   ## Blends color arrays `srca` and `srcb` into `dst`.
   ## 
-  ## This is an ARM assembly routine 
-  ## 
   ## :srca: Source array A.
   ## :srcb: Source array B.
   ## :dst: Destination array.
   ## :nclrs: Number of colors.
   ## :alpha: Blend weight (range: 0-32).
   ## 
-  ## .. note:: Handles 2 colors per loop. Very fast.
+  ## .. note::
+  ##    This is an ARM assembly routine placed in IWRAM, which makes it very fast, but keep in mind that IWRAM is a limited resource.
 
 proc clrFadeFast*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_fade_fast", tonc.}
   ## Fades color arrays `srca` to `clr` into `dst`.
@@ -287,7 +287,8 @@ proc clrFadeFast*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: int; alpha:
   ## :nclrs: Number of colors.
   ## :alpha: Blend weight (range: 0-32).
   ## 
-  ## .. note:: Handles 2 colors per loop. Very fast.
+  ## .. note::
+  ##    This is an ARM assembly routine placed in IWRAM, which makes it very fast, but keep in mind that IWRAM is a limited resource.
 
 proc bgIsAffine*(n: int): bool {.importc: "BG_IS_AFFINE", toncinl.}
 proc bgIsAvailable*(n: int): bool {.importc: "BG_IS_AVAIL", toncinl.}
@@ -563,7 +564,7 @@ proc setToRotation*(bgaff: var BgAffine; alpha: uint16) {.importc: "bg_aff_rotat
   ## Set bg matrix to counter-clockwise rotation.
   ## 
   ## :bgaff: BG affine struct to set.
-  ## :alpha: CCW angle. full-circle is 10000h.
+  ## :alpha: CCW angle. full-circle is 0x10000.
 
 proc setToScaleAndRotation*(bgaff: var BgAffine; sx, sy: Fixed; alpha: uint16) {.importc: "bg_aff_rotscale", tonc.}
   ## Set bg matrix to 2d scaling, then counter-clockwise rotation.
