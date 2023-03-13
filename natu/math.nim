@@ -347,7 +347,7 @@ func `*=`*(a: var Vec2i, b: Vec2i) =
 func `/=`*(a: var Vec2i, b: Vec2i) =
   ## Vector component-wise compound division
   a.x = a.x div b.x
-  a.y = a.x div b.y
+  a.y = a.y div b.y
 
 func `*=`*(a: var Vec2i, n: int) =
   ## Compound scale a vector by n
