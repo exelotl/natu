@@ -1,4 +1,4 @@
 --gc:arc
 --noMain:on
---passC:"""-DPACKAGE_VERSION=\"1.9.0\""""
+--passC:"""-DPACKAGE_VERSION=\"1.10.1\""""
 --passL:"-lm"
