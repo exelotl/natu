@@ -40,6 +40,7 @@ int Load_WAV( Sample* samp, bool verbose, bool fix )
 	unsigned int chunk_code;
 	unsigned int chunk_size;
 	unsigned int num_channels = 0;
+	unsigned int smpl_chunk_pos = 0;
 	
 	if( verbose )
 		printf( "Loading WAV file...\n" );
@@ -166,63 +167,65 @@ int Load_WAV( Sample* samp, bool verbose, bool fix )
 		case 'lpms':	// sampler chunk
 		//------------------------------------------------------------------------------
 		{
-			int pos;
-			skip8( 	4		// manufacturer
-					+4		// product
-					+4		// sample period
-					+4		// midi unity note
-					+4		// midi pitch fraction
-					+4		// smpte format
-					+4		// smpte offset
-					);
-			int num_sample_loops = read32();
-			
-			read32();		// sample data
-			
-			pos = 36;
-			
-			// check for sample looping data
-			if( num_sample_loops )
-			{
-				read32();	// cue point ID
-				int loop_type = read32();
-				pos += 8;
-				
-				if( loop_type < 2 )
-				{
-					// sample    | internal
-					// 0=forward | 1
-					// 1=bidi    | 2
-					samp->loop_type = loop_type + 1;
-					samp->loop_start = read32();
-					samp->loop_end = read32();
-					
-					// clip loop start against sample length
-					if( samp->loop_end > samp->sample_length ) {
-						samp->loop_end = samp->sample_length;
-					}
-					
-					// disable tiny loop
-					// catch invalid loop
-					if( (samp->loop_start > samp->sample_length) ||
-						(samp->loop_end - samp->loop_start < 16) ) {
-						
-						samp->loop_type = 0;
-						samp->loop_start = 0;
-						samp->loop_end = 0;
-					}
-					
-					// ignore fractional
-					// ignore play count
-					pos += 8;
-				}
-			}
-			
-			skip8( chunk_size - pos );
+			smpl_chunk_pos = file_tell_read();
+			skip8( chunk_size );
 			break;
 		}	
 		default:
 			skip8( chunk_size );
+		}
+	}
+	
+	// sampler chunk is processed last because it depends on the sample length being known.
+	if ( smpl_chunk_pos )
+	{
+		file_seek_read( smpl_chunk_pos, SEEK_SET );
+		
+		skip8( 	4		// manufacturer
+				+4		// product
+				+4		// sample period
+				+4		// midi unity note
+				+4		// midi pitch fraction
+				+4		// smpte format
+				+4		// smpte offset
+				);
+		
+		int num_sample_loops = read32();
+		
+		read32();		// sample data
+		
+		// check for sample looping data
+		if( num_sample_loops )
+		{
+			read32();	// cue point ID
+			int loop_type = read32();
+			
+			if( loop_type < 2 )
+			{
+				// sample    | internal
+				// 0=forward | 1
+				// 1=bidi    | 2
+				samp->loop_type = loop_type + 1;
+				samp->loop_start = read32();
+				samp->loop_end = read32();
+				
+				// clip loop start against sample length
+				if( samp->loop_end > samp->sample_length ) {
+					samp->loop_end = samp->sample_length;
+				}
+				
+				// disable tiny loop
+				// catch invalid loop
+				if( (samp->loop_start > samp->sample_length) ||
+					(samp->loop_end - samp->loop_start < 16) ) {
+					samp->loop_type = 0;
+					samp->loop_start = 0;
+					samp->loop_end = 0;
+				}
+				
+				// ignore fractional
+				// ignore play count
+			}
 		}
 	}
 	

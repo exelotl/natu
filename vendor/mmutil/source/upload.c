@@ -24,5 +24,6 @@
 
 void Upload_GBA( char* filename )
 {
+	(void)filename;
 	// todo.........
 }

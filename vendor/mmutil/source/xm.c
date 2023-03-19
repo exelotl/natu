@@ -36,15 +36,15 @@
 #define cho 64
 
 #ifdef SUPER_ASCII
-#define vstr_xm_samp "  %2i   ³   %s%s   ³ %-22s ³\n"
-#define vstr_xm_nosamp  "  --   ³   --   ³ %-22s ³\n"
-#define vstr_xm_div "ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ\n"
+#define vstr_xm_samp "  %2i   â”‚   %s%s   â”‚ %-22s â”‚\n"
+#define vstr_xm_nosamp  "  --   â”‚   --   â”‚ %-22s â”‚\n"
+#define vstr_xm_div "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n"
 #define vstr_xm_patt " \x0e %2i "
-#define vstr_xm_samp_top "ÚÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿\n"
-#define vstr_xm_samp_header "³INDEX³SAMPLES³ENVELOPE³          NAME          ³\n"
-#define vstr_xm_samp_prefix "³%3i  ³"
-#define vstr_xm_samp_slice "ÃÄÄÄÄÄÅÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´\n"
-#define vstr_xm_samp_bottom "ÀÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ\n"
+#define vstr_xm_samp_top "â”Œâ”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”\n"
+#define vstr_xm_samp_header "â”‚INDEXâ”‚SAMPLESâ”‚ENVELOPEâ”‚          NAME          â”‚\n"
+#define vstr_xm_samp_prefix "â”‚%3i  â”‚"
+#define vstr_xm_samp_slice "â”œâ”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤\n"
+#define vstr_xm_samp_bottom "â””â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜\n"
 #else
 #define vstr_xm_samp "  %2i   |   %s%s   | %-22s |\n"
 #define vstr_xm_nosamp "  --   |   --   | %-22s |\n"
