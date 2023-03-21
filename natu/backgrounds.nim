@@ -1,4 +1,4 @@
-import natu/[utils, video]
+import natu/[utils, video, bios]
 import natu/kit/pal_manager
 
 type
@@ -12,6 +12,12 @@ type
     bfBlankTile
     bfAutoPal
   
+  CompressionKind* = enum  # TODO: move this outta here in the future.
+    None
+    # Lz77
+    # Huff
+    Rle
+  
   BgData* = object
     kind*: BgKind
     w*, h*: int
@@ -22,6 +28,8 @@ type
     tileOffset*: uint16
     flags*: set[BgFlag]
     regions*: seq[BgRegion]
+    tileComp*: CompressionKind
+    mapComp*: CompressionKind
   
   BgRegionLayout* = enum
     Chr4c
@@ -46,6 +54,8 @@ template flags*(bg: Background): set[BgFlag] = bg.data.flags
 template regions*(bg: Background): seq[BgRegion] = bg.data.regions
 template palOffset*(bg: Background): int = bg.data.palOffset.int
 template tileOffset*(bg: Background): int = bg.data.tileOffset.int
+template tileComp*(bg: Background): CompressionKind = bg.data.tileComp
+template mapComp*(bg: Background): CompressionKind = bg.data.mapComp
 
 template is8bpp*(bg: Background): bool =
   bg.data.kind in {bkReg8bpp, bkAff}
@@ -58,7 +68,11 @@ proc loadTiles*(bg: Background, cbb: range[0..3]) {.inline.} =
   ## :cbb: Character Base Block: The tileset will be copied to this location.
   ## 
   let tileOffset = bg.data.tileOffset.int * (if bg.is8bpp: 2 else: 1)
-  memcpy32(addr bgTileMem[cbb][tileOffset], bg.imgDataPtr, bg.data.imgWords)
+  case bg.tileComp
+  of None:
+    memcpy32(addr bgTileMem[cbb][tileOffset], bg.imgDataPtr, bg.data.imgWords)
+  of Rle:
+    RLUnCompVram(bg.imgDataPtr, addr bgTileMem[cbb][tileOffset])
 
 proc loadMap*(bg: Background, sbb: range[0..31]) {.inline.} =
   ## 
@@ -74,7 +88,11 @@ proc loadMap*(bg: Background, sbb: range[0..31]) {.inline.} =
   ##   If there is more than 1 screenblock of data, it will be copied
   ##   over into the next screenblocks.
   ## 
-  memcpy32(addr seMem[sbb], bg.mapDataPtr, bg.data.mapWords)
+  case bg.mapComp
+  of None:
+    memcpy32(addr seMem[sbb], bg.mapDataPtr, bg.data.mapWords)
+  of Rle:
+    RLUnCompVram(bg.mapDataPtr, addr seMem[sbb])
 
 proc loadPal*(bg: Background, palId: range[0..15]) {.inline.} =
   ## 

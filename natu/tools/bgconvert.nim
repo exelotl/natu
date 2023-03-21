@@ -14,6 +14,10 @@ type
     bfBlankTile
     bfAutoPal
   
+  CompressionKind = enum
+    None
+    Rle
+  
   BgRow = object
     ## Just the stuff parsed from the tsv
     pngPath: string
@@ -23,6 +27,8 @@ type
     tileOffset: int     ## First tile ID
     flags: set[BgFlag]  ## Misc. conversion options
     regions: seq[BgRegion]
+    tileComp: CompressionKind
+    mapComp: CompressionKind
   
   BgData = object
     # Everything in this object will be serialised (marshalled) and stored in
@@ -37,6 +43,8 @@ type
     tileOffset: uint16
     flags: set[BgFlag]
     regions: seq[BgRegion]
+    tileComp: CompressionKind
+    mapComp: CompressionKind
   
   BgRegionLayout = enum
     Chr4c
@@ -205,7 +213,9 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
       palOffset: parseInt(row[2]),
       tileOffset: parseInt(row[3]),
       flags: cast[set[BgFlag]](parseUInt(row[4])),
-      regions: parseRegions(row[5])
+      regions: parseRegions(row[5]),
+      tileComp: parseEnum[CompressionKind](row[6]),
+      mapComp: parseEnum[CompressionKind](row[7])
     )
     oldestModifiedOut = oldest(oldestModifiedOut, outputBgDir / bgName & ".c")
   
@@ -237,7 +247,9 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
               row.flags != data.flags or
               row.palOffset != data.palOffset.int or
               row.tileOffset != data.tileOffset.int or
-              row.regions != data.regions
+              row.regions != data.regions or
+              row.tileComp != data.tileComp or
+              row.mapComp != data.mapComp
       else:
         convert = true
       
@@ -306,6 +318,15 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
           pal = bgAff.pal.toBytes()
           map = bgAff.map.toBytes()
         
+        # compression
+        case row.tileComp
+        of None: discard
+        of Rle: img = rleCompress(img)
+        
+        case row.mapComp
+        of None: discard
+        of Rle: map = rleCompress(map)
+        
         # update and write data
         data = BgData(
           kind: row.kind,
@@ -317,6 +338,8 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
           tileOffset: row.tileOffset.uint16,
           flags: row.flags,
           regions: row.regions,
+          tileComp: row.tileComp,
+          mapComp: row.mapComp
         )
         withFile bgCPath, fmWrite:
           file.writeBackgroundC(row.name, img, map, pal, data)

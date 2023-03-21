@@ -243,6 +243,10 @@ type
       ##    . . .
   
   BgRegion* = (BgRegionLayout, int, int, int, int)
+  
+  CompressionKind* = enum
+    None
+    Rle
 
 proc toUInt[T](s: set[T]): uint =
   ## Get internal representation of a (<= 32 bits) set in Nimscript.
@@ -264,10 +268,12 @@ proc readBackgrounds*(script: static string) =
     tileOffset = 0,
     flags: set[BgFlag] = {},
     regions: openArray[BgRegion] = @[],
+    tileComp = None,
+    mapComp = None,
   ) =
     let path = name.absolutePath.relativePath(natuCurrentDir)
     doAssert({'\t', '\n'} notin path, path & " contains invalid characters.")
-    natuBackgrounds.add row(path, kind, palOffset, tileOffset, flags.toUInt(), regions)
+    natuBackgrounds.add row(path, kind, palOffset, tileOffset, flags.toUInt(), regions, tileComp, mapComp)
   
   doInclude(script)
   cd natuCurrentDir
