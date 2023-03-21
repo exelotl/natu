@@ -318,15 +318,6 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
           pal = bgAff.pal.toBytes()
           map = bgAff.map.toBytes()
         
-        # compression
-        case row.tileComp
-        of None: discard
-        of Rle: img = rleCompress(img)
-        
-        case row.mapComp
-        of None: discard
-        of Rle: map = rleCompress(map)
-        
         # update and write data
         data = BgData(
           kind: row.kind,
@@ -341,6 +332,24 @@ proc bgConvert*(tsvPath, script, indir, outdir: string) =
           tileComp: row.tileComp,
           mapComp: row.mapComp
         )
+        
+        # compression
+        case row.tileComp
+        of None: discard
+        of Rle:
+          let oldLen = img.len
+          img = rleCompress(img)
+          if img.len >= oldLen:
+            echo "Warning, tile data got bigger."
+        
+        case row.mapComp
+        of None: discard
+        of Rle:
+          let oldLen = map.len
+          map = rleCompress(map)
+          if map.len >= oldLen:
+            echo "Warning, map data got bigger."
+        
         withFile bgCPath, fmWrite:
           file.writeBackgroundC(row.name, img, map, pal, data)
       
