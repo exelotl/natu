@@ -60,23 +60,54 @@ template mapComp*(bg: Background): CompressionKind = bg.data.mapComp
 template is8bpp*(bg: Background): bool =
   bg.data.kind in {bkReg8bpp, bkAff}
 
-proc loadTiles*(bg: Background, cbb: range[0..3]) {.inline.} =
+
+proc loadTiles*(bg: Background; dest: pointer) {.inline.} =
   ## 
-  ## Copy a background's tile image data into memory.
+  ## Copy a background's tile image data to some location in memory.
+  ## 
+  ## :bg:   The background asset to use.
+  ## :dest: The location to copy the tileset to.
+  ## 
+  ## If your BG asset has a tileOffset specified, be sure to add that
+  ## to the destination before calling this.
+  ## 
+  case bg.tileComp
+  of None:
+    memcpy32(dest, bg.imgDataPtr, bg.data.imgWords)
+  of Rle:
+    RLUnCompVram(bg.imgDataPtr, dest)
+
+
+proc loadTiles*(bg: Background; cbb: range[0..3]) {.inline.} =
+  ## 
+  ## Copy a background's tile image data into VRAM.
   ## 
   ## :bg:  The background asset to use.
   ## :cbb: Character Base Block: The tileset will be copied to this location.
   ## 
-  let tileOffset = bg.data.tileOffset.int * (if bg.is8bpp: 2 else: 1)
-  case bg.tileComp
-  of None:
-    memcpy32(addr bgTileMem[cbb][tileOffset], bg.imgDataPtr, bg.data.imgWords)
-  of Rle:
-    RLUnCompVram(bg.imgDataPtr, addr bgTileMem[cbb][tileOffset])
+  let tileOffset = bg.tileOffset * (if bg.is8bpp: 2 else: 1)
+  bg.loadTiles(addr bgTileMem[cbb][tileOffset])
 
-proc loadMap*(bg: Background, sbb: range[0..31]) {.inline.} =
+
+proc loadMap*(bg: Background; dest: pointer) {.inline.} =
   ## 
-  ## Copy a background's map data into memory.
+  ## Copy a background's map data to some location in memory.
+  ## 
+  ## **Parameters:**
+  ## 
+  ## :bg:   The background asset to use.
+  ## :dest: The location to copy the map data to.
+  ## 
+  case bg.mapComp
+  of None:
+    memcpy32(dest, bg.mapDataPtr, bg.data.mapWords)
+  of Rle:
+    RLUnCompVram(bg.mapDataPtr, dest)
+
+
+proc loadMap*(bg: Background; sbb: range[0..31]) {.inline.} =
+  ## 
+  ## Copy a background's map data into VRAM.
   ## 
   ## **Parameters:**
   ## 
@@ -88,15 +119,22 @@ proc loadMap*(bg: Background, sbb: range[0..31]) {.inline.} =
   ##   If there is more than 1 screenblock of data, it will be copied
   ##   over into the next screenblocks.
   ## 
-  case bg.mapComp
-  of None:
-    memcpy32(addr seMem[sbb], bg.mapDataPtr, bg.data.mapWords)
-  of Rle:
-    RLUnCompVram(bg.mapDataPtr, addr seMem[sbb])
+  bg.loadMap(addr seMem[sbb])
 
-proc loadPal*(bg: Background, palId: range[0..15]) {.inline.} =
+
+proc loadPal*(bg: Background; dest: pointer) {.inline.} =
   ## 
-  ## Copy a background's palette into memory.
+  ## Copy a background's palette to some location in memory.
+  ## 
+  ## :bg:   The background asset to use.
+  ## :dest: The location to copy the palette to.
+  ## 
+  memcpy16(dest, bg.palDataPtr, bg.data.palHalfwords)
+
+
+proc loadPal*(bg: Background; palId: range[0..15]) {.inline.} =
+  ## 
+  ## Copy a background's palette into buffered palette memory.
   ## 
   ## :bg:    The background asset to use.
   ## :palId: The palette will be copied to this location in `bgPalBuf`.
