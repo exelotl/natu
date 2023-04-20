@@ -28,6 +28,8 @@ template getScale[T, N](typ: typedesc[FixedT[T,N]]): T = T(1) shl N
 template toFixed*(n: SomeNumber; F: typedesc[FixedT]): untyped =
   ## Convert a number to the fixed-point type `F`.
   F(n * typeof(n)(getScale(F)))
+  # NOTE: a bit of a gotcha here if typeof(n) is smaller than getBaseType(F)
+  # might be best to convert `n` to whichever type has most bits first?
 
 template toFixed*[T,N](n: FixedT; F: typedesc[FixedT[T,N]]): untyped =
   ## Convert from one fixed-point format to another.

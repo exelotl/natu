@@ -140,6 +140,8 @@ proc contains*[N,T](list: var List[N,T]; val: T): bool =
     if list.rawGet(i) == val: return true
   false
 
+template toOpenArray*[N,T](list: List[N,T]): openArray[T] =
+  toOpenArray[T](list.arr, 0, list.len-1)
 
 iterator items*[N,T](list: List[N,T]): lent T =
   ## Loop over each element in the list.
