@@ -128,7 +128,7 @@ proc keyReleased*(k: KeyIndex): bool =
   k in (keyPrevState - keyCurrState)
 
 proc anyKeyHit*(s: KeyState): bool =
-  ## True if any of the given keys are currently down.
+  ## True if any of the given keys were just pressed on this frame.
   s * (keyCurrState - keyPrevState) != {}
 
 

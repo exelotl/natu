@@ -228,7 +228,7 @@ proc resume*() {.importc:"mmResume".}
   ## Resume module playback, pause with `maxmod.pause()`
 
 proc stop*() {.importc:"mmStop".}
-  ## Stop module playback. start again with mmStart().
+  ## Stop module playback. start again with `maxmod.start()`.
 
 proc setPosition*(position: uint) {.importc:"mmPosition".}
   ## Set playback position.
