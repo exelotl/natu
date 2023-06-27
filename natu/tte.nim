@@ -141,7 +141,7 @@ type
     cursorX*: int16                      ## Cursor X-coord.
     cursorY*: int16                      ## Cursor Y-coord.
     font*: Font                          ## Current font.
-    charLut*: ptr UncheckedArray[uint8]  ## Character mapping lut. (if any).
+    charLut*: ptr UncheckedArray[uint8]  ## Character mapping lut. (if any).    
     cattr*: array[4, uint16]             ## ink, shadow, paper and special color attributes.
     
     # Higher-up members
@@ -153,6 +153,7 @@ type
     marginBottom*: uint16
     savedX*: int16
     savedY*: int16
+    lineSpacing*: int16                  ## Extra line spacing
     
     # Callbacks and table pointers
     drawgProc*: FnDrawg                       ## Glyph render procedure.
@@ -311,6 +312,8 @@ proc getPaper*(): uint16 {.importc: "tte_get_paper", toncinl.}
   ## Get paper color attribute.
 proc getSpecial*(): uint16 {.importc: "tte_get_special", toncinl.}
   ## Get special color attribute.
+proc getLineSpacing*(): int16 {.importc: "tte_get_line_spacing", toncinl.}
+  ## Get extra line spacing.
 proc getSurface*(): SurfacePtr {.importc: "tte_get_surface", toncinl.}
   ## Get a pointer to the text surface.
 proc getFont*(): Font {.importc: "tte_get_font", toncinl.}
@@ -338,6 +341,8 @@ proc setPaper*(cattr: uint16) {.importc: "tte_set_paper", toncinl.}
   ## Set paper color attribute.
 proc setSpecial*(cattr: uint16) {.importc: "tte_set_special", toncinl.}
   ## Set special color attribute.
+proc setLineSpacing*(spacing: int16) {.importc: "tte_set_line_spacing", toncinl.}
+  ## Set extra line spacing.
 proc setSurface*(srf: SurfacePtr) {.importc: "tte_set_surface", toncinl.}
   ## Set the text surface.
 proc setFont*(font: Font) {.importc: "tte_set_font", toncinl.}

@@ -316,6 +316,7 @@ typedef struct TTC
 	u16 marginBottom;
 	s16	savedX;
 	s16	savedY;
+	s16 lineSpacing;   //!< Extra line spacing
 	// Callbacks and table pointers
 	fnDrawg	drawgProc;			//!< Glyph render procedure.
 	fnErase	eraseProc;			//!< Text eraser procedure.
@@ -338,13 +339,13 @@ extern TTC *gp_tte_context;
 // --- Main Font data ---
 extern const TFont sys8Font;		//!< System font ' '-127. FWF  8x 8\@1.
 
-extern const TFont verdana9Font;	//!< Verdana 9 ' '-'ÿ'. VWF  8x12\@1.
-extern const TFont verdana9bFont;	//!< Verdana 9 bold ' '-'ÿ'. VWF  8x12\@1.
-extern const TFont verdana9iFont;	//!< Verdana 9 italic ' '-'ÿ'. VWF  8x12\@1.
+extern const TFont verdana9Font;	//!< Verdana 9 ' '-'ï¿½'. VWF  8x12\@1.
+extern const TFont verdana9bFont;	//!< Verdana 9 bold ' '-'ï¿½'. VWF  8x12\@1.
+extern const TFont verdana9iFont;	//!< Verdana 9 italic ' '-'ï¿½'. VWF  8x12\@1.
 
-extern const TFont verdana10Font;	//!< Verdana 10 ' '-'ÿ'. VWF 16x14\@1.
+extern const TFont verdana10Font;	//!< Verdana 10 ' '-'ï¿½'. VWF 16x14\@1.
 		
-extern const TFont verdana9_b4Font;	//!< Verdana 9 ' '-'ÿ'. VWF  8x12\@4.
+extern const TFont verdana9_b4Font;	//!< Verdana 9 ' '-'ï¿½'. VWF  8x12\@4.
 
 
 // --- Extra font data ---
@@ -425,6 +426,7 @@ INLINE u16 tte_get_ink(void);
 INLINE u16 tte_get_shadow(void);
 INLINE u16 tte_get_paper(void);
 INLINE u16 tte_get_special(void);
+INLINE s16 tte_get_line_spacing(void);
 
 INLINE TSurface *tte_get_surface(void);
 INLINE TFont *tte_get_font(void);
@@ -440,6 +442,7 @@ INLINE void tte_set_ink(u16 cattr);
 INLINE void tte_set_shadow(u16 cattr);
 INLINE void tte_set_paper(u16 cattr);
 INLINE void tte_set_special(u16 cattr);
+INLINE void tte_set_line_spacing(s16 spacing);
 
 INLINE void tte_set_surface(const TSurface *srf);
 INLINE void tte_set_font(const TFont *font);
@@ -704,6 +707,15 @@ INLINE u16 tte_get_paper(void)
 //! Get special color attribute.
 INLINE u16 tte_get_special(void)
 {	return tte_get_context()->cattr[TTE_SPECIAL];	}
+
+
+//! Get extra line spacing.
+INLINE s16 tte_get_line_spacing(void)
+{	return tte_get_context()->lineSpacing;	}
+
+//! Set extra line spacing.
+INLINE void tte_set_line_spacing(s16 spacing)
+{	tte_get_context()->lineSpacing= spacing;	}
 
 
 //! Set the character plotter

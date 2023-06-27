@@ -594,7 +594,7 @@ int	tte_write(const char *text)
 				str++;
 			// FALLTHRU
 		case '\n':
-			tc->cursorY += tc->font->charH;
+			tc->cursorY += tc->font->charH + tc->lineSpacing;
 			tc->cursorX  = tc->marginLeft;
 			break;
 		// --- Tab ---
@@ -705,7 +705,7 @@ POINT16 tte_get_text_size(const char *str)
 				str++;
 			// FALLTHRU
 		case '\n':
-			height += charH;
+			height += charH + tc->lineSpacing;
 			if(x > width)
 				width= x;
 			x= 0;
