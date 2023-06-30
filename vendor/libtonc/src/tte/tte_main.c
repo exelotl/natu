@@ -556,7 +556,7 @@ int tte_putc(int ch)
 	
 	if(tc->cursorX+charW > tc->marginRight)
 	{
-		tc->cursorY += font->charH;
+		tc->cursorY += font->charH + tc->lineSpacing;
 		tc->cursorX  = tc->marginLeft;
 	}
 
@@ -627,7 +627,7 @@ int	tte_write(const char *text)
 			int charW= font->widths ? font->widths[gid] : font->charW;
 			if(tc->cursorX+charW > tc->marginRight)
 			{
-				tc->cursorY += font->charH;
+				tc->cursorY += font->charH + tc->lineSpacing;
 				tc->cursorX  = tc->marginLeft;
 			}
 
