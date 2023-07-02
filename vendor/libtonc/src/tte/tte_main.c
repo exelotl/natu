@@ -729,7 +729,7 @@ POINT16 tte_get_text_size(const char *str)
 			charW= tte_get_glyph_width(tte_get_glyph_id(ch));
 			if(x+charW > tc->marginRight)
 			{
-				height += charH;		
+				height += charH + tc->lineSpacing;
 				if(x>width)
 					width= x;
 				x=0;			
