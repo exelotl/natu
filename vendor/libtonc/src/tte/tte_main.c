@@ -726,7 +726,7 @@ POINT16 tte_get_text_size(const char *str)
 			if(ch>=0x80)
 				ch= utf8_decode_char(str-1, &str);
 
-			charW= tc->font->cellW;
+			charW= tte_get_glyph_width(tte_get_glyph_id(ch));
 			if(x+charW > tc->marginRight)
 			{
 				height += charH;		
@@ -735,7 +735,7 @@ POINT16 tte_get_text_size(const char *str)
 				x=0;			
 			}
 			else
-				x += tte_get_glyph_width(tte_get_glyph_id(ch));	
+				x += charW;
 		}
 	}
 
