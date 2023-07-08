@@ -2,10 +2,9 @@
 
 proc natuPanic(msg1: cstring; msg2: cstring = nil) {.importc, noreturn.}
 
-when defined(nimHasExceptionsQuery):
-  const gotoBasedExceptions = compileOption("exceptions", "goto")
-else:
-  const gotoBasedExceptions = false
+const
+  gotoBasedExceptions = compileOption("exceptions", "goto")
+  quirkyExceptions = compileOption("exceptions", "quirky")
 
 template sysFatal(exceptn: typedesc, message: string|cstring) =
   when nimvm:
