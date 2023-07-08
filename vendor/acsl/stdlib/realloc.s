@@ -63,12 +63,15 @@ realloc:	cmp	r0,0
 		str	r1,[r0]
 		adds	r0,r1		@ point to end of new block
 		subs	r1,r2,r1	@ deallocate (oldsize - newsize) bytes
-		bl	acsl_FreeMem
+		
+		ldr	r2,=acsl_FreeMem	@ Prepare to call ARM subroutine
+		bl	bxr2			@ Call R2
 
 		pop	{r0,r1}		@ return the same chunk
 		bx	r1
 
 bxlr:		bx	lr
+bxr2:		bx	r2
 
 reallocFail:	ldr	r1,=errno
 		ldr	r0,=ENOMEM
