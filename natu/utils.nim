@@ -28,9 +28,10 @@ template rawGet[N,T](list: List[N,T]; i: int): T =
 template rawPut[N,T](list: var List[N,T]; i: int; val: T) =
   cast[ptr UncheckedArray[T]](addr list.arr)[i] = val
 
-proc `=destroy`[N,T](list: var List[N,T]) =
-  for i in 0..<list.len:
-    `=destroy`(list.rawGet(i))
+proc `=destroy`[N,T](list: List[N,T]) =
+  {.cast(raises: []).}:  # compiler complains if you don't have this?
+    for i in 0..<list.len:
+      `=destroy`(list.rawGet(i))
 
 when compileOption("boundchecks"):
   template boundCheck(cond) =
