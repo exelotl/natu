@@ -1,0 +1,9 @@
+*.[chsS] text eol=auto
+*.ld	text eol=auto
+*.py	text eol=auto
+*.lua	text eol=auto
+*.md	text eol=auto
+Makefile text eol=auto
+*.bin	binary
+*.gba	binary
+*.elf	binary
