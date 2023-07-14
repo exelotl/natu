@@ -78,8 +78,8 @@ fillBytes:	adds	r2,4
 		bxeq	lr
 
 		subs	r2,2
-epilogue:	strhsh	r1,[r12],2
-1:		strneb	r1,[r12]
+epilogue:	strhhs	r1,[r12],2
+1:		strbne	r1,[r12]
 		bx	lr
 
 		.ltorg
