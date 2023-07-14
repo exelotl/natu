@@ -23,7 +23,7 @@ typedef unsigned size_t;
 typedef int ptrdiff_t;
 typedef unsigned wchar_t; /* per the GNU EABI */
 
-#define NULL (0)
+#define NULL (void*)0
 #define offsetof(t,m) ((size_t)&(((t*)0)->m))
 
 
