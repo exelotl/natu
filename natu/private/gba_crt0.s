@@ -83,9 +83,9 @@ start_vector:
     ldr     r2, =__EWRAM_SIZE__
     bl      mem_copy
 
-    // Global constructors
-    ldr     r2, =__libc_init_array
-    bl      blx_r2_trampoline
+    // Global constructors - commented out because this isn't a thing in ACSL.
+    @ ldr     r2, =__libc_init_array
+    @ bl      blx_r2_trampoline
 
     // Call main()
     mov     r0, #0 // int argc
@@ -94,8 +94,8 @@ start_vector:
     bl      blx_r2_trampoline
 
     // Global destructors
-    ldr     r2, =__libc_fini_array
-    bl      blx_r2_trampoline
+    @ ldr     r2, =__libc_fini_array
+    @ bl      blx_r2_trampoline
 
     // If main() returns, reboot the GBA using SoftReset
     swi     #0x00

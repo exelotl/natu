@@ -58,7 +58,7 @@ proc gbaCfg* =
     put "natu.ldflags.script", "-T " & natuDir & "/natu/private/gba_cart.ld"
   
   if not exists("natu.ldflags.specs"):
-    put "natu.ldflags.specs", "-lnosys -Wl,--gc-sections"  # you could potentially pass a specs file here instead
+    put "natu.ldflags.specs", "-nostdlib -lgcc -lnosys -Wl,--gc-sections"  # you could potentially pass a specs file here instead
   
   if not exists("natu.ldflags.target"):
     put "natu.ldflags.target", get("natu.cflags.target")
@@ -108,6 +108,7 @@ proc gbaCfg* =
   switch "threads", "off"
   switch "cincludes", natuDir/"vendor/libtonc/include"
   switch "cincludes", natuDir/"vendor/maxmod/include"
+  switch "cincludes", natuDir/"vendor/acsl/include"
   
   # Natu panic handler
   switch "import", natuDir/"natu/private/essentials"
