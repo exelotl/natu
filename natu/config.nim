@@ -14,6 +14,7 @@ put "natu.cflags.target", "-mthumb -mthumb-interwork"
 put "natu.cflags.cpu", "-mcpu=arm7tdmi"
 put "natu.cflags.perf", "-O2 -ffast-math"
 put "natu.cflags.debug", "-g"
+put "natu.cflags.stdlib", "-nostdinc -isystem " & natuDir / "vendor/acsl/include"
 
 # silence some warnings that may occur in the generated C code,
 # but are out of your control.
@@ -58,7 +59,7 @@ proc gbaCfg* =
     put "natu.ldflags.script", "-T " & natuDir & "/natu/private/gba_cart.ld"
   
   if not exists("natu.ldflags.specs"):
-    put "natu.ldflags.specs", "-nostdlib -lgcc -lnosys -Wl,--gc-sections"  # you could potentially pass a specs file here instead
+    put "natu.ldflags.specs", "-nostdlib -lgcc -Wl,--gc-sections"  # you could potentially pass a specs file here instead
   
   if not exists("natu.ldflags.target"):
     put "natu.ldflags.target", get("natu.cflags.target")
@@ -75,6 +76,7 @@ proc gbaCfg* =
     put "natu.ldflags.map", "-Wl,-Map," & name & ".map"
   
   let cflags = [
+    get("natu.cflags.stdlib"),
     get("natu.cflags.target"),
     get("natu.cflags.cpu"),
     get("natu.cflags.debug"),
@@ -108,7 +110,6 @@ proc gbaCfg* =
   switch "threads", "off"
   switch "cincludes", natuDir/"vendor/libtonc/include"
   switch "cincludes", natuDir/"vendor/maxmod/include"
-  switch "cincludes", natuDir/"vendor/acsl/include"
   
   # Natu panic handler
   switch "import", natuDir/"natu/private/essentials"
