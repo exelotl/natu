@@ -141,6 +141,12 @@ proc contains*[N,T](list: List[N,T]; val: T): bool =
     if list.rawGet(i) == val: return true
   false
 
+proc find*[N,T](list: List[N,T]; val: T): int =
+  ## Returns the index of `val` in the list, or `-1` if `val` is not in the list.
+  for i in 0..<list.len:
+    if list.rawGet(i) == val: return i
+  -1
+
 template toOpenArray*[N,T](list: List[N,T]): openArray[T] =
   toOpenArray[T](list.arr, 0, list.len-1)
 
