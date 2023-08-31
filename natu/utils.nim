@@ -117,11 +117,11 @@ proc qclear*[N,T](list: var List[N,T]) =
   ## Elements won't be deinitialised, so only do this if you know there'll be no resource leakage.
   list.len = 0
 
-proc isFull*[N,T](list: var List[N,T]): bool =
+proc isFull*[N,T](list: List[N,T]): bool =
   ## Returns true if the list is at its maximum capacity.
   list.len == N
 
-proc contains*[N,T](list: var List[N,T]; val: T): bool =
+proc contains*[N,T](list: List[N,T]; val: T): bool =
   ## Check whether a value exists in the list.
   ## 
   ## This can also be invoked using the `in` or `notin` keywords.
