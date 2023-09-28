@@ -712,8 +712,8 @@ POINT16 tte_get_text_size(const char *str)
 			break;			
 
 		// --- Special char ---
-		case '\\':
-			//# Use cmd-functino
+		case '#':
+			//# Use cmd-function
 			//# Take care of positioning commands.
 			if(str[0] == '{')
 				str= tte_cmd_skip(str);
