@@ -128,9 +128,20 @@ proc gbaStrip*(elfFile, gbaFile: string) =
 
 proc gbaFix*(gbaFile: string) =
   ## Invoke gbafix to set the ROM header
-  exec natuExe() & " fix " & gbaFile &
-    " -c:" & get("natu.gameCode") &
-    " -t:" & get("natu.gameTitle").toUpperAscii()
+  let gameCode = get("natu.gameCode")
+  let gameTitle = get("natu.gameTitle")
+  let makerCode = get("natu.makerCode")
+  let gameVersion = get("natu.gameVersion")
+  let pad = get("natu.pad")
+  
+  var args = gbaFile
+  if gameCode != "":  args &= " -c:" & gameCode
+  if gameTitle != "": args &= " -t:" & gameTitle.toUpperAscii()
+  if makerCode != "": args &= " -m:" & makerCode
+  if gameVersion != "": args &= " -r:" & gameVersion
+  if pad != "": args &= (if parseBool(pad): " -p" else: "")
+  
+  exec natuExe() & " fix " & args
 
 proc printMemInfo*(elfFile: string) =
   ## Invoke natu info to print out GBA memory usage info about an elf using objdump.
