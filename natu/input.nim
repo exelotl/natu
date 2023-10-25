@@ -28,9 +28,9 @@ type
     irq* {.bitsize:1.}: bool        ## Enables the keypad interrupt.
     op* {.bitsize:1.}: KeyIntrOp    ## The condition under which the interrupt will be raised (`opOr` vs `opAnd`)
   
-  KeyRepeat = object
-    keys, mask: KeyState
-    timer, delay, period: uint8
+  KeyRepeater* = object
+    keys*, mask*: KeyState
+    timer*, delay*, period*: uint8
 
 let keyinput* {.importc:"(*(volatile KeyInput*)(0x04000130))", nodecl.}: KeyInput
   ## Keypad status register (read only).
@@ -55,7 +55,9 @@ var keyPrevState*: KeyState
 const allKeys*: KeyState = {kiA..kiL}
 
 
-var repeat = KeyRepeat(mask: allKeys, timer: 20, delay: 20, period: 10)
+var keyRepeater* = KeyRepeater(mask: allKeys, timer: 20, delay: 20, period: 10)
+
+template repeat: KeyRepeater = keyRepeater  # internal alias.
 
 proc `^`[T](a, b: set[T]): set[T] {.inline.} =
   ## Symmetric difference between two sets, analogous to XOR.
