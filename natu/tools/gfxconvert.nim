@@ -14,12 +14,13 @@ type
     w, h: int
     bpp: GfxBpp
     palNum: int
-    strictPal: bool
+    flags: set[GraphicFlag]
   
   GraphicData = object
     ## Data to be output as Nim code
     bpp: int
     size: ObjSize
+    flags: set[GraphicFlag]
     w, h: int
     imgPos: int
     imgWords: int
@@ -33,6 +34,10 @@ type
     s8x8, s16x16, s32x32, s64x64,
     s16x8, s32x8, s32x16, s64x32,
     s8x16, s8x32, s16x32, s32x64
+  
+  GraphicFlag* = enum
+    StrictPal
+    PalOnly
 
 
 proc writeGraphicsC(f: File; imgData, palData: string) =
@@ -73,7 +78,7 @@ proc gfxConvert*(tsvPath, script, indir, outdir: string) =
       h: h,
       bpp: parseEnum[GfxBpp](fmt"gfx{row[2]}bpp"),
       palNum: parseInt(row[3]),
-      strictPal: parseBool(row[4])
+      flags: cast[set[GraphicFlag]](parseUInt(row[4])),
     )
   
   # regenerate the output files if any input files have changed:
@@ -131,9 +136,10 @@ proc gfxConvert*(tsvPath, script, indir, outdir: string) =
         bpp: g.bpp,
         layout: gfxTiles,
       )
-      let data = pngToBin(g.pngPath, info, if g.strictPal: StrictGrowth else: LaxGrowth)
-      
+      var data = pngToBin(g.pngPath, info, if StrictPal in g.flags: StrictGrowth else: LaxGrowth)
       doAssert(info.width == g.w, "PNG width ({info.width}) should match the graphic width ({g.w}). Spritesheets must be provided as a vertical strip.".fmt)
+      
+      if PalOnly in g.flags: data = ""
       
       # Won't work yet because trick doesn't set the height?
       # doAssert((info.height mod g.h) == 0, "PNG height should be a multiple of the graphic height. Spritesheets must be provided as a vertical strip.")
@@ -148,6 +154,7 @@ proc gfxConvert*(tsvPath, script, indir, outdir: string) =
       gfxDatas.add GraphicData(
         bpp: ord(g.bpp),
         size: size,
+        flags: g.flags,
         w: g.w,
         h: g.h,
         imgPos: imgData.len,

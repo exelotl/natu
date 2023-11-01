@@ -171,6 +171,12 @@ func toCamelCase*(str: string, firstUpper = false): string =
       result.add(c)
 
 
+proc toUInt[T](s: set[T]): uint =
+  ## Get internal representation of a (<= 32 bits) set in Nimscript.
+  for n in s:
+    result = result or (1'u shl ord(n))
+
+
 # Graphics
 # --------
 
@@ -178,6 +184,10 @@ type ObjSize* = enum
   s8x8, s16x16, s32x32, s64x64,
   s16x8, s32x8, s32x16, s64x32,
   s8x16, s8x32, s16x32, s32x64
+
+type GraphicFlag* = enum
+  StrictPal
+  PalOnly
 
 var natuGraphics*: seq[string]
 
@@ -196,10 +206,20 @@ proc readGraphics*(script: static string) =
     natuIsSharingPal = false
     inc natuPalCounter
   
-  proc graphic(name: string, size: ObjSize, bpp = 4, strictPal = false) =
+  proc graphic(
+    name: string,
+    size: ObjSize,
+    bpp = 4,
+    flags: set[GraphicFlag] = {},
+    strictPal = false
+  ) =
     let path = name.absolutePath.relativePath(natuCurrentDir)
     doAssert({'\t', '\n'} notin path, path & " contains invalid characters.")
-    natuGraphics.add row(path, size, bpp, natuPalCounter, strictPal)
+    var flags = flags
+    if strictPal:
+      echo "`strictPal` is deprecated, use flags={StrictPal} instead."
+      flags.incl StrictPal  # legacy compatibiltiy
+    natuGraphics.add row(path, size, bpp, natuPalCounter, flags.toUInt())
     if not natuIsSharingPal:
       inc natuPalCounter
   
@@ -260,11 +280,6 @@ type
   CompressionKind* = enum
     None
     Rle
-
-proc toUInt[T](s: set[T]): uint =
-  ## Get internal representation of a (<= 32 bits) set in Nimscript.
-  for n in s:
-    result = result or (1'u shl ord(n))
 
 var natuBackgrounds*: seq[string]
 

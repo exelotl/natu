@@ -6,9 +6,13 @@ export obj_tile_manager
 export ObjSize
 
 type
+  GraphicFlag* = enum
+    StrictPal
+    PalOnly
   GraphicData* = object
     bpp*: int
     size*: ObjSize
+    flags*: set[GraphicFlag]
     w*, h*: int
     imgPos*: int
     imgWords*: int
