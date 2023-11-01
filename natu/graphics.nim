@@ -10,17 +10,17 @@ type
     StrictPal
     PalOnly
   GraphicData* = object
-    bpp*: int
+    imgPos*: int
+    palPos*: int
+    imgWords*: int
+    palNum: uint16
+    frames: uint16
+    frameWords: uint16
+    palHalfwords: uint8
+    bpp: uint8
+    w, h: uint8
     size*: ObjSize
     flags*: set[GraphicFlag]
-    w*, h*: int
-    imgPos*: int
-    imgWords*: int
-    palNum*: int
-    palPos*: int
-    palHalfwords*: int
-    frames*: int
-    frameWords*: int
 
 const natuOutputDir {.strdefine.} = ""
 
@@ -35,22 +35,22 @@ doInclude natuOutputDir & "/graphics.nim"
 
 # Implementation of useful graphic operations below:
 
-template width*(g: Graphic): int = g.data.w
+template width*(g: Graphic): int = g.data.w.int
   ## The width of the graphic in pixels.
 
-template height*(g: Graphic): int = g.data.h
+template height*(g: Graphic): int = g.data.h.int
   ## The height of the graphic in pixels.
 
 # shorthands
-template w*(g: Graphic): int = g.data.w
-template h*(g: Graphic): int = g.data.h
+template w*(g: Graphic): int = g.data.w.int
+template h*(g: Graphic): int = g.data.h.int
 
 template size*(g: Graphic): ObjSize = g.data.size
   ## The size value for the graphic, as required by hardware sprites.
   ## 
   ## For example a 16x32 sprite will have a size value of `s16x32`.
 
-template bpp*(g: Graphic): int = g.data.bpp
+template bpp*(g: Graphic): int = g.data.bpp.int
   ## The number of bits-per-pixel used by the sprite's gfx data.
   ## 
   ## This will be either 2, 4 or 8.
@@ -62,7 +62,7 @@ template frameTiles*(g: Graphic): int =
   ## How many 4bpp tiles does a single frame of animation occupy in VRAM?
   ## Note, 8bpp graphics take up twice as many tiles.
   ## 
-  g.data.frameWords div tileWords
+  g.data.frameWords.int div tileWords
 
 template allTiles*(g: Graphic): int =
   ## 
@@ -75,7 +75,7 @@ template numFrames*(g: Graphic): int =
   ## 
   ## How many frames exist in the sprite sheet?
   ## 
-  g.data.frames
+  g.data.frames.int
 
 template copyPal*(dest: var Palette, g: Graphic) =
   ## 
@@ -107,7 +107,7 @@ template copyFrame*(dest: ptr Tile4, g: Graphic, frame: int) =
   ## Copy a single frame of animation to a location in Object VRAM
   ## 
   let img = cast[ptr UncheckedArray[uint32]](g.imgDataPtr)
-  memcpy32(dest, addr img[g.data.frameWords * frame], g.data.frameWords)
+  memcpy32(dest, addr img[g.data.frameWords.int * frame], g.data.frameWords)
 
 template onscreen*(g: Graphic, pos: Vec2i): bool =
   ## 
@@ -165,7 +165,7 @@ template acquireObjPal*(g: Graphic): int =
   ## with `getPalId`.
   ## 
   let u = cast[ptr PalUsage](addr palUsage(g))
-  acquireObjPal(u[], g.palDataPtr, g.data.palHalfwords)
+  acquireObjPal(u[], g.palDataPtr, g.data.palHalfwords.int)
 
 template releaseObjPal*(g: Graphic) =
   ## 
@@ -201,3 +201,14 @@ template allocObjTiles*(g: Graphic): int =
   else:
     let snap = logPowerOfTwo(g.frameTiles.uint).int
   allocObjTiles(g.frameTiles, snap)
+
+
+# Expose gfx internal fields as int for convenience.
+
+template palNum*(gd: GraphicData): int = int(gd.palNum)
+template palHalfwords*(gd: GraphicData): int = int(gd.palHalfwords)
+template frames*(gd: GraphicData): int = int(gd.frames)
+template frameWords*(gd: GraphicData): int = int(gd.frameWords)
+template bpp*(gd: GraphicData): int = int(gd.bpp)
+template w*(gd: GraphicData): int = int(gd.w)
+template h*(gd: GraphicData): int = int(gd.h)
