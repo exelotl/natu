@@ -612,3 +612,7 @@ proc setWindow*(winId: range[0..1]; bounds: Rect) {.inline.} =
   ## The rectangle is clamped to the bounds of the screen.
   winh[winId] = WinH(right: bounds.right.clamp(0, ScreenWidth).uint8, left: bounds.left.clamp(0, ScreenWidth).uint8)
   winv[winId] = WinV(bottom: bounds.bottom.clamp(0, ScreenHeight).uint8, top: bounds.top.clamp(0, ScreenHeight).uint8)
+
+proc busyWaitForVBlank* {.inline.} =
+  while vcount >= 160: discard
+  while vcount < 160: discard
