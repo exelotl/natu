@@ -777,8 +777,8 @@ const
   ATTR0_4BPP*:uint16 = 0x0000      ## Use 4bpp (16 color) tiles
   ATTR0_8BPP*:uint16 = 0x2000      ## Use 8bpp (256 color) tiles
   ATTR0_SQUARE*:uint16 = 0x0000    ## Square shape
-  ATTR0_WIDE*:uint16 = 0x4000      ## Tall shape (height > width)
-  ATTR0_TALL*:uint16 = 0x8000      ## Wide shape (height < width)
+  ATTR0_WIDE*:uint16 = 0x4000      ## Wide shape (height < width)
+  ATTR0_TALL*:uint16 = 0x8000      ## Tall shape (height > width)
 
 const
   ATTR0_Y_MASK*:uint16 = 0x00FF

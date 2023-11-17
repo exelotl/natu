@@ -33,30 +33,43 @@ proc open*(): bool {.discardable.} =
 proc close*() =
   poke(REG_DEBUG_ENABLE, 0)
 
-template printf*(level: LogLevel, str: cstring, args: varargs[untyped]) =
-  ## Output a formatted message to the mGBA log, at a specified level of visibility.
-  ## 
-  ## Example:
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   printf(logFatal, "Uh oh, something went wrong!")
-  ## 
-  printfAux(str, args)
-  poke(REG_DEBUG_FLAGS, (level.uint16) or 0x100)
+# TODO: replace with general logging module + `natuLogMode` string define
+const natuMgbaLogging {.booldefine.} = true
 
-template printf*(str: cstring, args: varargs[untyped]) =
-  ## Output a formatted message to the mGBA log.
-  ## 
-  ## Example:
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   printf("Spawned item at %d, %d", pos.x, pos.y)
-  ## 
-  printfAux(str, args)
-  poke(REG_DEBUG_FLAGS, (logWarn.uint16) or 0x100)
+when natuMgbaLogging:
+  
+  template printf*(level: LogLevel, str: cstring, args: varargs[untyped]) =
+    ## Output a formatted message to the mGBA log, at a specified level of visibility.
+    ## 
+    ## Example:
+    ## 
+    ## .. code-block:: nim
+    ## 
+    ##   printf(logFatal, "Uh oh, something went wrong!")
+    ## 
+    printfAux(str, args)
+    poke(REG_DEBUG_FLAGS, (level.uint16) or 0x100)
+  
+  template printf*(str: cstring, args: varargs[untyped]) =
+    ## Output a formatted message to the mGBA log.
+    ## 
+    ## Example:
+    ## 
+    ## .. code-block:: nim
+    ## 
+    ##   printf("Spawned item at %d, %d", pos.x, pos.y)
+    ## 
+    printfAux(str, args)
+    poke(REG_DEBUG_FLAGS, (logWarn.uint16) or 0x100)
+  
+  
+  # Open the debug log by default, just `import natu/mgba` to use.
+  poke(REG_DEBUG_ENABLE, 0xC0DE)
 
-
-# Open the debug log by default, just `import natu/mgba` to use.
-poke(REG_DEBUG_ENABLE, 0xC0DE)
+else:
+  
+  template printf*(level: LogLevel, str: cstring, args: varargs[untyped]) =
+    discard
+    
+  template printf*(str: cstring, args: varargs[untyped]) =
+    discard

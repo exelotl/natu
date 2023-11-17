@@ -1,0 +1,788 @@
+/*
+ * Test suite for strtol/strtoul with 32-bit long
+ *
+ * (C) Copyright 2021 Pedro Gimeno Fortea
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
+ * IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * This code is inspired in a sprintf test suite made for the tyndur Project.
+ * Although little if anything of the original code remains, here's the
+ * original copyright and license text.
+ *
+ * Copyright (c) 2011 The tyndur Project. All rights reserved.
+ *
+ * This code is derived from software contributed to the tyndur Project
+ * by Kevin Wolf.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <stddef.h>
+#include <inttypes.h>
+
+#define TESTL(str, ptr, base, ret, rptr, err) (failed+=testl(str, ptr, base, ret, rptr, err, __LINE__))
+int testl(char *s, char **ptr, int base, long expret, ptrdiff_t expofs, int experr, int line)
+{
+  errno = 0;
+  long ret = strtol(s, ptr, base);
+  if (ret != expret || ptr && *ptr-s != expofs || errno != experr)
+  {
+    if (ret != expret)
+      printf("* FAIL strtol:  Line %4d; ret: got %ld want"
+        " %ld\n", line, ret, expret);
+    if (ptr && *ptr-s != expofs)
+      printf("* FAIL strtol:  Line %4d; '%s' ptr: got %d want"
+        " %d\n", line, s, *ptr-s, expofs);
+    if (errno != experr)
+      printf("* FAIL strtol:  Line %4d; errno %d want %d\n",
+        line, errno, experr);
+    return 1;
+  }
+  return 0;
+}
+
+#define TESTUL(str, ptr, base, ret, rptr, err) (failed+=testul(str, ptr, base, ret, rptr, err, __LINE__))
+int testul(char *s, char **ptr, int base, unsigned long expret, ptrdiff_t expofs, int experr, int line)
+{
+  errno = 0;
+  unsigned long ret = strtoul(s, ptr, base);
+  if (ret != expret || ptr && *ptr-s != expofs || errno != experr)
+  {
+    if (ret != expret)
+      printf("* FAIL strtoul:  Line %4d; ret: got %lu want"
+        " %lu\n", line, ret, expret);
+    if (ptr && *ptr-s != expofs)
+      printf("* FAIL strtoul:  Line %4d; '%s' ptrofs: got %d want"
+        " %d\n", line, s, *ptr-s, expofs);
+    if (errno != experr)
+      printf("* FAIL strtoul:  Line %4d; errno %d want %d\n",
+        line, errno, experr);
+    return 1;
+  }
+  return 0;
+}
+
+#define TESTLL(str, ptr, base, ret, rptr, err) (failed+=testll(str, ptr, base, ret, rptr, err, __LINE__))
+int testll(char *s, char **ptr, int base, long long expret, ptrdiff_t expofs, int experr, int line)
+{
+  errno = 0;
+  long long ret = strtoll(s, ptr, base);
+  intmax_t ret2 = strtoimax(s, ptr, base);
+  if (ret != ret2 || ret != expret || ptr && *ptr-s != expofs || errno != experr)
+  {
+    if (ret != ret2)
+      printf("* FAIL strtoimax: Mismatch with strtoll line %4d; got %lld"
+        " want %lld\n", ret, ret2);
+    if (ret != expret)
+      printf("* FAIL strtoll:  Line %4d; ret: got %lld want"
+        " %lld\n", line, ret, expret);
+    if (ptr && *ptr-s != expofs)
+      printf("* FAIL strtoll:  Line %4d; '%s' ptrofs: got %d want"
+        " %d\n", line, s, *ptr-s, expofs);
+    if (errno != experr)
+      printf("* FAIL strtoll:  Line %4d; errno %d want %d\n",
+        line, errno, experr);
+    return 1;
+  }
+  return 0;
+}
+
+#define TESTULL(str, ptr, base, ret, rptr, err) (failed+=testull(str, ptr, base, ret, rptr, err, __LINE__))
+int testull(char *s, char **ptr, int base, unsigned long long expret, ptrdiff_t expofs, int experr, int line)
+{
+  errno = 0;
+  unsigned long long ret = strtoull(s, ptr, base);
+  uintmax_t ret2 = strtoumax(s, ptr, base);
+  if (ret != ret2 || ret != expret || ptr && *ptr-s != expofs || errno != experr)
+  {
+    if (ret != ret2)
+      printf("* FAIL strtoumax: Mismatch with strtoull line %4d; got %llu"
+        " want %llu\n", ret, ret2);
+    if (ret != expret)
+      printf("* FAIL strtoull:  Line %4d; ret: got %llu want"
+        " %llu\n", line, ret, expret);
+    if (ptr && *ptr-s != expofs)
+      printf("* FAIL strtoull:  Line %4d; '%s' ptrofs: got %d want"
+        " %d\n", line, s, *ptr-s, expofs);
+    if (errno != experr)
+      printf("* FAIL strtoull:  Line %4d; errno %d want %d\n",
+        line, errno, experr);
+    return 1;
+  }
+  return 0;
+}
+
+
+int main()
+{
+  int failed = 0;
+
+  char *s;
+  char *E;
+  char **e = &E;
+
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+#include <assert.h>
+  assert(sizeof(long) == 4); // This test is for 32-bit long
+
+  // strtol
+
+  TESTL("", e, 0, 0L, 0, 0);
+  TESTL("0", e, 0, 0L, 1, 0);
+  TESTL("0", e, 2, 0L, 1, 0);
+  TESTL("0", e, 8, 0L, 1, 0);
+  TESTL("0", e, 10, 0L, 1, 0);
+  TESTL("0", e, 16, 0L, 1, 0);
+  TESTL("0", e, 36, 0L, 1, 0);
+  TESTL("00", e, 0, 0L, 2, 0);
+  TESTL("0x0", e, 0, 0L, 3, 0);
+  TESTL("0x0", e, 2, 0L, 1, 0);
+  TESTL("0x0", e, 8, 0L, 1, 0);
+  TESTL("0x0", e, 10, 0L, 1, 0);
+  TESTL("0x0", e, 16, 0L, 3, 0);
+  TESTL("0x0", e, 33, 0L, 1, 0);
+  TESTL("0x0", e, 34, 0x462L, 3, 0);
+  TESTL("0x0", e, 35, 0x483L, 3, 0);
+  TESTL("0x0", e, 36, 0x4A4L, 3, 0);
+  TESTL("0x12349AbC", e, 0, 0x12349abcL, 10, 0);
+  TESTL("0X12349aBc", e, 0, 0x12349abcL, 10, 0);
+  TESTL("0x1234g0", e, 0, 0x1234L, 6, 0);
+  TESTL("0X1234g0", e, 0, 0x1234L, 6, 0);
+  TESTL("0x0007fffffff", e, 0, 0x7fffffffL, 13, 0);
+  TESTL("0x80000000", e, 0, 0x7fffffffL, 10, ERANGE);
+  TESTL("-0x80000000", e, 0, -0x80000000L, 11, 0);
+  TESTL("-0xFFFFFFFF", e, 0, -0x80000000L, 11, ERANGE);
+  TESTL("0x1fffffff0", e, 0, 0x7fffffffL, 11, ERANGE);
+
+  TESTL("", e, 16, 0L, 0, 0);
+  TESTL("0x12349AbC", e, 16, 0x12349abcL, 10, 0);
+  TESTL("0X12349aBc", e, 16, 0x12349abcL, 10, 0);
+  TESTL("0x1234g0", e, 16, 0x1234L, 6, 0);
+  TESTL("0X1234g0", e, 16, 0x1234L, 6, 0);
+  TESTL("0x0007fffffff", e, 16, 0x7fffffffL, 13, 0);
+  TESTL("0x80000000", e, 16, 0x7fffffffL, 10, ERANGE);
+  TESTL("-0x80000000", e, 16, -0x80000000L, 11, 0);
+  TESTL("-0xFFFFFFFF", e, 16, -0x80000000L, 11, ERANGE);
+  TESTL("0x1fffffff0", e, 16, 0x7fffffffL, 11, ERANGE);
+
+  TESTL("012349AbC", e, 16, 0x12349abcL, 9, 0);
+  TESTL("012349aBc", e, 16, 0x12349abcL, 9, 0);
+  TESTL("01234g0", e, 16, 0x1234L, 5, 0);
+  TESTL("01234g0", e, 16, 0x1234L, 5, 0);
+  TESTL("00007fffffff", e, 16, 0x7fffffffL, 12, 0);
+  TESTL("80000000", e, 16, 0x7fffffffL, 8, ERANGE);
+  TESTL("-80000000", e, 16, -0x80000000L, 9, 0);
+  TESTL("-FFFFFFFF", e, 16, -0x80000000L, 9, ERANGE);
+  TESTL("1fffffff0", e, 16, 0x7fffffffL, 9, ERANGE);
+
+  TESTL("01234567", e, 0, 01234567L, 8, 0);
+  TESTL("01777777777", e, 0, 01777777777L, 11, 0);
+  TESTL("017777777777", e, 0, 017777777777L, 12, 0);
+  TESTL("020000000000", e, 0, 017777777777L, 12, ERANGE);
+  TESTL("037777777777", e, 0, 017777777777L, 12, ERANGE);
+  TESTL("-01777777777", e, 0, -01777777777L, 12, 0);
+  TESTL("-017777777777", e, 0, -017777777777L, 13, 0);
+  TESTL("-020000000000", e, 0, -020000000000L, 13, 0);
+  TESTL("-020000000001", e, 0, -020000000000L, 13, ERANGE);
+  TESTL("-037777777777", e, 0, -020000000000L, 13, ERANGE);
+
+  TESTL("", e, 8, 0L, 0, 0);
+  TESTL("01234567", e, 8, 01234567L, 8, 0);
+  TESTL("01777777777", e, 8, 01777777777L, 11, 0);
+  TESTL("017777777777", e, 8, 017777777777L, 12, 0);
+  TESTL("020000000000", e, 8, 017777777777L, 12, ERANGE);
+  TESTL("037777777777", e, 8, 017777777777L, 12, ERANGE);
+  TESTL("-01777777777", e, 8, -01777777777L, 12, 0);
+  TESTL("-017777777777", e, 8, -017777777777L, 13, 0);
+  TESTL("-020000000000", e, 8, -020000000000L, 13, 0);
+  TESTL("-020000000001", e, 8, -020000000000L, 13, ERANGE);
+  TESTL("-037777777777", e, 8, -020000000000L, 13, ERANGE);
+
+  TESTL("1234567", e, 8, 01234567L, 7, 0);
+  TESTL("1777777777", e, 8, 01777777777L, 10, 0);
+  TESTL("17777777777", e, 8, 017777777777L, 11, 0);
+  TESTL("20000000000", e, 8, 017777777777L, 11, ERANGE);
+  TESTL("37777777777", e, 8, 017777777777L, 11, ERANGE);
+  TESTL("-1777777777", e, 8, -01777777777L, 11, 0);
+  TESTL("-17777777777", e, 8, -017777777777L, 12, 0);
+  TESTL("-20000000000", e, 8, -020000000000L, 12, 0);
+  TESTL("-20000000001", e, 8, -020000000000L, 12, ERANGE);
+  TESTL("-37777777777", e, 8, -020000000000L, 12, ERANGE);
+  TESTL("-37777877777", e, 8, -037777L, 6, 0);
+
+  TESTL("37777 ", e, 0, 37777L, 5, 0);
+  TESTL("37777 ", e, 8, 037777L, 5, 0);
+  TESTL("37777 ", e, 9, 0x634FL, 5, 0);
+  TESTL("37777 ", e, 10, 37777L, 5, 0);
+  TESTL("37777 ", e, 16, 0x37777L, 5, 0);
+  TESTL("-37777 ", e, 0, -37777L, 6, 0);
+  TESTL("037777 ", e, 0, 037777L, 6, 0);
+  TESTL("-37777 ", e, 8, -037777L, 6, 0);
+  TESTL("-37777 ", e, 9, -0x634FL, 6, 0);
+  TESTL("-37777 ", e, 10, -37777L, 6, 0);
+  TESTL("037777 ", e, 10, 37777L, 6, 0);
+  TESTL("-37777 ", e, 16, -0x37777L, 6, 0);
+  TESTL("-037777 ", e, 0, -037777L, 7, 0);
+  TESTL("0x37777 ", e, 0, 0x37777L, 7, 0);
+  TESTL("-037777 ", e, 10, -37777L, 7, 0);
+  TESTL("0x37777 ", e, 8, 0L, 1, 0);
+  TESTL("0x37777 ", e, 10, 0L, 1, 0);
+  TESTL("-0x37777 ", e, 0, -0x37777L, 8, 0);
+  TESTL("-0x37777 ", e, 16, -0x37777L, 8, 0);
+  TESTL("-0x37777 ", e, 8, 0L, 2, 0);
+  TESTL("-0x37777 ", e, 10, 0L, 2, 0);
+
+  TESTL("1234567", e, 0, 1234567L, 7, 0);
+  TESTL("-1234567", e, 0, -1234567L, 8, 0);
+  TESTL("2147483647", e, 0, 2147483647L, 10, 0);
+  TESTL("2147483648", e, 0, 2147483647L, 10, ERANGE);
+  TESTL("2147483649", e, 0, 2147483647L, 10, ERANGE);
+  TESTL("2147483650", e, 0, 2147483647L, 10, ERANGE);
+  TESTL("-2147483647", e, 0, -2147483647L, 11, 0);
+  TESTL("-2147483648", e, 0, -2147483648L, 11, 0);
+  TESTL("-2147483649", e, 0, -2147483648L, 11, ERANGE);
+  TESTL("-2147483650", e, 0, -2147483648L, 11, ERANGE);
+  TESTL("4294967295", e, 0, 2147483647L, 10, ERANGE);
+  TESTL("-4294967295", e, 0, -2147483648L, 11, ERANGE);
+  TESTL("4294967296", e, 0, 2147483647L, 10, ERANGE);
+  TESTL("-4294967296", e, 0, -2147483648L, 11, ERANGE);
+  TESTL("4294967297", e, 0, 2147483647L, 10, ERANGE);
+  TESTL("-4294967297", e, 0, -2147483648L, 11, ERANGE);
+  TESTL("4294967300", e, 0, 2147483647L, 10, ERANGE);
+  TESTL("-4294967300", e, 0, -2147483648L, 11, ERANGE);
+  TESTL("21474836400", e, 0, 2147483647L, 11, ERANGE);
+  TESTL("-21474836400", e, 0, -2147483648L, 12, ERANGE);
+
+  TESTL("1234567", e, 10, 1234567L, 7, 0);
+  TESTL("-1234567", e, 10, -1234567L, 8, 0);
+  TESTL("2147483647", e, 10, 2147483647L, 10, 0);
+  TESTL("2147483648", e, 10, 2147483647L, 10, ERANGE);
+  TESTL("-2147483647", e, 10, -2147483647L, 11, 0);
+  TESTL("-2147483648", e, 10, -2147483648L, 11, 0);
+  TESTL("-2147483649", e, 10, -2147483648L, 11, ERANGE);
+  TESTL("-2147483650", e, 10, -2147483648L, 11, ERANGE);
+  TESTL("2147483650", e, 10, 2147483647L, 10, ERANGE);
+  TESTL("-4294967295", e, 10, -2147483648L, 11, ERANGE);
+  TESTL("4294967295", e, 10, 2147483647L, 10, ERANGE);
+  TESTL("4294967296", e, 10, 2147483647L, 10, ERANGE);
+  TESTL("4294967297", e, 10, 2147483647L, 10, ERANGE);
+  TESTL("4294967300", e, 10, 2147483647L, 10, ERANGE);
+  TESTL("21474836400", e, 10, 2147483647L, 11, ERANGE);
+  TESTL("-21474836400", e, 10, -2147483648L, 12, ERANGE);
+  TESTL("-21474836500", e, 10, -2147483648L, 12, ERANGE);
+
+  TESTL("09azAZ", e, 36, 0xEE7A3BL, 6, 0);
+  TESTL("-09azAZ", e, 36, -0xEE7A3BL, 7, 0);
+  TESTL("9azAZ", e, 36, 0xEE7A3BL, 5, 0);
+  TESTL("-9azAZ", e, 36, -0xEE7A3BL, 6, 0);
+  TESTL("1Z141Z4", e, 36, 0x7FFFFFFFL, 7, ERANGE);
+  TESTL("ZIK0ZL", e, 36, 0x7FFFFFFFL, 6, ERANGE);
+  TESTL("ZIK0ZK", e, 36, 0x7FFFFFFFL, 6, ERANGE);
+  TESTL("ZIK0ZJ", e, 36, 0x7FFFFFFFL, 6, 0);
+  TESTL("-ZIK0ZJ", e, 36, -0x7FFFFFFFL, 7, 0);
+  TESTL("-ZIK0ZK", e, 36, -0x80000000L, 7, 0);
+  TESTL("-ZIK0ZL", e, 36, -0x80000000L, 7, ERANGE);
+  TESTL("-ZIK0ZM", e, 36, -0x80000000L, 7, ERANGE);
+
+  TESTL("10101010", e, 2, 0xAAL, 8, 0);
+  TESTL("1111111111111111111111111111111", e, 2, 0x7FFFFFFFL, 31, 0);
+  TESTL("10000000000000000000000000000000", e, 2, 0x7FFFFFFFL, 32, ERANGE);
+  TESTL("-1111111111111111111111111111111", e, 2, -0x7FFFFFFFL, 32, 0);
+  TESTL("-10000000000000000000000000000000", e, 2, -0x80000000L, 33, 0);
+  TESTL("-10000000000000000000000000000001", e, 2, -0x80000000L, 33, ERANGE);
+
+  TESTL("0x ", e, 0, 0L, 1, 0);
+  TESTL("0x", e, 0, 0L, 1, 0);
+  TESTL("0xg", e, 16, 0L, 1, 0);
+  TESTL("0x", e, 16, 0L, 1, 0);
+
+  TESTL("+0x", e, 0, 0L, 2, 0);
+  TESTL("-0x", e, 0, 0L, 2, 0);
+
+  TESTL(" - 0", e, 0, 0L, 0, 0);
+  TESTL("+ 0", e, 0, 0L, 0, 0);
+  TESTL("   ", e, 0, 0L, 0, 0);
+
+  // strtoul
+
+  TESTUL("", e, 0, 0UL, 0, 0);
+  TESTUL("0", e, 0, 0UL, 1, 0);
+  TESTUL("0", e, 2, 0UL, 1, 0);
+  TESTUL("0", e, 8, 0UL, 1, 0);
+  TESTUL("0", e, 10, 0UL, 1, 0);
+  TESTUL("0", e, 16, 0UL, 1, 0);
+  TESTUL("0", e, 36, 0UL, 1, 0);
+  TESTUL("00", e, 0, 0UL, 2, 0);
+  TESTUL("0x0", e, 0, 0UL, 3, 0);
+  TESTUL("0x0", e, 2, 0UL, 1, 0);
+  TESTUL("0x0", e, 8, 0UL, 1, 0);
+  TESTUL("0x0", e, 10, 0UL, 1, 0);
+  TESTUL("0x0", e, 16, 0UL, 3, 0);
+  TESTUL("0x0", e, 33, 0UL, 1, 0);
+  TESTUL("0x0", e, 34, 0x462UL, 3, 0);
+  TESTUL("0x0", e, 35, 0x483UL, 3, 0);
+  TESTUL("0x0", e, 36, 0x4A4UL, 3, 0);
+  TESTUL("0x12349AbC", e, 0, 0x12349abcUL, 10, 0);
+  TESTUL("0X12349aBc", e, 0, 0x12349abcUL, 10, 0);
+  TESTUL("0x1234g0", e, 0, 0x1234UL, 6, 0);
+  TESTUL("0X1234g0", e, 0, 0x1234UL, 6, 0);
+  TESTUL("0x0007fffffff", e, 0, 0x7FFFFFFFUL, 13, 0);
+  TESTUL("0x000ffffffff", e, 0, 0xFFFFFFFFUL, 13, 0);
+  TESTUL("0x80000000", e, 0, 0x80000000UL, 10, 0);
+  TESTUL("-0x80000000", e, 0, 0x80000000UL, 11, 0);
+  TESTUL("-0xFFFFFFFF", e, 0, 0x1UL, 11, 0);
+  TESTUL("0x1fffffff0", e, 0, 0xFFFFFFFFUL, 11, ERANGE);
+
+  TESTUL("", e, 16, 0UL, 0, 0);
+  TESTUL("0x12349AbC", e, 16, 0x12349abcUL, 10, 0);
+  TESTUL("0X12349aBc", e, 16, 0x12349abcUL, 10, 0);
+  TESTUL("0x1234g0", e, 16, 0x1234UL, 6, 0);
+  TESTUL("0X1234g0", e, 16, 0x1234UL, 6, 0);
+  TESTUL("0x0007fffffff", e, 16, 0x7fffffffUL, 13, 0);
+  TESTUL("0x80000000", e, 16, 0x80000000UL, 10, 0);
+  TESTUL("-0x80000000", e, 16, 0x80000000UL, 11, 0);
+  TESTUL("-0xFFFFFFFF", e, 16, 0x1UL, 11, 0);
+  TESTUL("0x1fffffff0", e, 16, 0xFFFFFFFFUL, 11, ERANGE);
+
+  TESTUL("012349AbC", e, 16, 0x12349abcUL, 9, 0);
+  TESTUL("012349aBc", e, 16, 0x12349abcUL, 9, 0);
+  TESTUL("01234g0", e, 16, 0x1234UL, 5, 0);
+  TESTUL("01234g0", e, 16, 0x1234UL, 5, 0);
+  TESTUL("00007fffffff", e, 16, 0x7FFFFFFFUL, 12, 0);
+  TESTUL("80000000", e, 16, 0x80000000UL, 8, 0);
+  TESTUL("-80000000", e, 16, 0x80000000UL, 9, 0);
+  TESTUL("-FFFFFFFF", e, 16, 0x1UL, 9, 0);
+  TESTUL("1fffffff0", e, 16, 0xFFFFFFFFUL, 9, ERANGE);
+
+  TESTUL("01234567", e, 0, 01234567UL, 8, 0);
+  TESTUL("01777777777", e, 0, 01777777777UL, 11, 0);
+  TESTUL("017777777777", e, 0, 017777777777UL, 12, 0);
+  TESTUL("020000000000", e, 0, 020000000000UL, 12, 0);
+  TESTUL("-01777777777", e, 0, 036000000001UL, 12, 0);
+  TESTUL("-017777777777", e, 0, 020000000001UL, 13, 0);
+  TESTUL("-020000000000", e, 0, 020000000000UL, 13, 0);
+  TESTUL("-020000000001", e, 0, 017777777777UL, 13, 0);
+  TESTUL("-037777777777", e, 0, 01UL, 13, 0);
+  TESTUL("037777777777", e, 0, 037777777777UL, 12, 0);
+  TESTUL("040000000000", e, 0, 037777777777UL, 12, ERANGE);
+  TESTUL("050000000000", e, 0, 037777777777UL, 12, ERANGE);
+  TESTUL("077777777777", e, 0, 037777777777UL, 12, ERANGE);
+  TESTUL("0100000000000", e, 0, 037777777777UL, 13, ERANGE);
+  TESTUL("0177777777770", e, 0, 037777777777UL, 13, ERANGE);
+
+  TESTUL("01234567", e, 8, 01234567UL, 8, 0);
+  TESTUL("01777777777", e, 8, 01777777777UL, 11, 0);
+  TESTUL("017777777777", e, 8, 017777777777UL, 12, 0);
+  TESTUL("020000000000", e, 8, 020000000000UL, 12, 0);
+  TESTUL("-01777777777", e, 8, 036000000001UL, 12, 0);
+  TESTUL("-017777777777", e, 8, 020000000001UL, 13, 0);
+  TESTUL("-020000000000", e, 8, 020000000000UL, 13, 0);
+  TESTUL("-020000000001", e, 8, 017777777777UL, 13, 0);
+  TESTUL("-037777777777", e, 8, 01L, 13, 0);
+  TESTUL("037777777777", e, 8, 037777777777UL, 12, 0);
+  TESTUL("040000000000", e, 8, 037777777777UL, 12, ERANGE);
+  TESTUL("050000000000", e, 8, 037777777777UL, 12, ERANGE);
+  TESTUL("077777777777", e, 8, 037777777777UL, 12, ERANGE);
+  TESTUL("0100000000000", e, 8, 037777777777UL, 13, ERANGE);
+  TESTUL("0177777777770", e, 8, 037777777777UL, 13, ERANGE);
+
+  TESTUL("1234567", e, 8, 01234567UL, 7, 0);
+  TESTUL("1777777777", e, 8, 01777777777UL, 10, 0);
+  TESTUL("17777777777", e, 8, 017777777777UL, 11, 0);
+  TESTUL("20000000000", e, 8, 020000000000UL, 11, 0);
+  TESTUL("37777777777", e, 8, 037777777777UL, 11, 0);
+  TESTUL("-1777777777", e, 8, 036000000001UL, 11, 0);
+  TESTUL("-17777777777", e, 8, 020000000001UL, 12, 0);
+  TESTUL("-20000000000", e, 8, 020000000000UL, 12, 0);
+  TESTUL("-20000000001", e, 8, 017777777777UL, 12, 0);
+  TESTUL("-37777777777", e, 8, 01UL, 12, 0);
+  TESTUL("40000000000", e, 8, 037777777777UL, 11, ERANGE);
+  TESTUL("377777777777", e, 8, 037777777777UL, 12, ERANGE);
+  TESTUL("-40000000000", e, 8, 037777777777UL, 12, ERANGE);
+  TESTUL("-377777777777", e, 8, 037777777777UL, 13, ERANGE);
+  TESTUL("-37777877777", e, 8, 037777740001UL, 6, 0);
+
+  TESTUL("37777 ", e, 0, 37777UL, 5, 0);
+  TESTUL("37777 ", e, 8, 037777UL, 5, 0);
+  TESTUL("37777 ", e, 9, 0x634FUL, 5, 0);
+  TESTUL("37777 ", e, 10, 37777UL, 5, 0);
+  TESTUL("37777 ", e, 16, 0x37777UL, 5, 0);
+  TESTUL("-37777 ", e, 0, 0xFFFF6C6FUL, 6, 0);
+  TESTUL("037777 ", e, 0, 037777UL, 6, 0);
+  TESTUL("-37777 ", e, 8, 0xFFFFC001UL, 6, 0);
+  TESTUL("-37777 ", e, 9, 0xFFFF9CB1UL, 6, 0);
+  TESTUL("-37777 ", e, 10, 0xFFFF6C6FUL, 6, 0);
+  TESTUL("037777 ", e, 10, 37777UL, 6, 0);
+  TESTUL("-37777 ", e, 16, 0xFFFC8889UL, 6, 0);
+  TESTUL("-037777 ", e, 0, 0xFFFFC001UL, 7, 0);
+  TESTUL("0x37777 ", e, 0, 0x37777UL, 7, 0);
+  TESTUL("-037777 ", e, 10, 0xFFFF6C6FUL, 7, 0);
+  TESTUL("0x37777 ", e, 8, 0UL, 1, 0);
+  TESTUL("0x37777 ", e, 10, 0UL, 1, 0);
+  TESTUL("-0x37777 ", e, 0, 0xFFFC8889UL, 8, 0);
+  TESTUL("-0x37777 ", e, 16, 0xFFFC8889UL, 8, 0);
+  TESTUL("-0x37777 ", e, 8, 0UL, 2, 0);
+  TESTUL("-0x37777 ", e, 10, 0UL, 2, 0);
+
+  TESTUL("1234567", e, 0, 1234567UL, 7, 0);
+  TESTUL("-1234567", e, 0, 0xFFED2979UL, 8, 0);
+  TESTUL("2147483647", e, 0, 2147483647UL, 10, 0);
+  TESTUL("2147483648", e, 0, 2147483648UL, 10, 0);
+  TESTUL("-2147483647", e, 0, 2147483649UL, 11, 0);
+  TESTUL("-2147483648", e, 0, 2147483648UL, 11, 0);
+  TESTUL("-2147483649", e, 0, 2147483647UL, 11, 0);
+  TESTUL("-4294967295", e, 0, 1UL, 11, 0);
+  TESTUL("-4294967296", e, 0, 4294967295UL, 11, ERANGE);
+  TESTUL("-4294967297", e, 0, 4294967295UL, 11, ERANGE);
+  TESTUL("-4294967300", e, 0, 4294967295UL, 11, ERANGE);
+  TESTUL("-42949672900", e, 0, 4294967295UL, 12, ERANGE);
+  TESTUL("4294967295", e, 0, 4294967295UL, 10, 0);
+  TESTUL("4294967296", e, 0, 4294967295UL, 10, ERANGE);
+  TESTUL("4294967297", e, 0, 4294967295UL, 10, ERANGE);
+  TESTUL("4294967300", e, 0, 4294967295UL, 10, ERANGE);
+  TESTUL("42949673000", e, 0, 4294967295UL, 11, ERANGE);
+  TESTUL("21474836400", e, 0, 4294967295UL, 11, ERANGE);
+  TESTUL("-21474836400", e, 0, 4294967295UL, 12, ERANGE);
+
+  TESTUL("1234567", e, 10, 1234567UL, 7, 0);
+  TESTUL("-1234567", e, 10, 0xFFED2979UL, 8, 0);
+  TESTUL("2147483647", e, 10, 2147483647UL, 10, 0);
+  TESTUL("2147483648", e, 10, 2147483648UL, 10, 0);
+  TESTUL("-2147483647", e, 10, 2147483649UL, 11, 0);
+  TESTUL("-2147483648", e, 10, 2147483648UL, 11, 0);
+  TESTUL("-2147483649", e, 10, 2147483647UL, 11, 0);
+  TESTUL("-04294967290", e, 10, 6UL, 12, 0);
+  TESTUL("04294967290", e, 10, 4294967290UL, 11, 0);
+  TESTUL("-4294967295", e, 10, 1UL, 11, 0);
+  TESTUL("-4294967296", e, 10, 4294967295UL, 11, ERANGE);
+  TESTUL("-4294967297", e, 10, 4294967295UL, 11, ERANGE);
+  TESTUL("-4294967300", e, 10, 4294967295UL, 11, ERANGE);
+  TESTUL("-42949672900", e, 10, 4294967295UL, 12, ERANGE);
+  TESTUL("4294967295", e, 10, 4294967295UL, 10, 0);
+  TESTUL("4294967296", e, 10, 4294967295UL, 10, ERANGE);
+  TESTUL("4294967297", e, 10, 4294967295UL, 10, ERANGE);
+  TESTUL("4294967300", e, 10, 4294967295UL, 10, ERANGE);
+  TESTUL("42949673000", e, 10, 4294967295UL, 11, ERANGE);
+  TESTUL("21474836400", e, 10, 4294967295UL, 11, ERANGE);
+  TESTUL("-21474836400", e, 10, 4294967295UL, 12, ERANGE);
+
+  TESTUL("09azAZ", e, 36, 0xEE7A3BUL, 6, 0);
+  TESTUL("-09azAZ", e, 36, 0xFF1185C5UL, 7, 0);
+  TESTUL("90azAZ", e, 36, 0x2077953BUL, 6, 0);
+  TESTUL("-90azAZ", e, 36, 0xDF886AC5UL, 7, 0);
+  TESTUL("1Z141Z4", e, 36, 0xFFFFFFFFUL, 7, ERANGE);
+  TESTUL("1Z141ZZ", e, 36, 0xFFFFFFFFUL, 7, ERANGE);
+  TESTUL("1Z14200", e, 36, 0xFFFFFFFFUL, 7, ERANGE);
+  TESTUL("1Z141Z3", e, 36, 0xFFFFFFFFUL, 7, 0);
+  TESTUL("1Z141YZ", e, 36, 0xFFFFFFFBUL, 7, 0);
+  TESTUL("ZIK0ZL", e, 36, 0x80000001UL, 6, 0);
+  TESTUL("ZIK0ZK", e, 36, 0x80000000UL, 6, 0);
+  TESTUL("ZIK0ZJ", e, 36, 0x7FFFFFFFUL, 6, 0);
+  TESTUL("-ZIK0ZJ", e, 36, 0x80000001UL, 7, 0);
+  TESTUL("-ZIK0ZK", e, 36, 0x80000000UL, 7, 0);
+  TESTUL("-ZIK0ZL", e, 36, 0x7FFFFFFFUL, 7, 0);
+  TESTUL("-ZIK0ZM", e, 36, 0x7FFFFFFEUL, 7, 0);
+
+  TESTUL("010101010", e, 2, 0xAAUL, 9, 0);
+  TESTUL("1111111111111111111111111111111", e, 2, 0x7FFFFFFFUL, 31, 0);
+  TESTUL("11111111111111111111111111111111", e, 2, 0xFFFFFFFFUL, 32, 0);
+  TESTUL("10000000000000000000000000000000", e, 2, 0x80000000UL, 32, 0);
+  TESTUL("10000000000000000000000000000001", e, 2, 0x80000001UL, 32, 0);
+  TESTUL("-1111111111111111111111111111111", e, 2, 0x80000001UL, 32, 0);
+  TESTUL("-10000000000000000000000000000000", e, 2, 0x80000000UL, 33, 0);
+  TESTUL("-010000000000000000000000000000001", e, 2, 0x7FFFFFFFUL, 34, 0);
+  TESTUL("-100000000000000000000000000000000", e, 2, 0xFFFFFFFFUL, 34, ERANGE);
+  TESTUL("100000000000000000000000000000000", e, 2, 0xFFFFFFFFUL, 33, ERANGE);
+
+  TESTUL("0x ", e, 0, 0UL, 1, 0);
+  TESTUL("0x", e, 0, 0UL, 1, 0);
+  TESTUL("0xg", e, 16, 0UL, 1, 0);
+  TESTUL("0x", e, 16, 0UL, 1, 0);
+
+  TESTUL("+0x", e, 0, 0UL, 2, 0);
+  TESTUL("-0x", e, 0, 0UL, 2, 0);
+
+  TESTUL(" - 0", e, 0, 0UL, 0, 0);
+  TESTUL("+ 0", e, 0, 0UL, 0, 0);
+  TESTUL("   ", e, 0, 0UL, 0, 0);
+
+  // strtoll
+
+  TESTLL("", e, 0, 0LL, 0, 0);
+  TESTLL("0", e, 0, 0LL, 1, 0);
+  TESTLL("0", e, 2, 0LL, 1, 0);
+  TESTLL("0", e, 8, 0LL, 1, 0);
+  TESTLL("0", e, 10, 0LL, 1, 0);
+  TESTLL("0", e, 16, 0LL, 1, 0);
+  TESTLL("0", e, 36, 0LL, 1, 0);
+  TESTLL("00", e, 0, 0LL, 2, 0);
+  TESTLL("0x0", e, 0, 0LL, 3, 0);
+  TESTLL("0x0", e, 2, 0LL, 1, 0);
+  TESTLL("0x0", e, 8, 0LL, 1, 0);
+  TESTLL("0x0", e, 10, 0LL, 1, 0);
+  TESTLL("0x0", e, 16, 0LL, 3, 0);
+  TESTLL("0x0", e, 33, 0LL, 1, 0);
+  TESTLL("0x0", e, 34, 0x462LL, 3, 0);
+  TESTLL("0x0", e, 35, 0x483LL, 3, 0);
+  TESTLL("0x0", e, 36, 0x4A4LL, 3, 0);
+  TESTLL("0x12349AbC", e, 0, 0x12349abcLL, 10, 0);
+  TESTLL("0X12349aBc", e, 0, 0x12349abcLL, 10, 0);
+  TESTLL("0x1234g0", e, 0, 0x1234LL, 6, 0);
+  TESTLL("0X1234g0", e, 0, 0x1234LL, 6, 0);
+  TESTLL("0x0007fffffff", e, 0, 0x7fffffffLL, 13, 0);
+  TESTLL("0x80000000", e, 0, 0x80000000LL, 10, 0);
+  TESTLL("-0x80000000", e, 0, -0x80000000LL, 11, 0);
+  TESTLL("-0xFFFFFFFF", e, 0, -0xFFFFFFFFLL, 11, 0);
+  TESTLL("0x1fffffff0", e, 0, 0x1fffffff0LL, 11, 0);
+
+  TESTLL("", e, 16, 0LL, 0, 0);
+  TESTLL("0x12349AbC", e, 16, 0x12349abcLL, 10, 0);
+  TESTLL("0X12349aBc", e, 16, 0x12349abcLL, 10, 0);
+  TESTLL("0x1234g0", e, 16, 0x1234LL, 6, 0);
+  TESTLL("0X1234g0", e, 16, 0x1234LL, 6, 0);
+  TESTLL("0x0007fffffff", e, 16, 0x7fffffffLL, 13, 0);
+  TESTLL("0x80000000", e, 16, 0x80000000LL, 10, 0);
+  TESTLL("-0x80000000", e, 16, -0x80000000LL, 11, 0);
+  TESTLL("-0xFFFFFFFF", e, 16, -0xFFFFFFFFLL, 11, 0);
+  TESTLL("0x1fffffff0", e, 16, 0x1fffffff0LL, 11, 0);
+
+  TESTLL("012349AbC", e, 16, 0x12349abcLL, 9, 0);
+  TESTLL("012349aBc", e, 16, 0x12349abcLL, 9, 0);
+  TESTLL("01234g0", e, 16, 0x1234LL, 5, 0);
+  TESTLL("01234g0", e, 16, 0x1234LL, 5, 0);
+  TESTLL("00007fffffff", e, 16, 0x7fffffffLL, 12, 0);
+  TESTLL("80000000", e, 16, 0x80000000LL, 8, 0);
+  TESTLL("-80000000", e, 16, -0x80000000LL, 9, 0);
+  TESTLL("-FFFFFFFF", e, 16, -0xFFFFFFFFLL, 9, 0);
+  TESTLL("1fffffff0", e, 16, 0x1fffffff0LL, 9, 0);
+
+  TESTLL("01234567", e, 0, 01234567LL, 8, 0);
+  TESTLL("01777777777", e, 0, 01777777777LL, 11, 0);
+  TESTLL("017777777777", e, 0, 017777777777LL, 12, 0);
+  TESTLL("020000000000", e, 0, 020000000000LL, 12, 0);
+  TESTLL("037777777777", e, 0, 037777777777LL, 12, 0);
+  TESTLL("-01777777777", e, 0, -01777777777LL, 12, 0);
+  TESTLL("-017777777777", e, 0, -017777777777LL, 13, 0);
+  TESTLL("-020000000000", e, 0, -020000000000LL, 13, 0);
+  TESTLL("-020000000001", e, 0, -020000000001LL, 13, 0);
+  TESTLL("-037777777777", e, 0, -037777777777LL, 13, 0);
+
+  TESTLL("", e, 8, 0LL, 0, 0);
+  TESTLL("01234567", e, 8, 01234567LL, 8, 0);
+  TESTLL("01777777777", e, 8, 01777777777LL, 11, 0);
+  TESTLL("017777777777", e, 8, 017777777777LL, 12, 0);
+  TESTLL("020000000000", e, 8, 020000000000LL, 12, 0);
+  TESTLL("037777777777", e, 8, 037777777777LL, 12, 0);
+  TESTLL("-01777777777", e, 8, -01777777777LL, 12, 0);
+  TESTLL("-017777777777", e, 8, -017777777777LL, 13, 0);
+  TESTLL("-020000000000", e, 8, -020000000000LL, 13, 0);
+  TESTLL("-020000000001", e, 8, -020000000001LL, 13, 0);
+  TESTLL("-037777777777", e, 8, -037777777777LL, 13, 0);
+
+  TESTLL("1234567", e, 8, 01234567LL, 7, 0);
+  TESTLL("1777777777", e, 8, 01777777777LL, 10, 0);
+  TESTLL("17777777777", e, 8, 017777777777LL, 11, 0);
+  TESTLL("20000000000", e, 8, 020000000000LL, 11, 0);
+  TESTLL("37777777777", e, 8, 037777777777LL, 11, 0);
+  TESTLL("-1777777777", e, 8, -01777777777LL, 11, 0);
+  TESTLL("-17777777777", e, 8, -017777777777LL, 12, 0);
+  TESTLL("-20000000000", e, 8, -020000000000LL, 12, 0);
+  TESTLL("-20000000001", e, 8, -020000000001LL, 12, 0);
+  TESTLL("-37777777777", e, 8, -037777777777LL, 12, 0);
+  TESTLL("-37777877777", e, 8, -037777LL, 6, 0);
+
+  TESTLL("37777 ", e, 0, 37777LL, 5, 0);
+  TESTLL("37777 ", e, 8, 037777LL, 5, 0);
+  TESTLL("37777 ", e, 9, 0x634FLL, 5, 0);
+  TESTLL("37777 ", e, 10, 37777LL, 5, 0);
+  TESTLL("37777 ", e, 16, 0x37777LL, 5, 0);
+  TESTLL("-37777 ", e, 0, -37777LL, 6, 0);
+  TESTLL("037777 ", e, 0, 037777LL, 6, 0);
+  TESTLL("-37777 ", e, 8, -037777LL, 6, 0);
+  TESTLL("-37777 ", e, 9, -0x634FLL, 6, 0);
+  TESTLL("-37777 ", e, 10, -37777LL, 6, 0);
+  TESTLL("037777 ", e, 10, 37777LL, 6, 0);
+  TESTLL("-37777 ", e, 16, -0x37777LL, 6, 0);
+  TESTLL("-037777 ", e, 0, -037777LL, 7, 0);
+  TESTLL("0x37777 ", e, 0, 0x37777LL, 7, 0);
+  TESTLL("-037777 ", e, 10, -37777LL, 7, 0);
+  TESTLL("0x37777 ", e, 8, 0LL, 1, 0);
+  TESTLL("0x37777 ", e, 10, 0LL, 1, 0);
+  TESTLL("-0x37777 ", e, 0, -0x37777LL, 8, 0);
+  TESTLL("-0x37777 ", e, 16, -0x37777LL, 8, 0);
+  TESTLL("-0x37777 ", e, 8, 0LL, 2, 0);
+  TESTLL("-0x37777 ", e, 10, 0LL, 2, 0);
+
+  TESTLL("1234567", e, 0, 1234567LL, 7, 0);
+  TESTLL("-1234567", e, 0, -1234567LL, 8, 0);
+  TESTLL("2147483647", e, 0, 2147483647LL, 10, 0);
+  TESTLL("2147483648", e, 0, 2147483648LL, 10, 0);
+  TESTLL("2147483649", e, 0, 2147483649LL, 10, 0);
+  TESTLL("2147483650", e, 0, 2147483650LL, 10, 0);
+  TESTLL("-2147483647", e, 0, -2147483647LL, 11, 0);
+  TESTLL("-2147483648", e, 0, -2147483648LL, 11, 0);
+  TESTLL("-2147483649", e, 0, -2147483649LL, 11, 0);
+  TESTLL("-2147483650", e, 0, -2147483650LL, 11, 0);
+  TESTLL("4294967295", e, 0, 4294967295LL, 10, 0);
+  TESTLL("-4294967295", e, 0, -4294967295LL, 11, 0);
+  TESTLL("4294967296", e, 0, 4294967296LL, 10, 0);
+  TESTLL("-4294967296", e, 0, -4294967296LL, 11, 0);
+  TESTLL("4294967297", e, 0, 4294967297LL, 10, 0);
+  TESTLL("-4294967297", e, 0, -4294967297LL, 11, 0);
+  TESTLL("4294967300", e, 0, 4294967300LL, 10, 0);
+  TESTLL("-4294967300", e, 0, -4294967300LL, 11, 0);
+  TESTLL("21474836400", e, 0, 21474836400LL, 11, 0);
+  TESTLL("-21474836400", e, 0, -21474836400LL, 12, 0);
+
+  TESTLL("1234567", e, 10, 1234567LL, 7, 0);
+  TESTLL("-1234567", e, 10, -1234567LL, 8, 0);
+  TESTLL("2147483647", e, 10, 2147483647LL, 10, 0);
+  TESTLL("2147483648", e, 10, 2147483648LL, 10, 0);
+  TESTLL("-2147483647", e, 10, -2147483647LL, 11, 0);
+  TESTLL("-2147483648", e, 10, -2147483648LL, 11, 0);
+  TESTLL("-2147483649", e, 10, -2147483649LL, 11, 0);
+  TESTLL("-2147483650", e, 10, -2147483650LL, 11, 0);
+  TESTLL("2147483650", e, 10, 2147483650LL, 10, 0);
+  TESTLL("-4294967295", e, 10, -4294967295LL, 11, 0);
+  TESTLL("4294967295", e, 10, 4294967295LL, 10, 0);
+  TESTLL("4294967296", e, 10, 4294967296LL, 10, 0);
+  TESTLL("4294967297", e, 10, 4294967297LL, 10, 0);
+  TESTLL("4294967300", e, 10, 4294967300LL, 10, 0);
+  TESTLL("21474836400", e, 10, 21474836400LL, 11, 0);
+  TESTLL("-21474836400", e, 10, -21474836400LL, 12, 0);
+  TESTLL("-21474836500", e, 10, -21474836500LL, 12, 0);
+
+  TESTLL("09azAZ", e, 36, 0xEE7A3BLL, 6, 0);
+  TESTLL("-09azAZ", e, 36, -0xEE7A3BLL, 7, 0);
+  TESTLL("9azAZ", e, 36, 0xEE7A3BLL, 5, 0);
+  TESTLL("-9azAZ", e, 36, -0xEE7A3BLL, 6, 0);
+  TESTLL("1Z141Z4", e, 36, 0x100000000LL, 7, 0);
+  TESTLL("ZIK0ZL", e, 36, 0x80000001LL, 6, 0);
+  TESTLL("ZIK0ZK", e, 36, 0x80000000LL, 6, 0);
+  TESTLL("ZIK0ZJ", e, 36, 0x7FFFFFFFLL, 6, 0);
+  TESTLL("-ZIK0ZJ", e, 36, -0x7FFFFFFFLL, 7, 0);
+  TESTLL("-ZIK0ZK", e, 36, -0x80000000LL, 7, 0);
+  TESTLL("-ZIK0ZL", e, 36, -0x80000001LL, 7, 0);
+  TESTLL("-ZIK0ZM", e, 36, -0x80000002LL, 7, 0);
+  TESTLL("1Y2p0IJ32E8e6", e, 36, 0x7FFFFFFFFFFFFFFELL, 13, 0);
+  TESTLL("1Y2P0IJ32E8E7", e, 36, 0x7FFFFFFFFFFFFFFFLL, 13, 0);
+  TESTLL("1Y2P0IJ32E8E8", e, 36, 0x7FFFFFFFFFFFFFFFLL, 13, ERANGE);
+  TESTLL("1Y2P0IJ32E8E9", e, 36, 0x7FFFFFFFFFFFFFFFLL, 13, ERANGE);
+  TESTLL("1Y2P0IJ32E8EZ", e, 36, 0x7FFFFFFFFFFFFFFFLL, 13, ERANGE);
+  TESTLL("1Y2P0IJ32E8F0", e, 36, 0x7FFFFFFFFFFFFFFFLL, 13, ERANGE);
+  TESTLL("-1Y2P0IJ32E8E6", e, 36, -0x7FFFFFFFFFFFFFFELL, 14, 0);
+  TESTLL("-1Y2P0IJ32E8E7", e, 36, -0x7FFFFFFFFFFFFFFFLL, 14, 0);
+  TESTLL("-1Y2P0IJ32E8E8", e, 36, -0x8000000000000000LL, 14, 0);
+  TESTLL("-1Y2P0IJ32E8E9", e, 36, -0x8000000000000000LL, 14, ERANGE);
+  TESTLL("-1Y2P0IJ32E8EZ", e, 36, -0x8000000000000000LL, 14, ERANGE);
+  TESTLL("-1Y2P0IJ32E8F0", e, 36, -0x8000000000000000LL, 14, ERANGE);
+  TESTLL("3W5E11264sgse", e, 36, 0x7FFFFFFFFFFFFFFFLL, 13, ERANGE);
+  TESTLL("3w5e11264SGSf", e, 36, 0x7FFFFFFFFFFFFFFFLL, 13, ERANGE);
+  TESTLL("3W5E11264SGSG", e, 36, 0x7FFFFFFFFFFFFFFFLL, 13, ERANGE);
+  TESTLL("3W5E11264SGSH", e, 36, 0x7FFFFFFFFFFFFFFFLL, 13, ERANGE);
+  TESTLL("3W5E11264SGT0", e, 36, 0x7FFFFFFFFFFFFFFFLL, 13, ERANGE);
+  TESTLL("-3W5E11264SGSE", e, 36, -0x8000000000000000LL, 14, ERANGE);
+  TESTLL("-3W5E11264SGSF", e, 36, -0x8000000000000000LL, 14, ERANGE);
+  TESTLL("-3W5E11264SGSG", e, 36, -0x8000000000000000LL, 14, ERANGE);
+  TESTLL("-3W5E11264SGSH", e, 36, -0x8000000000000000LL, 14, ERANGE);
+  TESTLL("-3W5E11264SGT0", e, 36, -0x8000000000000000LL, 14, ERANGE);
+
+  TESTLL("10101010", e, 2, 0xAALL, 8, 0);
+  TESTLL("1111111111111111111111111111111", e, 2, 0x7FFFFFFFLL, 31, 0);
+  TESTLL("10000000000000000000000000000000", e, 2, 0x80000000LL, 32, 0);
+  TESTLL("-1111111111111111111111111111111", e, 2, -0x7FFFFFFFLL, 32, 0);
+  TESTLL("-10000000000000000000000000000000", e, 2, -0x80000000LL, 33, 0);
+  TESTLL("-10000000000000000000000000000001", e, 2, -0x80000001LL, 33, 0);
+
+  TESTLL("0x ", e, 0, 0LL, 1, 0);
+  TESTLL("0x", e, 0, 0LL, 1, 0);
+  TESTLL("0xg", e, 16, 0LL, 1, 0);
+  TESTLL("0x", e, 16, 0LL, 1, 0);
+
+  TESTLL("+0x", e, 0, 0LL, 2, 0);
+  TESTLL("-0x", e, 0, 0LL, 2, 0);
+
+  TESTLL(" - 0", e, 0, 0LL, 0, 0);
+  TESTLL("+ 0", e, 0, 0LL, 0, 0);
+  TESTLL("   ", e, 0, 0LL, 0, 0);
+
+  TESTULL("09azAZ", e, 36, 0xEE7A3BLL, 6, 0);
+  TESTULL("-09azAZ", e, 36, -0xEE7A3BLL, 7, 0);
+  TESTULL("9azAZ", e, 36, 0xEE7A3BLL, 5, 0);
+  TESTULL("-9azAZ", e, 36, -0xEE7A3BLL, 6, 0);
+  TESTULL("1Z141Z4", e, 36, 0x100000000LL, 7, 0);
+  TESTULL("ZIK0ZL", e, 36, 0x80000001LL, 6, 0);
+  TESTULL("ZIK0ZK", e, 36, 0x80000000LL, 6, 0);
+  TESTULL("ZIK0ZJ", e, 36, 0x7FFFFFFFLL, 6, 0);
+  TESTULL("-ZIK0ZJ", e, 36, -0x7FFFFFFFLL, 7, 0);
+  TESTULL("-ZIK0ZK", e, 36, -0x80000000LL, 7, 0);
+  TESTULL("-ZIK0ZL", e, 36, -0x80000001LL, 7, 0);
+  TESTULL("-ZIK0ZM", e, 36, -0x80000002LL, 7, 0);
+  TESTULL("1Y2p0IJ32E8e6", e, 36, 0x7FFFFFFFFFFFFFFELL, 13, 0);
+  TESTULL("1Y2P0IJ32E8E7", e, 36, 0x7FFFFFFFFFFFFFFFLL, 13, 0);
+  TESTULL("1Y2P0IJ32E8E8", e, 36, 0x8000000000000000LL, 13, 0);
+  TESTULL("1Y2P0IJ32E8E9", e, 36, 0x8000000000000001LL, 13, 0);
+  TESTULL("1Y2P0IJ32E8EZ", e, 36, 0x800000000000001BLL, 13, 0);
+  TESTULL("1Y2P0IJ32E8F0", e, 36, 0x800000000000001CLL, 13, 0);
+  TESTULL("-1Y2P0IJ32E8E6", e, 36, 0x8000000000000002LL, 14, 0);
+  TESTULL("-1Y2P0IJ32E8E7", e, 36, 0x8000000000000001LL, 14, 0);
+  TESTULL("-1Y2P0IJ32E8E8", e, 36, 0x8000000000000000LL, 14, 0);
+  TESTULL("-1Y2P0IJ32E8E9", e, 36, 0x7FFFFFFFFFFFFFFFLL, 14, 0);
+  TESTULL("-1Y2P0IJ32E8EZ", e, 36, 0x7FFFFFFFFFFFFFE5LL, 14, 0);
+  TESTULL("-1Y2P0IJ32E8F0", e, 36, 0x7FFFFFFFFFFFFFE4LL, 14, 0);
+  TESTULL("3W5E11264sgse", e, 36, 0xFFFFFFFFFFFFFFFELL, 13, 0);
+  TESTULL("3w5e11264SGSf", e, 36, 0xFFFFFFFFFFFFFFFFLL, 13, 0);
+  TESTULL("3W5E11264SGSG", e, 36, 0xFFFFFFFFFFFFFFFFLL, 13, ERANGE);
+  TESTULL("3W5E11264SGSH", e, 36, 0xFFFFFFFFFFFFFFFFLL, 13, ERANGE);
+  TESTULL("3W5E11264SGT0", e, 36, 0xFFFFFFFFFFFFFFFFLL, 13, ERANGE);
+  TESTULL("-3W5E11264SGSE", e, 36, 0x2LL, 14, 0);
+  TESTULL("-3W5E11264SGSF", e, 36, 0x1LL, 14, 0);
+  TESTULL("-3W5E11264SGSG", e, 36, 0xFFFFFFFFFFFFFFFFLL, 14, ERANGE);
+  TESTULL("-3W5E11264SGSH", e, 36, 0xFFFFFFFFFFFFFFFFLL, 14, ERANGE);
+  TESTULL("-3W5E11264SGT0", e, 36, 0xFFFFFFFFFFFFFFFFLL, 14, ERANGE);
+
+
+  errno = 0;
+
+  if (failed == 0) {
+    printf("* PASS\n");
+  } else {
+    printf("* %d failed tests\n", failed);
+  }
+
+  return 0;
+}

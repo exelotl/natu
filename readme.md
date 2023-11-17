@@ -20,7 +20,7 @@ nim build                       # run the "build" nimscript task
 
 Natu is a package for making Game Boy Advance games in [Nim](https://nim-lang.org/).
 
-Primarily a wrapper for [libtonc](https://www.coranac.com/tonc/text/), we are now growing in our own direction: ditching some old conventions to be more Nim-friendly, and adding more libraries.
+Originally a wrapper for [libtonc](https://www.coranac.com/tonc/text/), we are now growing in our own direction: ditching some old conventions to be more Nim-friendly, and adding more libraries.
 
 ### Features
 
@@ -42,19 +42,18 @@ Primarily a wrapper for [libtonc](https://www.coranac.com/tonc/text/), we are no
 
 ### Usage
 
-You will need [devkitARM](https://devkitpro.org/wiki/Getting_Started) with GBA tools and libraries. If you are using the graphical installer, simply check "tools for GBA development" during setup. Otherwise be sure to install the `gba-dev` group of packages. Either way, the libtonc package is included so you should be good to go!
+For docs and setup instructions go to [natu.exelo.tl](https://natu.exelo.tl)
 
-Before diving into Nim, try building some of the Tonc 'advanced' demos to make sure your environment is good.
+The examples can be found at [git.sr.ht/~exelotl/natu-examples](https://git.sr.ht/~exelotl/natu-examples)
 
-The examples in this repo each use a _nimscript_ configuration which should make a good starting point for any project. From within an example you can run `nim build` in the terminal to produce a GBA rom.
-
-Happy coding! And if you need any help you can reach me (exelotl) on the [gbadev](https://discord.gg/2WS7bpJ) discord.
+Happy coding! And if you need any help you can reach me (exelotl) on the [gbadev](https://discord.gg/2WS7bpJ) discord, `#natu` irc channel on EFnet, or ask a question on [the natu mailing list](https://lists.sr.ht/~exelotl/natu).
 
 ### Thanks
 
 [tonc](https://www.coranac.com/tonc/text/) + libtonc by cearn  
-[devkitARM](https://devkitpro.org/) toolchain maintained by wintermute  
 [maxmod](https://maxmod.devkitpro.org/) sound system by mukunda johnson  
+[libugba](https://github.com/AntonioND/libugba)'s interrupt handler by AntonioND
+[ACSL](https://codeberg.org/pgimeno/ACSL)'s malloc/free by pgimeno
 [mGBA](https://mgba.io/) by endrift  
 [posprintf](http://www.danposluns.com/gbadev/posprintf/index.html) by dan posluns  
 natu logo by [hot_pengu](https://twitter.com/hot_pengu), based on pixel art by [iamrifki](https://iamrifki.github.io/)  

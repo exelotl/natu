@@ -1,0 +1,6 @@
+%rename startfile ignore_startfile
+%rename endfile ignore_endfile
+%rename lib ignore_lib
+
+*lib:
+-lacsl
