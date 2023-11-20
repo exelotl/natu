@@ -1,5 +1,6 @@
 import natu/[video, math, utils]
 import natu/kit/[pal_manager, obj_tile_manager]
+from natu/private/common import doInclude, natuOutputDir
 
 export pal_manager
 export obj_tile_manager
@@ -21,14 +22,6 @@ type
     w, h: uint8
     size*: ObjSize
     flags*: set[GraphicFlag]
-
-const natuOutputDir {.strdefine.} = ""
-
-when natuOutputDir == "":
-  {.error: "natuOutputDir is not set. Did you forget to call gbaCfg() in your config.nims?".}
-
-template doInclude(path: static string) =
-  include `path`
 
 doInclude natuOutputDir & "/graphics.nim"
 

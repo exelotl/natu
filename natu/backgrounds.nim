@@ -1,5 +1,6 @@
 import natu/[utils, video, bios]
 import natu/kit/pal_manager
+from natu/private/common import doInclude, natuOutputDir
 
 type
   BgKind* = enum
@@ -37,17 +38,7 @@ type
   
   BgRegion* = tuple[layout: BgRegionLayout; x1, y1, x2, y2: int]
 
-
-const natuOutputDir {.strdefine.} = ""
-
-when natuOutputDir == "":
-  {.error: "natuOutputDir is not set. Did you forget to call gbaCfg() in your config.nims?".}
-
-template doInclude(path: static string) =
-  include `path`
-
 doInclude natuOutputDir & "/backgrounds.nim"
-
 
 template kind*(bg: Background): BgKind = bg.data.kind
 template flags*(bg: Background): set[BgFlag] = bg.data.flags

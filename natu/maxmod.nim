@@ -25,6 +25,7 @@
 ]#
 
 from ./math import FixedN
+from natu/private/common import doInclude, natuOutputDir
 
 const thisDir = currentSourcePath()[0..^11]
 const mmPath = thisDir & "../vendor/maxmod"
@@ -46,14 +47,6 @@ type
 
 
 # Soundbank is auto-included from the user's project:
-
-const natuOutputDir {.strdefine.} = ""
-
-when natuOutputDir == "":
-  {.error: "natuOutputDir is not set. Did you forget to call gbaCfg() in your config.nims?".}
-
-template doInclude(path: static string) =
-  include `path`
 
 doInclude natuOutputDir & "/soundbank.nim"
 
