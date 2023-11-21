@@ -548,37 +548,47 @@ func `pal=`*(se: var ScrEntry, pal: int) =  se.palId = pal
 # BG affine matrix functions
 # -------------------------- 
 
-proc setTo*(bgaff: var BgAffine; pa, pb, pc, pd: Fixed) {.importc: "bg_aff_set", toncinl.}
+proc init*(bgaff: var BgAffine; pa, pb, pc, pd: Fixed) {.importc: "bg_aff_set", toncinl.}
   ## Set the elements of a bg affine matrix.
 
 proc setToIdentity*(bgaff: var BgAffine) {.importc: "bg_aff_identity", toncinl.}
-  ## Set an bg affine matrix to the identity matrix
+  ## Set a bg affine matrix to the identity matrix
 
-proc setToScale*(bgaff: var BgAffine; sx, sy: Fixed) {.importc: "bg_aff_scale", toncinl.}
+proc setToScaleRaw*(bgaff: var BgAffine; sx, sy: Fixed) {.importc: "bg_aff_scale", toncinl.}
+proc setToShearXRaw*(bgaff: var BgAffine; hx: Fixed) {.importc: "bg_aff_shearx", toncinl.}
+proc setToShearYRaw*(bgaff: var BgAffine; hy: Fixed) {.importc: "bg_aff_sheary", toncinl.}
+proc setToRotationRaw*(bgaff: var BgAffine; alpha: uint16) {.importc: "bg_aff_rotate", tonc.}
+proc setToScaleAndRotationRaw*(bgaff: var BgAffine; sx, sy: Fixed; alpha: uint16) {.importc: "bg_aff_rotscale", tonc.}
+
+proc setToScale*(bgaff: var BgAffine; sx: Fixed, sy = sx) {.inline.} =
   ## Set an bg affine matrix for scaling.
+  let x = ((1 shl 24) div sx.int) shr 8
+  let y = ((1 shl 24) div sy.int) shr 8
+  bgaff.setToScaleRaw(x.Fixed, y.Fixed)
 
-proc setToShearX*(bgaff: var BgAffine; hx: Fixed) {.importc: "bg_aff_shearx", toncinl.}
-proc setToShearY*(bgaff: var BgAffine; hy: Fixed) {.importc: "bg_aff_sheary", toncinl.}
-
-proc setToRotation*(bgaff: var BgAffine; alpha: uint16) {.importc: "bg_aff_rotate", tonc.}
+proc setToRotation*(bgaff: var BgAffine; theta: uint16) {.inline.} =
   ## Set bg matrix to counter-clockwise rotation.
   ## 
   ## :bgaff: BG affine struct to set.
   ## :alpha: CCW angle. full-circle is 0x10000.
+  bgaff.setToRotationRaw(0'u16 - theta)
 
-proc setToScaleAndRotation*(bgaff: var BgAffine; sx, sy: Fixed; alpha: uint16) {.importc: "bg_aff_rotscale", tonc.}
+proc setToShearX*(bgaff: var BgAffine; hx: Fixed) {.inline.} =
+  bgaff.setToShearXRaw(-hx)
+
+proc setToShearY*(bgaff: var BgAffine; hy: Fixed) {.inline.} =
+  bgaff.setToShearYRaw(-hy)
+
+proc setToScaleAndRotation*(bgaff: var BgAffine; sx, sy: Fixed; theta: uint16) {.inline.} =
   ## Set bg matrix to 2d scaling, then counter-clockwise rotation.
   ## 
   ## :bgaff: BG affine struct to set.
   ## :sx:    Horizontal scale (zoom). 24.8 fixed point.
   ## :sy:    Vertical scale (zoom). 24.8 fixed point.
   ## :alpha: CCW angle. full-circle is 0x10000.
-
-proc setToScaleAndRotation*(bgaff: var BgAffine; affSrc: ptr AffSrc) {.importc: "bg_aff_rotscale2", tonc.}
-  ## Set bg matrix to 2d scaling, then counter-clockwise rotation.
-  ## 
-  ## :bgaff: BG affine struct to set.
-  ## :affSrc: Struct with scales and angle.
+  let x = ((1 shl 24) div sx.int) shr 8
+  let y = ((1 shl 24) div sy.int) shr 8
+  bgaff.setToScaleAndRotationRaw(x.Fixed, y.Fixed, 0'u16 - theta)
 
 proc premul*(dst: var BgAffine; src: ptr BgAffine) {.importc: "bg_aff_premul", tonc.}
   ## Pre-multiply the matrix `dst` by `src`

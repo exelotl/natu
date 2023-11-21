@@ -70,30 +70,29 @@ proc setToIdentity*(oaff: var ObjAffine) {.inline.} =
   oaff.pc = 0
   oaff.pd = 0x0100
 
-proc setToScale*(oaff: var ObjAffine; sx, sy: Fixed) {.inline.} =
-  ## Set an object affine matrix for scaling.
+proc setToScaleRaw*(oaff: var ObjAffine; sx, sy: Fixed) {.inline.} =
+  ## Mathematically correct version of `setToScale`, but does the opposite of
+  ## what you'd expect (since the matrix maps from screen space to texture space).
   oaff.pa = sx.int16
   oaff.pb = 0
   oaff.pc = 0
   oaff.pd = sy.int16
-  
-proc setToShearX*(oaff: var ObjAffine; hx: Fixed) {.inline.} =
+
+proc setToShearXRaw*(oaff: var ObjAffine; hx: Fixed) {.inline.} =
   oaff.pa = 0x0100
   oaff.pb = hx.int16
   oaff.pc = 0
   oaff.pd = 0x0100
 
-proc setToShearY*(oaff: var ObjAffine; hy: Fixed) {.inline.} =
+proc setToShearYRaw*(oaff: var ObjAffine; hy: Fixed) {.inline.} =
   oaff.pa = 0x0100
   oaff.pb = 0
   oaff.pc = hy.int16
   oaff.pd = 0x0100
 
-proc setToRotation*(oaff: var ObjAffine; alpha: uint16) {.inline.} =
-  ## Set obj matrix to counter-clockwise rotation.
-  ## 
-  ## :oaff:  Object affine matrix to set.
-  ## :alpha: CCW angle. full-circle is `0x10000`.
+proc setToRotationRaw*(oaff: var ObjAffine; alpha: uint16) {.inline.} =
+  ## Mathematically correct version of `setToRotation`, but does the opposite of
+  ## what you'd expect (since the matrix maps from screen space to texture space).
   let ss = luSin(alpha.Angle).fp
   let cc = luCos(alpha.Angle).fp
   oaff.pa = (cc).int16
@@ -133,26 +132,15 @@ proc postmul*(dst: var ObjAffine, src: ObjAffine) =
   dst.pc = ((tmp_c * src.pa.int + tmp_d * src.pc.int) shr 8).int16
   dst.pd = ((tmp_c * src.pb.int + tmp_d * src.pd.int) shr 8).int16
 
-proc setToScaleAndRotation*(oaff: var ObjAffine; sx, sy: Fixed; alpha: uint16) =
-  ## Set obj matrix to 2d scaling, then counter-clockwise rotation.
-  ## 
-  ## :oaff:  Object affine matrix to set.
-  ## :sx:    Horizontal scale (zoom). .8 fixed point.
-  ## :sy:    Vertical scale (zoom). .8 fixed point.
-  ## :alpha: CCW angle. full-circle is `0x10000`.
+proc setToScaleAndRotationRaw*(oaff: var ObjAffine; sx, sy: Fixed; alpha: uint16) =
+  ## Mathematically correct version of `setToScaleAndRotation`, but does the opposite of
+  ## what you'd expect (since the matrix maps from screen space to texture space).
   let ss = luSin(alpha.Angle).int
   let cc = luCos(alpha.Angle).int
   oaff.pa = ((cc*sx) shr 12).int16
   oaff.pb = ((-ss*sx) shr 12).int16
   oaff.pc = ((ss*sy) shr 12).int16
   oaff.pd = ((cc*sy) shr 12).int16
-
-proc setToScaleAndRotation*(oaff: var ObjAffine; affSrc: ptr AffSrc) {.inline.} =
-  ## Set obj matrix to 2d scaling, then counter-clockwise rotation.
-  ## 
-  ## :oaff:   Object affine matrix to set.
-  ## :affSrc: Struct with scales and angle.
-  setToScaleAndRotation(oaff, affSrc.sx.Fixed, affSrc.sy.Fixed, affSrc.alpha)
 
 proc rotscaleEx*(obj: var ObjAttr; oaff: var ObjAffine; asx: ptr AffSrcEx) {.importc: "obj_rotscale_ex", tonc.}
   ## Rot/scale an object around an arbitrary point.
@@ -165,24 +153,35 @@ proc rotscaleEx*(obj: var ObjAttr; oaff: var ObjAffine; asx: ptr AffSrcEx) {.imp
 template rotscaleEx*(obj: var ObjAttr; oaff: var ObjAffine; asx: AffSrcEx) =
   rotscaleEx(obj, oaff, unsafeAddr asx)
 
-proc setToScaleInv*(oa: var ObjAffine; wx, wy: Fixed) {.inline.} =
-  let x = ((1 shl 24) div wx.int) shr 8
-  let y = ((1 shl 24) div wy.int) shr 8
-  oa.setToScale(x.Fixed, y.Fixed)
+proc setToScale*(oa: var ObjAffine; sx: Fixed, sy = sx) {.inline.} =
+  ## Set an object affine matrix for scaling.
+  let x = ((1 shl 24) div sx.int) shr 8
+  let y = ((1 shl 24) div sy.int) shr 8
+  oa.setToScaleRaw(x.Fixed, y.Fixed)
 
-proc setToRotationInv*(oa: var ObjAffine; theta: uint16) {.inline.} =
-  oa.setToRotation(0'u16 - theta)
+proc setToRotation*(oa: var ObjAffine; theta: uint16) {.inline.} =
+  ## Set obj matrix to counter-clockwise rotation.
+  ## 
+  ## :oaff:  Object affine matrix to set.
+  ## :alpha: CCW angle. full-circle is `0x10000`.
+  oa.setToRotationRaw(0'u16 - theta)
 
-proc setToShearXInv*(oa: var ObjAffine; hx: Fixed) {.inline.} =
-  oa.setToShearX(-hx)
+proc setToShearX*(oa: var ObjAffine; hx: Fixed) {.inline.} =
+  oa.setToShearXRaw(-hx)
 
-proc setToShearYInv*(oa: var ObjAffine; hy: Fixed) {.inline.} =
-  oa.setToShearY(-hy)
+proc setToShearY*(oa: var ObjAffine; hy: Fixed) {.inline.} =
+  oa.setToShearYRaw(-hy)
 
-proc setToScaleAndRotationInv*(oa: var ObjAffine; wx, wy: Fixed; theta: uint16) {.inline.} =
-  let x = ((1 shl 24) div wx.int) shr 8
-  let y = ((1 shl 24) div wy.int) shr 8
-  setToScaleAndRotation(oa, x.Fixed, y.Fixed, 0'u16 - theta)
+proc setToScaleAndRotation*(oa: var ObjAffine; sx, sy: Fixed; theta: uint16) {.inline.} =
+  ## Set obj matrix to 2d scaling, then counter-clockwise rotation.
+  ## 
+  ## :oaff:  Object affine matrix to set.
+  ## :sx:    Horizontal scale (zoom). .8 fixed point.
+  ## :sy:    Vertical scale (zoom). .8 fixed point.
+  ## :alpha: CCW angle. full-circle is `0x10000`.
+  let x = ((1 shl 24) div sx.int) shr 8
+  let y = ((1 shl 24) div sy.int) shr 8
+  oa.setToScaleAndRotationRaw(x.Fixed, y.Fixed, 0'u16 - theta)
 
 
 # SPRITE GETTERS/SETTERS
