@@ -11,7 +11,6 @@ from private/privutils import writeFields
 export objMem, objAffMem
 export ObjAttr, ObjAffine, ObjAttrPtr, ObjAffinePtr
 
-{.compile(toncPath & "/src/tonc_oam.c", toncCFlags).}
 {.compile(toncPath & "/src/tonc_obj_affine.c", toncCFlags).}
 
 {.pragma: tonc, header: "tonc_oam.h".}
@@ -41,15 +40,13 @@ type
     s16x8, s32x8, s32x16, s64x32,
     s8x16, s8x32, s16x32, s32x64
 
-{.push inline.}
-
-func setAttr*(obj: ObjAttrPtr; a0, a1, a2: uint16) =
+func setAttr*(obj: ObjAttrPtr; a0, a1, a2: uint16) {.inline.} =
   ## Set the attributes of an object
   obj.attr0 = a0
   obj.attr1 = a1
   obj.attr2 = a2
 
-func setAttr*(obj: var ObjAttr; a0, a1, a2: uint16) =
+func setAttr*(obj: var ObjAttr; a0, a1, a2: uint16) {.inline.} =
   ## Set the attributes of an object
   obj.attr0 = a0
   obj.attr1 = a1
@@ -59,74 +56,103 @@ func setAttr*(obj: var ObjAttr; a0, a1, a2: uint16) =
 # Obj affine procedures
 # ---------------------
 
-proc init(oaff: ObjAffinePtr; pa, pb, pc, pd: Fixed) {.importc: "obj_aff_set", tonc.}
-proc setToIdentity(oaff: ObjAffinePtr) {.importc: "obj_aff_identity", tonc.}
-proc setToScale(oaff: ObjAffinePtr; sx, sy: Fixed) {.importc: "obj_aff_scale", tonc.}
-proc setToShearX(oaff: ObjAffinePtr; hx: Fixed) {.importc: "obj_aff_shearx", tonc.}
-proc setToShearY(oaff: ObjAffinePtr; hy: Fixed) {.importc: "obj_aff_sheary", tonc.}
-proc setToRotation(oaff: ObjAffinePtr; alpha: uint16) {.importc: "obj_aff_rotate", tonc.}
-proc setToScaleAndRotation(oaff: ObjAffinePtr; sx, sy: Fixed; alpha: uint16) {.importc: "obj_aff_rotscale", tonc.}
-proc setToScaleAndRotation(oaff: ObjAffinePtr; affSrc: ptr AffSrc) {.importc: "obj_aff_rotscale2", tonc.}
-proc premul(dst: ObjAffinePtr, src: ObjAffinePtr) {.importc: "obj_aff_premul", tonc.}
-proc postmul(dst: ObjAffinePtr, src: ObjAffinePtr) {.importc: "obj_aff_postmul", tonc.}
-proc rotscaleEx(obj: var ObjAttr; oaff: ObjAffinePtr; asx: ptr AffSrcEx) {.importc: "obj_rotscale_ex", tonc.}
-proc setToScaleInv(oa: ObjAffinePtr; wx, wy: Fixed) {.importc: "obj_aff_scale_inv", tonc.}
-proc setToRotationInv(oa: ObjAffinePtr; theta: uint16) {.importc: "obj_aff_rotate_inv", tonc.}
-proc setToShearXInv(oa: ObjAffinePtr; hx: Fixed) {.importc: "obj_aff_shearx_inv", tonc.}
-proc setToShearYInv(oa: ObjAffinePtr; hy: Fixed) {.importc: "obj_aff_sheary_inv", tonc.}
-
-proc init*(oaff: var ObjAffine; pa, pb, pc, pd: Fixed) =
-  init(addr oaff, pa, pb, pc, pd)
+proc init*(oaff: var ObjAffine; pa, pb, pc, pd: Fixed) {.inline.} =
   ## Set the elements of an object affine matrix.
+  oaff.pa = pa.int16
+  oaff.pb = pb.int16
+  oaff.pc = pc.int16
+  oaff.pd = pd.int16
 
-proc setToIdentity*(oaff: var ObjAffine) {.importc: "obj_aff_identity", tonc.}
-  ##  Set an object affine matrix to the identity matrix.
+proc setToIdentity*(oaff: var ObjAffine) {.inline.} =
+  ## Set an object affine matrix to the identity matrix.
+  oaff.pa = 0x0100
+  oaff.pb = 0
+  oaff.pc = 0
+  oaff.pd = 0x0100
 
-proc setToScale*(oaff: var ObjAffine; sx, sy: Fixed) {.importc: "obj_aff_scale", tonc.}
+proc setToScale*(oaff: var ObjAffine; sx, sy: Fixed) {.inline.} =
   ## Set an object affine matrix for scaling.
+  oaff.pa = sx.int16
+  oaff.pb = 0
+  oaff.pc = 0
+  oaff.pd = sy.int16
   
-proc setToShearX*(oaff: var ObjAffine; hx: Fixed) {.importc: "obj_aff_shearx", tonc.}
+proc setToShearX*(oaff: var ObjAffine; hx: Fixed) {.inline.} =
+  oaff.pa = 0x0100
+  oaff.pb = hx.int16
+  oaff.pc = 0
+  oaff.pd = 0x0100
 
-proc setToShearY*(oaff: var ObjAffine; hy: Fixed) {.importc: "obj_aff_sheary", tonc.}
+proc setToShearY*(oaff: var ObjAffine; hy: Fixed) {.inline.} =
+  oaff.pa = 0x0100
+  oaff.pb = 0
+  oaff.pc = hy.int16
+  oaff.pd = 0x0100
 
-proc setToRotation*(oaff: var ObjAffine; alpha: uint16) {.importc: "obj_aff_rotate", tonc.}
+proc setToRotation*(oaff: var ObjAffine; alpha: uint16) {.inline.} =
   ## Set obj matrix to counter-clockwise rotation.
   ## 
   ## :oaff:  Object affine matrix to set.
   ## :alpha: CCW angle. full-circle is `0x10000`.
-  
-proc setToScaleAndRotation*(oaff: var ObjAffine; sx, sy: Fixed; alpha: uint16) {.importc: "obj_aff_rotscale", tonc.}
-  ## Set obj matrix to 2d scaling, then counter-clockwise rotation.
-  ## 
-  ## :oaff:  Object affine matrix to set.
-  ## :sx:    Horizontal scale (zoom). .8 fixed point.
-  ## :sy:    Vertical scale (zoom). .8 fixed point.
-  ## :alpha: CCW angle. full-circle is `0x10000`.
+  let ss = luSin(alpha.Angle).fp
+  let cc = luCos(alpha.Angle).fp
+  oaff.pa = (cc).int16
+  oaff.pb = (-ss).int16
+  oaff.pc = (ss).int16
+  oaff.pd = (cc).int16
 
-proc setToScaleAndRotation*(oaff: var ObjAffine; affSrc: ptr AffSrc) {.importc: "obj_aff_rotscale2", tonc.}
-  ## Set obj matrix to 2d scaling, then counter-clockwise rotation.
-  ## 
-  ## :oaff:   Object affine matrix to set.
-  ## :affSrc: Struct with scales and angle.
-
-proc premul*(dst: var ObjAffine, src: ObjAffinePtr) {.importc: "obj_aff_premul", tonc.}
+proc premul*(dst: var ObjAffine, src: ObjAffine) =
   ## Pre-multiply the matrix `dst` by `src`.
   ## i.e.
   ## 
   ## .. code-block::
   ## 
   ##   dst = src * dst
+  let tmp_a = dst.pa.int
+  let tmp_b = dst.pb.int
+  let tmp_c = dst.pc.int
+  let tmp_d = dst.pd.int
+  dst.pa = ((src.pa.int * tmp_a + src.pb.int * tmp_c) shr 8).int16
+  dst.pb = ((src.pa.int * tmp_b + src.pb.int * tmp_d) shr 8).int16
+  dst.pc = ((src.pc.int * tmp_a + src.pd.int * tmp_c) shr 8).int16
+  dst.pd = ((src.pc.int * tmp_b + src.pd.int * tmp_d) shr 8).int16
 
-proc postmul*(dst: var ObjAffine, src: ObjAffinePtr) {.importc: "obj_aff_postmul", tonc.}
+proc postmul*(dst: var ObjAffine, src: ObjAffine) =
   ## Post-multiply the matrix `dst` by `src`.
   ## i.e.
   ## 
   ## .. code-block::
   ## 
   ##   dst = dst * src
+  let tmpa = dst.pa.int
+  let tmpb = dst.pb.int
+  let tmpc = dst.pc.int
+  let tmpd = dst.pd.int
+  dst.pa = ((tmp_a * src.pa.int + tmp_b * src.pc.int) shr 8).int16
+  dst.pb = ((tmp_a * src.pb.int + tmp_b * src.pd.int) shr 8).int16
+  dst.pc = ((tmp_c * src.pa.int + tmp_d * src.pc.int) shr 8).int16
+  dst.pd = ((tmp_c * src.pb.int + tmp_d * src.pd.int) shr 8).int16
 
-template premul*(dst: var ObjAffine, src: ObjAffine) = preMul(dst, unsafeAddr src)
-template postmul*(dst: var ObjAffine, src: ObjAffine) = postMul(dst, unsafeAddr src)
+proc setToScaleAndRotation*(oaff: var ObjAffine; sx, sy: Fixed; alpha: uint16) =
+  ## Set obj matrix to 2d scaling, then counter-clockwise rotation.
+  ## 
+  ## :oaff:  Object affine matrix to set.
+  ## :sx:    Horizontal scale (zoom). .8 fixed point.
+  ## :sy:    Vertical scale (zoom). .8 fixed point.
+  ## :alpha: CCW angle. full-circle is `0x10000`.
+  let ss = luSin(alpha.Angle).int
+  let cc = luCos(alpha.Angle).int
+  oaff.pa = ((cc*sx) shr 12).int16
+  oaff.pb = ((-ss*sx) shr 12).int16
+  oaff.pc = ((ss*sy) shr 12).int16
+  oaff.pd = ((cc*sy) shr 12).int16
+
+proc setToScaleAndRotation*(oaff: var ObjAffine; affSrc: ptr AffSrc) {.inline.} =
+  ## Set obj matrix to 2d scaling, then counter-clockwise rotation.
+  ## 
+  ## :oaff:   Object affine matrix to set.
+  ## :affSrc: Struct with scales and angle.
+  setToScaleAndRotation(oaff, affSrc.sx.Fixed, affSrc.sy.Fixed, affSrc.alpha)
 
 proc rotscaleEx*(obj: var ObjAttr; oaff: var ObjAffine; asx: ptr AffSrcEx) {.importc: "obj_rotscale_ex", tonc.}
   ## Rot/scale an object around an arbitrary point.
@@ -139,28 +165,34 @@ proc rotscaleEx*(obj: var ObjAttr; oaff: var ObjAffine; asx: ptr AffSrcEx) {.imp
 template rotscaleEx*(obj: var ObjAttr; oaff: var ObjAffine; asx: AffSrcEx) =
   rotscaleEx(obj, oaff, unsafeAddr asx)
 
-#  inverse (object -> screen) functions, could be useful
-proc setToScaleInv*(oa: var ObjAffine; wx, wy: Fixed) {.importc: "obj_aff_scale_inv", tonc.}
+proc setToScaleInv*(oa: var ObjAffine; wx, wy: Fixed) {.inline.} =
+  let x = ((1 shl 24) div wx.int) shr 8
+  let y = ((1 shl 24) div wy.int) shr 8
+  oa.setToScale(x.Fixed, y.Fixed)
 
-proc setToRotationInv*(oa: var ObjAffine; theta: uint16) {.importc: "obj_aff_rotate_inv", tonc.}
+proc setToRotationInv*(oa: var ObjAffine; theta: uint16) {.inline.} =
+  oa.setToRotation(0'u16 - theta)
 
-proc setToShearXInv*(oa: var ObjAffine; hx: Fixed) {.importc: "obj_aff_shearx_inv", tonc.}
+proc setToShearXInv*(oa: var ObjAffine; hx: Fixed) {.inline.} =
+  oa.setToShearX(-hx)
 
-proc setToShearYInv*(oa: var ObjAffine; hy: Fixed) {.importc: "obj_aff_sheary_inv", tonc.}
+proc setToShearYInv*(oa: var ObjAffine; hy: Fixed) {.inline.} =
+  oa.setToShearY(-hy)
 
 proc setToScaleAndRotationInv*(oa: var ObjAffine; wx, wy: Fixed; theta: uint16) {.inline.} =
   let x = ((1 shl 24) div wx.int) shr 8
   let y = ((1 shl 24) div wy.int) shr 8
   setToScaleAndRotation(oa, x.Fixed, y.Fixed, 0'u16 - theta)
 
+
 # SPRITE GETTERS/SETTERS
 # ----------------------
+
+{.push inline.}
 
 # copy attr0,1,2 from one object into another
 func setAttr*(obj: ObjAttrPtr, src: ObjAttr) = setAttr(obj, src.attr0, src.attr1, src.attr2)
 func setAttr*(obj: var ObjAttr, src: ObjAttr) = setAttr(obj, src.attr0, src.attr1, src.attr2)
-func clear*(obj: ObjAttrPtr) {.inline, deprecated:"Use obj.init() to clear".} = setAttr(obj, 0, 0, 0)
-func clear*(obj: var ObjAttr) {.inline, deprecated:"Use obj.init() to clear".} = setAttr(addr obj, 0, 0, 0)
 
 # getters
 
