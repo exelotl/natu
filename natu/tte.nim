@@ -146,7 +146,7 @@ type
     
     # Higher-up members
     flags0*: uint16
-    ctrl*: BgCntU16                      ## BG control flags
+    ctrl*: BgCnt                         ## BG control flags
     marginLeft*: uint16
     marginTop*: uint16
     marginRight*: uint16
@@ -176,19 +176,19 @@ var fntVerdana9b4* {.importc: "(&verdana9_b4Font)", tonc.}: Font ## Verdana 9. V
 # Default Initializers
 # --------------------
 
-template initSe*(bgnr:int, bgcnt: BgCntU16) =
+template initSe*(bgnr:int, bgcnt: BgCnt) =
   initSe(bgnr, bgcnt, 0xF000, clrYellow.uint32, 0, fntSys8, nil)
 
-template initAse*(bgnr:int, bgcnt: BgCntU16) =
+template initAse*(bgnr:int, bgcnt: BgCnt) =
   initAse(bgnr, bgcnt, 0x0000, clrYellow.uint32, 0, fntSys8, nil)
 
-template initChr4c*(bgnr:int, bgcnt: BgCntU16) =
+template initChr4c*(bgnr:int, bgcnt: BgCnt) =
   initChr4c(bgnr, bgcnt, 0xF000, 0x0201, (clrOrange.uint32 shl 16) or (clrYellow.uint32), fntVerdana9, nil)
 
-template initChr4r*(bgnr:int, bgcnt: BgCntU16) =
+template initChr4r*(bgnr:int, bgcnt: BgCnt) =
   initChr4r(bgnr, bgcnt, 0xF000, 0x0201, (clrOrange.uint32 shl 16) or (clrYellow.uint32), fntVerdana9, nil)
 
-template initChr4cb4*(bgnr:int, bgcnt: BgCntU16) =
+template initChr4cb4*(bgnr:int, bgcnt: BgCnt) =
   initChr4c(bgnr, bgcnt, 0xF000, 0x0201, (clrOrange.uint32 shl 16) or (clrYellow.uint32), fntVerdana9b4, chr4cDrawg_b4cts)
 
 template initBmp*(mode: int) =
@@ -373,7 +373,7 @@ proc setMargins*(left, top, right, bottom: int) {.importc: "tte_set_margins", to
 # Note: At present, the regular tilemap text ignores screenblock
 #  boundaries, so 512px wide maps may not work properly.
 
-proc initSe*(bgnr: int; bgcnt: BgCntU16; se0: ScrEntry; clrs: uint32; bupofs: uint32; font: Font = fntSys8; fn: FnDrawg = nil) {.importc: "tte_init_se", tonc.}
+proc initSe*(bgnr: int; bgcnt: BgCnt; se0: ScrEntry; clrs: uint32; bupofs: uint32; font: Font = fntSys8; fn: FnDrawg = nil) {.importc: "tte_init_se", tonc.}
   ## Initialize text system for screen-entry fonts.
   ## `bgnr`   Number of background to be used for text.
   ## `bgcnt`  Background control flags.
@@ -396,7 +396,7 @@ proc seDrawgS*(gid: uint) {.importc: "se_drawg_s", tonc.}
 
 # Affine tilemaps
 # ---------------
-proc initAse*(bgnr: int; bgcnt: BgCntU16; ase0: uint8; clrs: uint32; bupofs: uint32; font: Font = fntSys8; fn: FnDrawg = nil) {.importc: "tte_init_ase", tonc.}
+proc initAse*(bgnr: int; bgcnt: BgCnt; ase0: uint8; clrs: uint32; bupofs: uint32; font: Font = fntSys8; fn: FnDrawg = nil) {.importc: "tte_init_ase", tonc.}
   ## 
 proc aseErase*(left, top, right, bottom: int) {.importc: "ase_erase", tonc.}
   ## Erase part of the affine tilemap canvas.
@@ -416,7 +416,7 @@ proc aseDrawgS*(gid: uint) {.importc: "ase_drawg_s", tonc.}
 # versus row-major. Since column-major is 'better', this is
 # considered the primary sub-system for tiled text.
 
-proc initChr4c*(bgnr: int; bgcnt: BgCntU16, se0: uint16; cattrs, clrs: uint32; font: Font = fntVerdana9; fn: FnDrawg = nil) {.importc: "tte_init_chr4c", tonc.}
+proc initChr4c*(bgnr: int; bgcnt: BgCnt, se0: uint16; cattrs, clrs: uint32; font: Font = fntVerdana9; fn: FnDrawg = nil) {.importc: "tte_init_chr4c", tonc.}
   ## Initialize text system for 4bpp tiled, column-major surfaces.
   ## `bgnr`   Background number.
   ## `bgcnt`  Background control flags.
@@ -436,7 +436,7 @@ proc chr4cDrawgB4CTS*(gid: uint) {.importc: "chr4c_drawg_b4cts_fast", tonc.}
   ## Render 4bpp fonts to 4bpp tiles, column-major
 
 
-proc initChr4r*(bgnr: int; bgcnt: BgCntU16; se0: uint16; cattrs: uint32; clrs: uint32; font: Font = fntVerdana9; fn: FnDrawg = nil) {.importc: "tte_init_chr4r", tonc.}
+proc initChr4r*(bgnr: int; bgcnt: BgCnt; se0: uint16; cattrs: uint32; clrs: uint32; font: Font = fntVerdana9; fn: FnDrawg = nil) {.importc: "tte_init_chr4r", tonc.}
   ## Initialize text system for 4bpp tiled, column-major surfaces.
   ## `bgnr`   Background number.
   ## `bgcnt`  Background control flags.

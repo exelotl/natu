@@ -4,6 +4,7 @@
 import ./types
 import ./memdef
 from ./privutils import writeFields
+import ../bits
 
 {.push inline.}
 
@@ -15,82 +16,64 @@ template `as`[T](a: typed; t: typedesc[T]): T =
 # Display Control Register
 # ------------------------
 
-type  
-  DisplayMode* {.size:4.} = enum
-    dm0 = 0x0000     ## Tile mode - BG0:text, BG1:text, BG2:text,   BG3:text
-    dm1 = 0x0001     ## Tile mode - BG0:text, BG1:text, BG2:affine, BG3:off
-    dm2 = 0x0002     ## Tile mode - BG0:off,  BG1:off,  BG2:affine, BG3:affine
-    dm3 = 0x0003     ## Bitmap mode - 240x160, BGR555 color
-    dm4 = 0x0004     ## Bitmap mode - 240x160, 256 color palette
-    dm5 = 0x0005     ## Bitmap mode - 160x128, BGR555 color
-  
+type
   DisplayLayer* {.size:4.} = enum
     lBg0, lBg1, lBg2, lBg3, lObj
   
   DisplayLayers* {.size:4.} = set[DisplayLayer]
   
-  DispCnt* {.exportc.} = object
-    
-    mode* {.bitsize:3.}: range[0..5]
-      ## Video mode. `0`, `1`, `2` are tiled modes; `3`, `4`, `5` are bitmap modes. 
-      ## 
-      ## ===== ===============================================================
-      ## Mode  Description
-      ## ===== ===============================================================
-      ## 0     Tile mode: BG0 = text, BG1 = text, BG2 = text,   BG3 = text
-      ## 1     Tile mode: BG0 = text, BG1 = text, BG2 = affine, BG3 = off
-      ## 2     Tile mode: BG0 = off,  BG1 = off,  BG2 = affine, BG3 = affine
-      ## 3     Bitmap mode: 240x160, BGR555 color
-      ## 4     Bitmap mode: 240x160, 256 color palette
-      ## 5     Bitmap mode: 160x128, BGR555 color
-      ## ===== ===============================================================
-    
-    gb {.bitsize:1.}: bool
-      ## True if cartridge is a GBC game. Read-only. 
-    
-    page* {.bitsize:1.}: bool # range[0..1]
-      ## Page select. Modes 4 and 5 can use page flipping for smoother animation.
-      ## This bit selects the displayed page (and allowing the other one to be drawn on without artifacts). 
-    
-    oamHbl* {.bitsize:1.}: bool
-      ## Allows access to OAM in during HBlank. OAM is normally locked in VDraw.
-      ## Will reduce the amount of sprite pixels rendered per line. 
-    
-    obj1d* {.bitsize:1.}: bool
-      ## Determines whether OBJ-VRAM is treated like an array or a matrix when drawing sprites.
-    
-    blank* {.bitsize:1.}: bool
-      ## Forced Blank: When set, the GBA will display a white screen.
-      ## This allows fast access to VRAM, PAL RAM, OAM.
-    
-    bg0* {.bitsize:1.}: bool
-    bg1* {.bitsize:1.}: bool
-    bg2* {.bitsize:1.}: bool
-    bg3* {.bitsize:1.}: bool
-    obj* {.bitsize:1.}: bool
-    win0* {.bitsize:1.}: bool
-    win1* {.bitsize:1.}: bool
-    winObj* {.bitsize:1.}: bool
-    gswap* {.bitsize:1.}: bool
-    unused {.bitsize:15.}: uint
+  DispCnt* = distinct uint16
 
-func gb*(dcnt: DispCnt): bool =
-  ## True if cartridge is a GBC game. Read-only. 
-  dcnt.gb
+defineBits DispCnt, 0..3, mode, uint16
+  # Video mode. `0`, `1`, `2` are tiled modes; `3`, `4`, `5` are bitmap modes. 
+  # 
+  # ===== ===============================================================
+  # Mode  Description
+  # ===== ===============================================================
+  # 0     Tile mode: BG0 = text, BG1 = text, BG2 = text,   BG3 = text
+  # 1     Tile mode: BG0 = text, BG1 = text, BG2 = affine, BG3 = off
+  # 2     Tile mode: BG0 = off,  BG1 = off,  BG2 = affine, BG3 = affine
+  # 3     Bitmap mode: 240x160, BGR555 color
+  # 4     Bitmap mode: 240x160, 256 color palette
+  # 5     Bitmap mode: 160x128, BGR555 color
+  # ===== ===============================================================
+
+defineBit DispCnt, 3, gb, bool, {ReadOnly}
+  # True if cartridge is a GBC game. Read-only. 
+
+defineBit DispCnt, 4, page, bool
+  # Page select. Modes 4 and 5 can use page flipping for smoother animation.
+  # This bit selects the displayed page (and allowing the other one to be drawn on without artifacts). 
+
+defineBit DispCnt, 5, oamHbl, bool
+  # Allows access to OAM in during HBlank. OAM is normally locked in VDraw.
+  # Will reduce the amount of sprite pixels rendered per line. 
+
+defineBit DispCnt, 6, obj1d, bool
+  # Determines whether OBJ-VRAM is treated like an array or a matrix when drawing sprites.
+
+defineBit DispCnt, 7, blank, bool
+  # Forced Blank: When set, the GBA will display a white screen.
+  # This allows fast access to VRAM, PAL RAM, OAM.
+
+defineBit DispCnt, 8, bg0, bool
+defineBit DispCnt, 9, bg1, bool
+defineBit DispCnt, 10, bg2, bool
+defineBit DispCnt, 11, bg3, bool
+defineBit DispCnt, 12, obj, bool
+defineBit DispCnt, 13, win0, bool
+defineBit DispCnt, 14, win1, bool
+defineBit DispCnt, 15, winObj, bool
+
+defineBits DispCnt, 8..12, layersU8, uint8, {Private}
 
 func layers*(dcnt: DispCnt): DisplayLayers =
   ## Get the currently enabled display layers as a bit-set.
-  let v = dcnt as uint32
-  cast[DisplayLayers]((v and DCNT_LAYER_MASK) shr DCNT_LAYER_SHIFT)
+  cast[DisplayLayers](dcnt.layersU8)
 
-proc `layers=`*(dcnt: var DispCnt, layers: DisplayLayers) =
+func `layers=`*(dcnt: var DispCnt, layers: DisplayLayers) =
   ## Update the currently enabled display layers.
-  var v = dcnt as uint32
-  v = ((v and not DCNT_LAYER_MASK) or (cast[uint32](layers) shl DCNT_LAYER_SHIFT))
-  dcnt = v as DispCnt
-
-converter dmToIntRange*(dm: DisplayMode): range[0..5] {.inline.} =
-  ord(dm)
+  dcnt.layersU8 = cast[uint8](layers)
 
 const allDisplayLayers* = { lBg0, lBg1, lBg2, lBg3, lObj }
 
@@ -98,49 +81,33 @@ const allDisplayLayers* = { lBg0, lBg1, lBg2, lBg3, lObj }
 # Display Status Register
 # -----------------------
 
-type
-  DispStat* {.exportc.} = object
-    
-    inVBlank {.bitsize:1.}: bool
-      ## VBlank status, read-only (see getter proc).
-    
-    inHBlank {.bitsize:1.}: bool
-      ## HBlank status, read-only (see getter proc).
-    
-    inVCountTrigger {.bitsize:1.}: bool
-      ## VCount trigger status, read-only (see getter proc).
-    
-    vblankIrq* {.bitsize:1.}: bool
-      ## VBlank interrupt request.
-      ## If set, an interrupt will be fired at VBlank.
-    
-    hblankIrq* {.bitsize:1.}: bool
-      ## HBlank interrupt request.
-      ## If set, an interrupt will be fired at HBlank.
-    
-    vcountIrq* {.bitsize:1.}: bool
-      ## VCount interrupt request.
-      ## If set, an interrupt will be fired when current scanline matches the scanline trigger (`vcount` == `dispstat.vcountTrigger`)
-    
-    unused {.bitsize:2.}: uint16
-    
-    vcountTrigger* {.bitsize:8.}: uint16
-      ## VCount trigger value.
-      ## If the current scanline is at this value, bit 2 is set and an interrupt is fired if requested. 
+type DispStat* = distinct uint16
 
-func inVBlank*(dstat: DispStat): bool =
-  ## VBlank status, read only.
-  ## True during VBlank, false during VDraw.
-  dstat.inVBlank
+defineBit DispStat, 0, inVBlank, bool, {ReadOnly}
+  # VBlank status, read only.
+  # True during VBlank, false during VDraw.
 
-func inHBlank*(dstat: DispStat): bool =
-  ## HBlank status, read only. True during HBlank.
-  dstat.inHBlank
+defineBit DispStat, 1, inHBlank, bool, {ReadOnly}
+  # HBlank status, read-only (see getter proc).
 
-func inVCountTrigger*(dstat: DispStat): bool =
-  ## VCount trigger status.
-  ## True if the current scanline matches the scanline trigger (`vcount` == `dispstat.vcountTrigger`)
-  dstat.inVCountTrigger
+defineBit DispStat, 2, inVCountTrigger, bool, {ReadOnly}
+  # VCount trigger status, read-only (see getter proc).
+
+defineBit DispStat, 3, vblankIrq, bool
+  # VBlank interrupt request.
+  # If set, an interrupt will be fired at VBlank.
+
+defineBit DispStat, 4, hblankIrq, bool
+  # HBlank interrupt request.
+  # If set, an interrupt will be fired at HBlank.
+
+defineBit DispStat, 5, vcountIrq, bool
+  # VCount interrupt request.
+  # If set, an interrupt will be fired when current scanline matches the scanline trigger (`vcount` == `dispstat.vcountTrigger`)
+
+defineBits DispStat, 8..15, vcountTrigger, uint16
+  # VCount trigger value.
+  # If the current scanline is at this value, bit 2 is set and an interrupt is fired if requested. 
 
 
 # Background Control Registers
@@ -165,42 +132,41 @@ type
     aff64x64
     aff128x128
   
-  BgCnt* {.exportc.} = object
+  BgCnt* {.exportc.} = distinct uint16
     ## Background control register value.
-    
-    prio* {.bitsize:2.}: uint16
-      ## Priority value (0..3)
-      ## Lower priority BGs will be drawn on top of higher priority BGs.
-    cbb* {.bitsize:2.}: uint16
-      ## Character Base Block (0..3)
-      ## Determines the base block for tile pixel data
-    
-    unused {.bitsize:2.}: uint16
-    
-    mos* {.bitsize:1.}: bool
-      ## Enables mosaic effect.
-    is8bpp* {.bitsize:1.}: bool
-      ## Specifies the color mode of the BG: 4bpp (16 colors) or 8bpp (256 colors)
-      ## Has no effect on affine BGs, which are always 8bpp.
-    sbb* {.bitsize:5.}: uint16
-      ## Screen Base Block (0..31)
-      ## Determines the base block for the tilemap
-    wrap* {.bitsize:1.}: bool
-      ## Affine Wrapping flag.
-      ## If set, affine background wrap around at their edges.
-      ## Has no effect on regular backgrounds as they wrap around by default. 
-    size* {.bitsize:2.}: BgSize
-      ## Value representing the size of the background in tiles.
-      ## Regular and affine backgrounds have different sizes available to them, hence
-      ## the two different types assignable to this field (`RegBgSize`, `AffBgSize`)
 
-  BgCntU16* = distinct uint16
-    ## Allows you to implicitly pass a `BgCnt` to a C library that expects an unsigned integer.
 
+defineBits BgCnt, 0..1, prio, uint16
+  # Priority value (0..3)
+  # Lower priority BGs will be drawn on top of higher priority BGs.
+
+defineBits BgCnt, 2..3, cbb, uint16
+  # Character Base Block (0..3)
+  # Determines the base block for tile pixel data
+
+defineBit BgCnt, 6, mos, bool
+  # Enables mosaic effect.
+
+defineBit BgCnt, 7, is8bpp, bool
+  # Specifies the color mode of the BG: 4bpp (16 colors) or 8bpp (256 colors)
+  # Has no effect on affine BGs, which are always 8bpp.
+
+defineBits BgCnt, 8..12, sbb, uint16
+  # Screen Base Block (0..31)
+  # Determines the base block for the tilemap
+
+defineBit BgCnt, 13, wrap, bool
+  # Affine Wrapping flag.
+  # If set, affine background wrap around at their edges.
+  # Has no effect on regular backgrounds as they wrap around by default. 
+
+defineBits BgCnt, 14..15, size, BgSize
+  # Value representing the size of the background in tiles.
+  # Regular and affine backgrounds have different sizes available to them, hence
+  # the two different types assignable to this field (`RegBgSize`, `AffBgSize`)
+    
 converter toBgSize*(r: RegBgSize): BgSize = (r.BgSize)
 converter toBgSize*(a: AffBgSize): BgSize = (a.BgSize)
-converter toBgCntU16*(b: BgCnt): BgCntU16 = (b as BgCntU16)
-converter toBgCnt*(b: BgCntU16): BgCnt = (b as BgCnt)
 
 
 # Window Registers
@@ -355,10 +321,10 @@ converter toBgOfs*(p: BgPoint): BgOfs =
 ]#
 
 
-var dispcnt* {.importc:"(*(volatile DispCnt*)(0x04000000))", nodecl.}: DispCnt              ## Display control register
-var dispstat* {.importc:"(*(volatile DispStat*)(0x04000004))", nodecl.}: DispStat           ## Display status register
+var dispcnt* {.importc:"(*(volatile NU16*)(0x04000000))", nodecl.}: DispCnt              ## Display control register
+var dispstat* {.importc:"(*(volatile NU16*)(0x04000004))", nodecl.}: DispStat           ## Display status register
 let vcount* {.importc:"(*(volatile NU16*)(0x04000006))", nodecl.}: uint16                   ## Scanline count (read only)
-var bgcnt* {.importc:"((volatile BgCnt*)(0x04000008))", nodecl.}: array[4, BgCnt]           ## BG control registers
+var bgcnt* {.importc:"((volatile NU16*)(0x04000008))", nodecl.}: array[4, BgCnt]           ## BG control registers
 var bgofs* {.importc:"((volatile BG_POINT*)(0x04000010))", nodecl.}: array[4, BgOfs]        ## [Write only!] BG scroll registers
 var bgaff* {.importc:"((volatile BG_AFFINE*)(0x04000020))", nodecl.}: array[2..3, BgAffine] ## [Write only!] Affine parameters (matrix and scroll offset) for BG2 and BG3, depending on display mode.
 
