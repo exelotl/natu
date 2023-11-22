@@ -22,11 +22,11 @@ var win1cnt* {.importc:"REG_WIN1CNT", header:"tonc_memmap.h".}: WinCnt  ## Windo
 var winoutcnt* {.importc:"REG_WINOUTCNT", header:"tonc_memmap.h".}: WinCnt  ## Out window control
 var winobjcnt* {.importc:"REG_WINOBJCNT", header:"tonc_memmap.h".}: WinCnt  ## Object window control
 
-var mosaic* {.importc:"(volatile NU16*)(0x0400004C)", nodecl.}: Mosaic        ## [Write only!] Mosaic size register
+var mosaic* {.importc:"(*(volatile NU16*)(0x0400004C))", nodecl.}: Mosaic        ## [Write only!] Mosaic size register
 
-var bldcnt* {.importc:"(volatile NU16*)(0x04000050)", nodecl.}: BldCnt        ## Blend control register
-var bldalpha* {.importc:"(volatile NU16*)(0x04000052)", nodecl.}: BlendAlpha  ## Alpha blending fade coefficients
-var bldy* {.importc:"(volatile NU16*)(0x04000054)", nodecl.}: BlendBrightness ## [Write only!] Brightness (fade in/out) coefficient
+var bldcnt* {.importc:"(*(volatile NU16*)(0x04000050))", nodecl.}: BldCnt        ## Blend control register
+var bldalpha* {.importc:"(*(volatile NU16*)(0x04000052))", nodecl.}: BlendAlpha  ## Alpha blending fade coefficients
+var bldy* {.importc:"(*(volatile NU16*)(0x04000054))", nodecl.}: BlendBrightness ## [Write only!] Brightness (fade in/out) coefficient
 
 
 # Memory mapped arrays
