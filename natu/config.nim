@@ -56,7 +56,7 @@ proc gbaCfg* =
   # set linker flags
   
   if not exists("natu.ldflags.script"):
-    put "natu.ldflags.script", "-T " & natuDir & "/natu/private/gba_cart.ld"
+    put "natu.ldflags.script", "-T " & natuDir & "/natu/private/gba/gba_cart.ld"
   
   if not exists("natu.ldflags.specs"):
     put "natu.ldflags.specs", "-nostdlib -lgcc -Wl,--gc-sections"  # you could potentially pass a specs file here instead
@@ -111,13 +111,16 @@ proc gbaCfg* =
   switch "cincludes", natuDir/"vendor/maxmod/include"
   
   # Natu panic handler
-  switch "import", natuDir/"natu/private/essentials"
-  patchFile("stdlib", "fatal", natuDir/"natu/private/fatal")
+  switch "import", natuDir/"natu/private/gba/essentials"
+  patchFile("stdlib", "fatal", natuDir/"natu/private/gba/fatal")
   
   if useDkp:
     # Ensure subprocesses can see the DLLs in tools/bin
     putEnv "PATH", devkitPro()/"tools"/"bin" & PathSep & getEnv("PATH")
 
+proc sdlCfg*() =
+  echo "Building for PC."
+  switch "cincludes", natuDir/"vendor/libtonc/include"
 
 proc gbaStrip*(elfFile, gbaFile: string) =
   ## Invoke objcopy to create a raw binary file (all debug symbols removed)

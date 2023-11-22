@@ -7,8 +7,8 @@
 ## Currently this is useful for dealing with registers that haven't yet
 ## been exposed via a nicer interface, such as REG_DMA, REG_TM
 ## 
-import private/[memmap, memdef, old_constants]
-export memmap, memdef, old_constants
+import private/[memmap, memdef]
+export memmap, memdef
 
 
 # DMA
