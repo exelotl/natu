@@ -154,7 +154,7 @@ proc VBlankIntrWait*() {.swi:"0x05", importc.}
   ##    
   ##    import natu/[irq, bios]
   ##    
-  ##    irq.enable(iiVBlank)
+  ##    enableIrq(iiVBlank)
   ##    
   ##    while true:
   ##      VBlankIntrWait()

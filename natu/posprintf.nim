@@ -29,7 +29,7 @@
 ##    dispcnt = initDispCnt(bg0 = true)
 ##    
 ##    # wait forever:
-##    irq.enable(iiVBlank)
+##    enableIrq(iiVBlank)
 ##    while true:
 ##      VBlankIntrWait()
 ##    

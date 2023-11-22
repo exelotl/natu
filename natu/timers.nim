@@ -15,7 +15,7 @@
 ##    proc myHandler() =
 ##      mgba.printf("Bonk!")
 ##    
-##    irq.put(iiTimer3, myHandler)      # Register the handler.
+##    putIrq(iiTimer3, myHandler)      # Register the handler.
 ##    
 ##    tmcnt[3].init(
 ##      freq = tf16kHz,
