@@ -4,13 +4,14 @@
 
 {.warning[UnusedImport]: off.}
 
-import private/[common, types, memmap, memdef, reg]
+import std/macros
+import private/[common, types, memmap, memdef]
+from private/privutils import writeFields
 import ./math
 import ./utils
-import ./oam
+import ./bits
 
-export reg   # TODO: move most of the exposed registers into here.
-export oam   # TODO: delete OAM module, move into here.
+# export oam   # TODO: delete OAM module, move into here.
 
 # types
 export
@@ -49,44 +50,11 @@ export
   `[]=`,
   toArray
 
-
-# Palette
-export
-  bgColorMem,
-  bgPalMem,
-  objColorMem,
-  objPalMem
-
-# VRAM
-export
-  bgTileMem,
-  bgTileMem8,
-  objTileMem,
-  objTileMem8,
-  seMem,
-  vidMem,
-  m3Mem,
-  m4Mem,
-  m5Mem,
-  vidMemFront,
-  vidMemBack,
-  m4MemBack,
-  m5MemBack
-
-{.compile(toncPath & "/src/tonc_video.c", toncCFlags).}
-{.compile(toncPath & "/src/tonc_bg_affine.c", toncCFlags).}
-{.compile(toncPath & "/src/tonc_bg.c", toncCFlags).}
-{.compile(toncPath & "/src/tonc_bmp8.c", toncCFlags).}
-{.compile(toncPath & "/src/tonc_bmp16.c", toncCFlags).}
-{.compile(toncPath & "/src/tonc_color.c", toncCFlags).}
-{.compile(toncPath & "/asm/clr_blend_fast.s", toncAsmFlags).}
-{.compile(toncPath & "/asm/clr_fade_fast.s", toncAsmFlags).}
-
-{.pragma: tonc, header: "tonc_video.h".}
-{.pragma: toncinl, header: "tonc_video.h".}  # inline from header.
+export ObjAttr, ObjAffine, ObjAttrPtr, ObjAffinePtr
 
 # Constants
 # ---------
+
 # Sizes in pixels
 const
   ScreenWidth* = 240          ## Width in pixels
@@ -103,8 +71,817 @@ const
 const
   ScreenWidthInTiles* = (ScreenWidth div 8)    ## Width in tiles
   ScreenHeightInTiles* = (ScreenHeight div 8)  ## Height in tiles
+
+
+
+# Display Control Register
+# ------------------------
+
+type
+  DisplayLayer* {.size:4.} = enum
+    lBg0, lBg1, lBg2, lBg3, lObj
   
-# Color constants
+  DisplayLayers* {.size:4.} = set[DisplayLayer]
+  
+  DispCnt* = distinct uint16
+
+defineBits DispCnt, 0..3, mode, uint16
+  # Video mode. `0`, `1`, `2` are tiled modes; `3`, `4`, `5` are bitmap modes. 
+  # 
+  # ===== ===============================================================
+  # Mode  Description
+  # ===== ===============================================================
+  # 0     Tile mode: BG0 = text, BG1 = text, BG2 = text,   BG3 = text
+  # 1     Tile mode: BG0 = text, BG1 = text, BG2 = affine, BG3 = off
+  # 2     Tile mode: BG0 = off,  BG1 = off,  BG2 = affine, BG3 = affine
+  # 3     Bitmap mode: 240x160, BGR555 color
+  # 4     Bitmap mode: 240x160, 256 color palette
+  # 5     Bitmap mode: 160x128, BGR555 color
+  # ===== ===============================================================
+
+defineBit DispCnt, 3, gb, bool, {ReadOnly}
+  # True if cartridge is a GBC game. Read-only. 
+
+defineBit DispCnt, 4, page, bool
+  # Page select. Modes 4 and 5 can use page flipping for smoother animation.
+  # This bit selects the displayed page (and allowing the other one to be drawn on without artifacts). 
+
+defineBit DispCnt, 5, oamHbl, bool
+  # Allows access to OAM in during HBlank. OAM is normally locked in VDraw.
+  # Will reduce the amount of sprite pixels rendered per line. 
+
+defineBit DispCnt, 6, obj1d, bool
+  # Determines whether OBJ-VRAM is treated like an array or a matrix when drawing sprites.
+
+defineBit DispCnt, 7, blank, bool
+  # Forced Blank: When set, the GBA will display a white screen.
+  # This allows fast access to VRAM, PAL RAM, OAM.
+
+defineBit DispCnt, 8, bg0, bool
+defineBit DispCnt, 9, bg1, bool
+defineBit DispCnt, 10, bg2, bool
+defineBit DispCnt, 11, bg3, bool
+defineBit DispCnt, 12, obj, bool
+defineBit DispCnt, 13, win0, bool
+defineBit DispCnt, 14, win1, bool
+defineBit DispCnt, 15, winObj, bool
+
+defineBits DispCnt, 8..12, layersU8, uint8, {Private}
+
+func layers*(dcnt: DispCnt): DisplayLayers =
+  ## Get the currently enabled display layers as a bit-set.
+  cast[DisplayLayers](dcnt.layersU8)
+
+func `layers=`*(dcnt: var DispCnt, layers: DisplayLayers) =
+  ## Update the currently enabled display layers.
+  dcnt.layersU8 = cast[uint8](layers)
+
+const allDisplayLayers* = { lBg0, lBg1, lBg2, lBg3, lObj }
+
+
+# Display Status Register
+# -----------------------
+
+type DispStat* = distinct uint16
+
+defineBit DispStat, 0, inVBlank, bool, {ReadOnly}
+  # VBlank status, read only.
+  # True during VBlank, false during VDraw.
+
+defineBit DispStat, 1, inHBlank, bool, {ReadOnly}
+  # HBlank status, read-only (see getter proc).
+
+defineBit DispStat, 2, inVCountTrigger, bool, {ReadOnly}
+  # VCount trigger status, read-only (see getter proc).
+
+defineBit DispStat, 3, vblankIrq, bool
+  # VBlank interrupt request.
+  # If set, an interrupt will be fired at VBlank.
+
+defineBit DispStat, 4, hblankIrq, bool
+  # HBlank interrupt request.
+  # If set, an interrupt will be fired at HBlank.
+
+defineBit DispStat, 5, vcountIrq, bool
+  # VCount interrupt request.
+  # If set, an interrupt will be fired when current scanline matches the scanline trigger (`vcount` == `dispstat.vcountTrigger`)
+
+defineBits DispStat, 8..15, vcountTrigger, uint16
+  # VCount trigger value.
+  # If the current scanline is at this value, bit 2 is set and an interrupt is fired if requested. 
+
+
+# Background Control Registers
+# ----------------------------
+
+type
+  BgSize* = distinct uint16
+  
+  RegBgSize* {.size:2.} = enum
+    ## Size of a regular background in tiles.
+    ## Implicitly convertible to type `BgSize`.
+    reg32x32
+    reg64x32
+    reg32x64
+    reg64x64
+  
+  AffBgSize* {.size:2.} = enum
+    ## Size of an affine background in tiles.
+    ## Implicitly convertible to type `BgSize`.
+    aff16x16
+    aff32x32
+    aff64x64
+    aff128x128
+  
+  BgCnt* {.exportc.} = distinct uint16
+    ## Background control register value.
+
+
+defineBits BgCnt, 0..1, prio, uint16
+  # Priority value (0..3)
+  # Lower priority BGs will be drawn on top of higher priority BGs.
+
+defineBits BgCnt, 2..3, cbb, uint16
+  # Character Base Block (0..3)
+  # Determines the base block for tile pixel data
+
+defineBit BgCnt, 6, mos, bool
+  # Enables mosaic effect.
+
+defineBit BgCnt, 7, is8bpp, bool
+  # Specifies the color mode of the BG: 4bpp (16 colors) or 8bpp (256 colors)
+  # Has no effect on affine BGs, which are always 8bpp.
+
+defineBits BgCnt, 8..12, sbb, uint16
+  # Screen Base Block (0..31)
+  # Determines the base block for the tilemap
+
+defineBit BgCnt, 13, wrap, bool
+  # Affine Wrapping flag.
+  # If set, affine background wrap around at their edges.
+  # Has no effect on regular backgrounds as they wrap around by default. 
+
+defineBits BgCnt, 14..15, size, BgSize
+  # Value representing the size of the background in tiles.
+  # Regular and affine backgrounds have different sizes available to them, hence
+  # the two different types assignable to this field (`RegBgSize`, `AffBgSize`)
+    
+converter toBgSize*(r: RegBgSize): BgSize = (r.BgSize)
+converter toBgSize*(a: AffBgSize): BgSize = (a.BgSize)
+
+
+# Window Registers
+# ----------------
+
+type
+  WinH* {.exportc:"WinH".} = object
+    ## Defines the horizontal bounds of a window (left ..< right)
+    right*: uint8
+    left*: uint8
+  WinV* {.exportc:"WinV".} = object
+    ## Defines the vertical bounds of a window (top ..< bottom)
+    bottom*: uint8
+    top*: uint8
+  
+  WindowLayer* {.size:1.} = enum
+    wlBg0, wlBg1, wlBg2, wlBg3, wlObj, wlBlend
+  
+  WinCnt* = set[WindowLayer]
+    ## Allows to make changes to one half of a window control register.
+
+const
+  allWindowLayers* = { wlBg0, wlBg1, wlBg2, wlBg3, wlObj, wlBlend }
+
+
+# Mosaic
+# ------
+
+type Mosaic* = distinct uint16
+
+defineBits Mosaic, 0..3, bgh, uint16, {WriteOnly}
+defineBits Mosaic, 4..7, bgv, uint16, {WriteOnly}
+defineBits Mosaic, 8..11, objh, uint16, {WriteOnly}
+defineBits Mosaic, 12..15, objv, uint16, {WriteOnly}
+
+
+# Color Special Effects
+# ---------------------
+
+type
+  BldCnt* = distinct uint16
+    ## Blend control register
+  
+  BlendMode* {.size:2.} = enum
+    ## Color special effects modes
+    bmOff = BLD_OFF       ## Blending disabled
+    bmAlpha = BLD_STD     ## Alpha blend both A and B (using the weights from ``bldalpha``)
+    bmWhite = BLD_WHITE   ## Blend A with white using the weight from ``bldy``
+    bmBlack = BLD_BLACK   ## Blend A with black using the weight from ``bldy``
+  
+  BlendLayer* {.size:2.} = enum
+    blBg0, blBg1, blBg2, blBg3, blObj, blBd
+  
+  BlendLayers* {.size:2.} = set[BlendLayer]
+
+const allBlendLayers* = { blBg0, blBg1, blBg2, blBg3, blObj, blBd }
+
+proc a*(bld: BldCnt): BlendLayers =
+  ## Upper layer of color special effects.
+  cast[BlendLayers](bld.uint16 and BLD_TOP_MASK)
+
+proc `a=`*(bld: var BldCnt, layers: BlendLayers) =
+  bld = ((bld.uint16 and not BLD_TOP_MASK) or (cast[uint16](layers))).BldCnt
+
+proc b*(bld: BldCnt): BlendLayers =
+  ## Lower layer of color special effects.
+  cast[BlendLayers]((bld.uint16 and BLD_BOT_MASK) shr BLD_BOT_SHIFT)
+
+proc `b=`*(bld: var BldCnt, layers: BlendLayers) =
+  bld = ((bld.uint16 and not BLD_BOT_MASK) or (cast[uint16](layers) shl BLD_BOT_SHIFT)).BldCnt
+
+
+# Old names - I think `a` and `b` are way better because they correspond to `eva` and `evb` and cannot be confused with window positions.
+
+proc top*(bld: BldCnt): BlendLayers {.inline, deprecated:"Use bldcnt.a instead".} =
+  cast[BlendLayers](bld.uint16 and BLD_TOP_MASK)
+proc `top=`*(bld: var BldCnt, layers: BlendLayers) {.inline, deprecated:"Use bldcnt.a instead".} =
+  bld = ((bld.uint16 and not BLD_TOP_MASK) or (cast[uint16](layers))).BldCnt
+proc bottom*(bld: BldCnt): BlendLayers {.inline, deprecated:"Use bldcnt.b instead".} =
+  cast[BlendLayers]((bld.uint16 and BLD_BOT_MASK) shr BLD_BOT_SHIFT)
+proc `bottom=`*(bld: var BldCnt, layers: BlendLayers) {.inline, deprecated:"Use bldcnt.b instead".} =
+  bld = ((bld.uint16 and not BLD_BOT_MASK) or (cast[uint16](layers) shl BLD_BOT_SHIFT)).BldCnt
+
+
+proc mode*(bld: BldCnt): BlendMode =
+  ## Color special effects mode
+  (bld.uint16 and BLD_MODE_MASK).BlendMode
+
+proc `mode=`*(bld: var BldCnt, v: BlendMode) =
+  bld = (v.uint16 or (bld.uint16 and not BLD_MODE_MASK)).BldCnt
+
+type
+  BlendCoefficient* = uint16
+    ## A blend value ranging from 0..16.
+    ## Values from 17..31 are treated the same as 16.
+  
+  BlendAlpha* = distinct uint16
+    ## Alpha blending levels.
+    ## Features two coefficients: ``eva`` for the top layer, ``evb`` for the bottom layer.
+  
+  BlendBrightness* = distinct uint16
+    ## Brightness level (fade to black or white).
+    ## Has a single coefficient ``evy``.
+
+defineBits BlendAlpha, 0..7, eva, BlendCoefficient
+  # Upper layer alpha blending coefficient
+
+defineBits BlendAlpha, 8..15, evb, BlendCoefficient
+  # Lower layer alpha blending coefficient
+
+
+proc `evy=`*(bldy: var BlendBrightness, v: BlendCoefficient) =
+  ## Brightness coefficient (write-only!)
+  bldy = v.BlendBrightness
+
+
+# TODO: improve how BG scroll registers are exposed.
+# You should be able to write to them _and_ take their address, just not read them
+type BgOfs = BgPoint
+
+
+
+# Init/edit macros
+# ----------------
+
+type
+  ReadWriteRegister = DispCnt | DispStat | BgCnt | WinCnt | BldCnt | BlendAlpha
+  WriteOnlyRegister = BgOfs | BgAffine | WinH | WinV | BlendBrightness
+  WritableRegister = ReadWriteRegister | WriteOnlyRegister
+
+
+template init*[T:WritableRegister](r: T, args: varargs[untyped]) =
+  ## Initialise an IO register to some combination of flags/values.
+  ## E.g.
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   dispcnt.init:
+  ##     mode = mode1
+  ##     bg0 = true
+  ##
+  ## Can also be written as a one-liner:
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   dispcnt.init(mode = mode1, bg0 = true)
+  ## 
+  ## These are both shorthand for:
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   var tmp: DispCnt
+  ##   tmp.mode = mode1
+  ##   tmp.bg0 = true
+  ##   dispcnt = tmp
+  ## 
+  ## Note that we could instead set each field on `dispcnt` directly:
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   dispcnt.clear()
+  ##   dispcnt.mode = mode1
+  ##   dispcnt.bg0 = true
+  ## 
+  ## But this would be slower because `dispcnt` is *volatile*, so the C compiler can't optimise these lines into a single assignment.
+  ## 
+  var tmp: T
+  writeFields(tmp, args)
+  r = tmp
+
+template clear*[T:WritableRegister](r: T) =
+  ## Set all bits in a register to zero.
+  r = default(T)
+
+template edit*[T:ReadWriteRegister](r: T, args: varargs[untyped]) =
+  ## Update the value of some fields in a register.
+  ## This works similarly to `init`, but preserves all other fields besides the ones that are specified.
+  ##
+  ## E.g.
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   dispcnt.edit:
+  ##     bg0 = false
+  ##     obj = true
+  ##     obj1d = true
+  ##
+  ## Is shorthand for:
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   var tmp = dispcnt
+  ##   tmp.bg0 = false
+  ##   tmp.obj = true
+  ##   tmp.obj1d = true
+  ##   dispcnt = tmp
+  ##
+  var tmp = r
+  writeFields(tmp, args)
+  r = tmp
+
+template dup*[T:ReadWriteRegister](r: T, args: varargs[untyped]): T =
+  ## Copy the value of a register, modifying and returning the copy.
+  ## 
+  ## E.g.
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   # Make BG1 use the same tiles as BG0, but different map data.
+  ##   bgcnt[1] = bgcnt[0].dup(sbb = 29)
+  var res = r
+  writeFields(res, args)
+  res
+
+template initDispCnt*(args: varargs[untyped]): DispCnt =
+  ## Create a new display control register value.
+  ## Omitted fields default to zero.
+  var dcnt: DispCnt
+  writeFields(dcnt, args)
+  dcnt
+
+template initBgCnt*(args: varargs[untyped]): BgCnt =
+  ## Create a new background control register value.
+  ## Omitted fields default to zero.
+  var bg: BgCnt
+  writeFields(bg, args)
+  bg
+
+
+# Set operation fixes
+
+type LayerEnum = DisplayLayer | BlendLayer | WindowLayer
+
+macro incl*[T:LayerEnum](x: set[T], y: T) =
+  expectKind(x, nnkCall)
+  let (field, reg) = (x[0], x[1])
+  quote do:
+    `reg`.`field` = `reg`.`field` + {y}
+
+macro incl*[T:LayerEnum](x: set[T], y: set[T]) =
+  expectKind(x, nnkCall)
+  let (field, reg) = (x[0], x[1])
+  quote do:
+    `reg`.`field` = `reg`.`field` + y
+
+macro excl*[T:LayerEnum](x: set[T], y: T) =
+  expectKind(x, nnkCall)
+  let (field, reg) = (x[0], x[1])
+  quote do:
+    `reg`.`field` = `reg`.`field` - {y}
+
+macro excl*[T:LayerEnum](x: set[T], y: set[T]) =
+  expectKind(x, nnkCall)
+  let (field, reg) = (x[0], x[1])
+  quote do:
+    `reg`.`field` = `reg`.`field` - y
+
+
+# Platform specific code
+# ----------------------
+
+when natuPlatform == "gba": include ./private/gba/video 
+elif natuPlatform == "sdl": include ./private/sdl/video
+else: {.error: "Unknown platform " & natuPlatform.}
+
+
+# Objects (sprites)
+# -----------------
+
+type
+  ObjMode* {.size:2.} = enum
+    omReg = ATTR0_REG
+    omAff = ATTR0_AFF
+    omHide = ATTR0_HIDE
+    omAffDbl = ATTR0_AFF_DBL
+  
+  ObjFxMode* {.size:2.} = enum
+    fxNone = 0
+      ## Normal object, no special effects.
+    fxBlend = ATTR0_BLEND
+      ## Alpha blending enabled.
+      ## The object is effectively placed into the `bldcnt.a` layer to be blended
+      ## with the `bldcnt.b` layer using the coefficients from `bldalpha`,
+      ## regardless of the current `bldcnt.mode` setting.
+    fxWindow = ATTR0_WINDOW
+      ## The sprite becomes part of the object window.
+  
+  ObjSize* {.size:2.} = enum
+    ## Sprite size constants, high-level interface.
+    ## Each corresponds to a pair of fields (`size` in attr0, `shape` in attr1)
+    s8x8, s16x16, s32x32, s64x64,
+    s16x8, s32x8, s32x16, s64x32,
+    s8x16, s8x32, s16x32, s32x64
+
+func setAttr*(obj: ObjAttrPtr; a0, a1, a2: uint16) {.inline.} =
+  ## Set the attributes of an object
+  obj.attr0 = a0
+  obj.attr1 = a1
+  obj.attr2 = a2
+
+func setAttr*(obj: var ObjAttr; a0, a1, a2: uint16) {.inline.} =
+  ## Set the attributes of an object
+  obj.attr0 = a0
+  obj.attr1 = a1
+  obj.attr2 = a2
+
+
+# Obj affine procedures
+# ---------------------
+
+proc init*(oaff: var ObjAffine; pa, pb, pc, pd: Fixed) {.inline.} =
+  ## Set the elements of an object affine matrix.
+  oaff.pa = pa.int16
+  oaff.pb = pb.int16
+  oaff.pc = pc.int16
+  oaff.pd = pd.int16
+
+proc setToIdentity*(oaff: var ObjAffine) {.inline.} =
+  ## Set an object affine matrix to the identity matrix.
+  oaff.pa = 0x0100
+  oaff.pb = 0
+  oaff.pc = 0
+  oaff.pd = 0x0100
+
+proc setToScaleRaw*(oaff: var ObjAffine; sx, sy: Fixed) {.inline.} =
+  ## Mathematically correct version of `setToScale`, but does the opposite of
+  ## what you'd expect (since the matrix maps from screen space to texture space).
+  oaff.pa = sx.int16
+  oaff.pb = 0
+  oaff.pc = 0
+  oaff.pd = sy.int16
+
+proc setToShearXRaw*(oaff: var ObjAffine; hx: Fixed) {.inline.} =
+  oaff.pa = 0x0100
+  oaff.pb = hx.int16
+  oaff.pc = 0
+  oaff.pd = 0x0100
+
+proc setToShearYRaw*(oaff: var ObjAffine; hy: Fixed) {.inline.} =
+  oaff.pa = 0x0100
+  oaff.pb = 0
+  oaff.pc = hy.int16
+  oaff.pd = 0x0100
+
+proc setToRotationRaw*(oaff: var ObjAffine; alpha: uint16) {.inline.} =
+  ## Mathematically correct version of `setToRotation`, but does the opposite of
+  ## what you'd expect (since the matrix maps from screen space to texture space).
+  let ss = luSin(alpha.Angle).fp
+  let cc = luCos(alpha.Angle).fp
+  oaff.pa = (cc).int16
+  oaff.pb = (-ss).int16
+  oaff.pc = (ss).int16
+  oaff.pd = (cc).int16
+
+proc premul*(dst: var ObjAffine, src: ObjAffine) =
+  ## Pre-multiply the matrix `dst` by `src`.
+  ## i.e.
+  ## 
+  ## .. code-block::
+  ## 
+  ##   dst = src * dst
+  let tmp_a = dst.pa.int
+  let tmp_b = dst.pb.int
+  let tmp_c = dst.pc.int
+  let tmp_d = dst.pd.int
+  dst.pa = ((src.pa.int * tmp_a + src.pb.int * tmp_c) shr 8).int16
+  dst.pb = ((src.pa.int * tmp_b + src.pb.int * tmp_d) shr 8).int16
+  dst.pc = ((src.pc.int * tmp_a + src.pd.int * tmp_c) shr 8).int16
+  dst.pd = ((src.pc.int * tmp_b + src.pd.int * tmp_d) shr 8).int16
+
+proc postmul*(dst: var ObjAffine, src: ObjAffine) =
+  ## Post-multiply the matrix `dst` by `src`.
+  ## i.e.
+  ## 
+  ## .. code-block::
+  ## 
+  ##   dst = dst * src
+  let tmpa = dst.pa.int
+  let tmpb = dst.pb.int
+  let tmpc = dst.pc.int
+  let tmpd = dst.pd.int
+  dst.pa = ((tmp_a * src.pa.int + tmp_b * src.pc.int) shr 8).int16
+  dst.pb = ((tmp_a * src.pb.int + tmp_b * src.pd.int) shr 8).int16
+  dst.pc = ((tmp_c * src.pa.int + tmp_d * src.pc.int) shr 8).int16
+  dst.pd = ((tmp_c * src.pb.int + tmp_d * src.pd.int) shr 8).int16
+
+proc setToScaleAndRotationRaw*(oaff: var ObjAffine; sx, sy: Fixed; alpha: uint16) =
+  ## Mathematically correct version of `setToScaleAndRotation`, but does the opposite of
+  ## what you'd expect (since the matrix maps from screen space to texture space).
+  let ss = luSin(alpha.Angle).int
+  let cc = luCos(alpha.Angle).int
+  oaff.pa = ((cc*sx) shr 12).int16
+  oaff.pb = ((-ss*sx) shr 12).int16
+  oaff.pc = ((ss*sy) shr 12).int16
+  oaff.pd = ((cc*sy) shr 12).int16
+
+proc rotscaleEx*(obj: var ObjAttr; oaff: var ObjAffine; asx: ptr AffSrcEx) {.importc: "obj_rotscale_ex", header: "tonc_oam.h".}
+  ## Rot/scale an object around an arbitrary point.
+  ## Sets up `obj` and `oaff` for rot/scale transformation around an arbitrary point using the `asx` data.
+  ## 
+  ## :obj:  Object to set.
+  ## :oaff: Object affine data to set.
+  ## :asx:  Affine source data: screen and texture origins, scales and angle.
+
+template rotscaleEx*(obj: var ObjAttr; oaff: var ObjAffine; asx: AffSrcEx) =
+  rotscaleEx(obj, oaff, unsafeAddr asx)
+
+proc setToScale*(oa: var ObjAffine; sx: Fixed, sy = sx) {.inline.} =
+  ## Set an object affine matrix for scaling.
+  let x = ((1 shl 24) div sx.int) shr 8
+  let y = ((1 shl 24) div sy.int) shr 8
+  oa.setToScaleRaw(x.Fixed, y.Fixed)
+
+proc setToRotation*(oa: var ObjAffine; theta: uint16) {.inline.} =
+  ## Set obj matrix to counter-clockwise rotation.
+  ## 
+  ## :oaff:  Object affine matrix to set.
+  ## :alpha: CCW angle. full-circle is `0x10000`.
+  oa.setToRotationRaw(0'u16 - theta)
+
+proc setToShearX*(oa: var ObjAffine; hx: Fixed) {.inline.} =
+  oa.setToShearXRaw(-hx)
+
+proc setToShearY*(oa: var ObjAffine; hy: Fixed) {.inline.} =
+  oa.setToShearYRaw(-hy)
+
+proc setToScaleAndRotation*(oa: var ObjAffine; sx, sy: Fixed; theta: uint16) {.inline.} =
+  ## Set obj matrix to 2d scaling, then counter-clockwise rotation.
+  ## 
+  ## :oaff:  Object affine matrix to set.
+  ## :sx:    Horizontal scale (zoom). .8 fixed point.
+  ## :sy:    Vertical scale (zoom). .8 fixed point.
+  ## :alpha: CCW angle. full-circle is `0x10000`.
+  let x = ((1 shl 24) div sx.int) shr 8
+  let y = ((1 shl 24) div sy.int) shr 8
+  oa.setToScaleAndRotationRaw(x.Fixed, y.Fixed, 0'u16 - theta)
+
+
+# SPRITE GETTERS/SETTERS
+# ----------------------
+
+{.push inline.}
+
+# copy attr0,1,2 from one object into another
+func setAttr*(obj: ObjAttrPtr, src: ObjAttr) = setAttr(obj, src.attr0, src.attr1, src.attr2)
+func setAttr*(obj: var ObjAttr, src: ObjAttr) = setAttr(obj, src.attr0, src.attr1, src.attr2)
+
+# getters
+
+func x*(obj: ObjAttr): int = (obj.attr1 and ATTR1_X_MASK).int
+func y*(obj: ObjAttr): int = (obj.attr0 and ATTR0_Y_MASK).int
+func pos*(obj: ObjAttr): Vec2i = vec2i(obj.x, obj.y)
+func mode*(obj: ObjAttr): ObjMode = (obj.attr0 and ATTR0_MODE_MASK).ObjMode
+func fx*(obj: ObjAttr): ObjFxMode = (obj.attr0 and (ATTR0_BLEND or ATTR0_WINDOW)).ObjFxMode
+func mos*(obj: ObjAttr): bool = (obj.attr0 and ATTR0_MOSAIC) != 0
+func is8bpp*(obj: ObjAttr): bool = (obj.attr0 and ATTR0_8BPP) != 0
+func affId*(obj: ObjAttr): int = ((obj.attr1 and ATTR1_AFF_ID_MASK) shr ATTR1_AFF_ID_SHIFT).int
+func size*(obj: ObjAttr): ObjSize = (((obj.attr0 and ATTR0_SHAPE_MASK) shr 12) or (obj.attr1 shr 14)).ObjSize
+func hflip*(obj: ObjAttr): bool = (obj.attr1 and ATTR1_HFLIP) != 0
+func vflip*(obj: ObjAttr): bool = (obj.attr1 and ATTR1_VFLIP) != 0
+func tileId*(obj: ObjAttr): int = ((obj.attr2 and ATTR2_ID_MASK) shr ATTR2_ID_SHIFT).int
+func palId*(obj: ObjAttr): int = ((obj.attr2 and ATTR2_PALBANK_MASK) shr ATTR2_PALBANK_SHIFT).int
+func prio*(obj: ObjAttr): int = ((obj.attr2 and ATTR2_PRIO_MASK) shr ATTR2_PRIO_SHIFT).int
+
+# setters
+
+func `x=`*(obj: var ObjAttr; x: int) =
+  obj.attr1 = (x.uint16 and ATTR1_X_MASK) or (obj.attr1 and not ATTR1_X_MASK)
+
+func `y=`*(obj: var ObjAttr; y: int) =
+  obj.attr0 = (y.uint16 and ATTR0_Y_MASK) or (obj.attr0 and not ATTR0_Y_MASK)
+
+func `pos=`*(obj: var ObjAttr; v: Vec2i) =
+  obj.x = v.x
+  obj.y = v.y
+
+func `tileId=`*(obj: var ObjAttr; tileId: int) =
+  obj.attr2 = ((tileId.uint16 shl ATTR2_ID_SHIFT) and ATTR2_ID_MASK) or (obj.attr2 and not ATTR2_ID_MASK)
+
+func `palId=`*(obj: var ObjAttr; palId: int) =
+  obj.attr2 = ((palId.uint16 shl ATTR2_PALBANK_SHIFT) and ATTR2_PALBANK_MASK) or (obj.attr2 and not ATTR2_PALBANK_MASK)
+
+func `hflip=`*(obj: var ObjAttr; v: bool) =
+  obj.attr1 = (v.uint16 shl 12) or (obj.attr1 and not ATTR1_HFLIP)
+  
+func `vflip=`*(obj: var ObjAttr; v: bool) =
+  obj.attr1 = (v.uint16 shl 13) or (obj.attr1 and not ATTR1_VFLIP)
+
+func `mode=`*(obj: var ObjAttr; v: ObjMode) =
+  obj.attr0 = (v.uint16) or (obj.attr0 and not ATTR0_MODE_MASK)
+
+func `fx=`*(obj: var ObjAttr; v: ObjFxMode) =
+  obj.attr0 = (v.uint16) or (obj.attr0 and not (ATTR0_BLEND or ATTR0_WINDOW))
+
+func `mos=`*(obj: var ObjAttr; v: bool) =
+  obj.attr0 = (v.uint16 shl 12) or (obj.attr0 and not ATTR0_MOSAIC)
+
+func `is8bpp=`*(obj: var ObjAttr; v: bool) =
+  obj.attr0 = (v.uint16 shl 13) or (obj.attr0 and not ATTR0_8BPP)
+
+func `affId=`*(obj: var ObjAttr; affId: int) =
+  obj.attr1 = ((affId.uint16 shl ATTR1_AFF_ID_SHIFT) and ATTR1_AFF_ID_MASK) or (obj.attr1 and not ATTR1_AFF_ID_MASK)
+
+func `size=`*(obj: var ObjAttr; v: ObjSize) =
+  let shape = (v.uint16 shl 12) and ATTR0_SHAPE_MASK
+  let size = (v.uint16 shl 14)
+  obj.attr0 = shape or (obj.attr0 and not ATTR0_SHAPE_MASK)
+  obj.attr1 = size or (obj.attr1 and not ATTR1_SIZE_MASK)
+  
+func `prio=`*(obj: var ObjAttr; prio: int) =
+  obj.attr2 = ((prio.uint16 shl ATTR2_PRIO_SHIFT) and ATTR2_PRIO_MASK) or (obj.attr2 and not ATTR2_PRIO_MASK)
+
+# ID shorthands:
+
+func aff*(obj: ObjAttr): int = obj.affId
+func tid*(obj: ObjAttr): int = obj.tileId
+func pal*(obj: ObjAttr): int = obj.palId
+
+func `aff=`*(obj: var ObjAttr; aff: int) = obj.affId = aff
+func `tid=`*(obj: var ObjAttr; tid: int) = obj.tileId = tid
+func `pal=`*(obj: var ObjAttr; pal: int) = obj.palId = pal
+
+
+template initObj*(args: varargs[untyped]): ObjAttr =
+  ## Create a new ObjAttr value.
+  ## 
+  ## **Example:**
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   objMem[0] = initObj(
+  ##     pos = vec2i(100, 100),
+  ##     size = s32x32,
+  ##     tileId = 0,
+  ##     palId = 3
+  ##   )
+  var obj: ObjAttr
+  writeFields(obj, args)
+  obj
+
+template init*(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
+  ## Initialise an object in-place.
+  ## 
+  ## Omitted fields will default to zero.
+  ## 
+  ## **Example:**
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   objMem[0].init(
+  ##     pos = vec2i(100, 100),
+  ##     size = s32x32,
+  ##     tileId = 0,
+  ##     palId = 3
+  ##   )
+  obj.setAttr(0, 0, 0)
+  writeFields(obj, args)
+
+template edit*(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
+  ## Change some fields of an object.
+  ## 
+  ## Like `obj.init`, but omitted fields will be left unchanged.
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   objMem[0].edit(
+  ##     pos = vec2i(100, 100),
+  ##     size = s32x32,
+  ##     tileId = 0,
+  ##     palId = 3
+  ##   )
+  ## 
+  writeFields(obj, args)
+
+
+template dup*(obj: ObjAttr, args: varargs[untyped]): ObjAttr =
+  ## Duplicate an object, modifying some fields and returning the copy.
+  ## 
+  ## **Example:**
+  ## 
+  ## .. code-block:: nim
+  ##    
+  ##    # Make a copy of Obj 0, but change some properties:
+  ##    objMem[1] = objMem[0].dup(x = 100, hflip = true)
+  ##    
+  var tmp = obj
+  writeFields(tmp, args)
+  tmp
+
+
+# Size helpers:
+
+const oamSizes: array[ObjSize, array[2, uint8]] = [
+  [ 8'u8, 8'u8], [16'u8,16'u8], [32'u8,32'u8], [64'u8,64'u8], 
+  [16'u8, 8'u8], [32'u8, 8'u8], [32'u8,16'u8], [64'u8,32'u8],
+  [ 8'u8,16'u8], [ 8'u8,32'u8], [16'u8,32'u8], [32'u8,64'u8],
+]
+
+func getSize*(size: ObjSize): tuple[w, h: int] =
+  ## Get the width and height in pixels of an `ObjSize` enum value.
+  let arr = oamSizes[size]
+  (arr[0].int, arr[1].int)
+  
+func getWidth*(size: ObjSize): int =
+  ## Get the width in pixels of an `ObjSize` enum value.
+  oamSizes[size][0].int
+
+func getHeight*(size: ObjSize): int =
+  ## Get the height in pixels of an `ObjSize` enum value.
+  oamSizes[size][1].int
+
+func getSize*(obj: ObjAttr | ObjAttrPtr): tuple[w, h: int] =
+  ## Get the width and height of an object in pixels.
+  getSize(obj.size)
+  
+func getWidth*(obj: ObjAttr | ObjAttrPtr): int =
+  ## Get the width of an object in pixels.
+  getWidth(obj.size)
+  
+func getHeight*(obj: ObjAttr | ObjAttrPtr): int =
+  ## Get the height of an object in pixels.
+  getHeight(obj.size)
+
+
+func hide*(obj: var ObjAttr) =
+  ## Hide an object.
+  ## 
+  ## Equivalent to ``obj.mode = omHide``
+  ## 
+  obj.mode = omHide
+
+func unhide*(obj: var ObjAttr; mode = omReg) =
+  ## Unhide an object.
+  ## 
+  ## Equivalent to ``obj.mode = mode``
+  ## 
+  ## **Parameters:**
+  ## 
+  ## obj
+  ##   Object to unhide.
+  ## 
+  ## mode
+  ##   Object mode to unhide to. Necessary because this affects the affine-ness of the object.
+  ## 
+  obj.mode = mode
+
+{.pop.}
+
+
+
+
+## Colors
+## ------
+
 const
   clrBlack* = 0x0000.Color
   clrRed* = 0x001F.Color
@@ -129,9 +906,6 @@ const
   clrFuchsia* = 0x7C1F.Color
   clrSkyBlue* = 0x7B34.Color
   clrCream* = 0x7BFF.Color
-
-## Colors
-## ------
 
 {.push inline.}
 
