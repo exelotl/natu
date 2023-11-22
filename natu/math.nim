@@ -65,11 +65,6 @@ template toFloat32*(n: FixedT): float32 = n.float32 / getScale(typeof(n)).float3
 
 func `$`*[F: FixedT](a: F): string = $(a.toFloat32())  # TODO: better implementation?
 
-when (NimMajor, NimMinor) >= (1, 6):
-  # Enable fixed-point numeric literals, e.g: 22.5'fp
-  # (Relegated to external file to keep the parser happy)
-  include private/fp_literals
-
 # implicit converters for the most common cases?
 # converter toFixedN8*(a: SomeNumber): FixedN[8] {.inline.} = toFixed(a, 8)
 # converter toFixedN10*(a: SomeNumber): FixedN[10] {.inline.} = toFixed(a, 10)
