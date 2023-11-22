@@ -5,7 +5,7 @@
 {.warning[UnusedImport]: off.}
 
 import std/macros
-import ./private/[common, types, memmap, memdef]
+import ./private/[common, types]
 from ./private/privutils import writeFields
 import ./math
 import ./utils
@@ -71,7 +71,6 @@ const
   ScreenHeightInTiles* = (ScreenHeight div 8)  ## Height in tiles
 
 
-
 # Display Control Register
 # ------------------------
 
@@ -105,8 +104,9 @@ bitdef DispCnt, 4, page, bool
   # This bit selects the displayed page (and allowing the other one to be drawn on without artifacts). 
 
 bitdef DispCnt, 5, oamHbl, bool
-  # Allows access to OAM in during HBlank. OAM is normally locked in VDraw.
-  # Will reduce the amount of sprite pixels rendered per line. 
+  # Allows access to OAM during HBlank. Supposedly OAM is locked in VDraw, but that
+  # doesn't seem to be true in practise. Therefore this flag does nothing, except reduce
+  # the maximum amount of sprite pixels that can be rendered per scanline.
 
 bitdef DispCnt, 6, obj1d, bool
   # Determines whether OBJ-VRAM is treated like an array or a matrix when drawing sprites.
@@ -124,15 +124,15 @@ bitdef DispCnt, 13, win0, bool
 bitdef DispCnt, 14, win1, bool
 bitdef DispCnt, 15, winObj, bool
 
-bitdef DispCnt, 8..12, layersU8, uint8, {Private}
+bitdef DispCnt, 8..12, layers_u8, uint8, {Private}
 
 func layers*(dcnt: DispCnt): DisplayLayers =
   ## Get the currently enabled display layers as a bit-set.
-  cast[DisplayLayers](dcnt.layersU8)
+  cast[DisplayLayers](dcnt.layers_u8)
 
 func `layers=`*(dcnt: var DispCnt, layers: DisplayLayers) =
   ## Update the currently enabled display layers.
-  dcnt.layersU8 = cast[uint8](layers)
+  dcnt.layers_u8 = cast[uint8](layers)
 
 const allDisplayLayers* = { lBg0, lBg1, lBg2, lBg3, lObj }
 
@@ -271,10 +271,10 @@ type
   
   BlendMode* {.size:2.} = enum
     ## Color special effects modes
-    bmOff = BLD_OFF       ## Blending disabled
-    bmAlpha = BLD_STD     ## Alpha blend both A and B (using the weights from ``bldalpha``)
-    bmWhite = BLD_WHITE   ## Blend A with white using the weight from ``bldy``
-    bmBlack = BLD_BLACK   ## Blend A with black using the weight from ``bldy``
+    bmOff    ## Blending disabled
+    bmAlpha  ## Alpha blend both A and B (using the weights from ``bldalpha``).
+    bmWhite  ## Blend A with white using the weight from ``bldy``
+    bmBlack  ## Blend A with black using the weight from ``bldy``
   
   BlendLayer* {.size:2.} = enum
     blBg0, blBg1, blBg2, blBg3, blObj, blBd
@@ -283,62 +283,36 @@ type
 
 const allBlendLayers* = { blBg0, blBg1, blBg2, blBg3, blObj, blBd }
 
-proc a*(bld: BldCnt): BlendLayers =
-  ## Upper layer of color special effects.
-  cast[BlendLayers](bld.uint16 and BLD_TOP_MASK)
+bitdef BldCnt, 0..5, a_u16, uint16, {Private}   # Upper layer of color special effects.
+bitdef BldCnt, 6..7, mode, BlendMode            # Color special effects mode
+bitdef BldCnt, 8..13, b_u16, uint16, {Private}  # Lower layer of color special effects.
 
-proc `a=`*(bld: var BldCnt, layers: BlendLayers) =
-  bld = ((bld.uint16 and not BLD_TOP_MASK) or (cast[uint16](layers))).BldCnt
-
-proc b*(bld: BldCnt): BlendLayers =
-  ## Lower layer of color special effects.
-  cast[BlendLayers]((bld.uint16 and BLD_BOT_MASK) shr BLD_BOT_SHIFT)
-
-proc `b=`*(bld: var BldCnt, layers: BlendLayers) =
-  bld = ((bld.uint16 and not BLD_BOT_MASK) or (cast[uint16](layers) shl BLD_BOT_SHIFT)).BldCnt
-
-
-# Old names - I think `a` and `b` are way better because they correspond to `eva` and `evb` and cannot be confused with window positions.
-
-proc top*(bld: BldCnt): BlendLayers {.inline, deprecated:"Use bldcnt.a instead".} =
-  cast[BlendLayers](bld.uint16 and BLD_TOP_MASK)
-proc `top=`*(bld: var BldCnt, layers: BlendLayers) {.inline, deprecated:"Use bldcnt.a instead".} =
-  bld = ((bld.uint16 and not BLD_TOP_MASK) or (cast[uint16](layers))).BldCnt
-proc bottom*(bld: BldCnt): BlendLayers {.inline, deprecated:"Use bldcnt.b instead".} =
-  cast[BlendLayers]((bld.uint16 and BLD_BOT_MASK) shr BLD_BOT_SHIFT)
-proc `bottom=`*(bld: var BldCnt, layers: BlendLayers) {.inline, deprecated:"Use bldcnt.b instead".} =
-  bld = ((bld.uint16 and not BLD_BOT_MASK) or (cast[uint16](layers) shl BLD_BOT_SHIFT)).BldCnt
-
-
-proc mode*(bld: BldCnt): BlendMode =
-  ## Color special effects mode
-  (bld.uint16 and BLD_MODE_MASK).BlendMode
-
-proc `mode=`*(bld: var BldCnt, v: BlendMode) =
-  bld = (v.uint16 or (bld.uint16 and not BLD_MODE_MASK)).BldCnt
+func a*(bld: BldCnt): BlendLayers = cast[BlendLayers](bld.a_u16)
+func b*(bld: BldCnt): BlendLayers = cast[BlendLayers](bld.b_u16)
+func `a=`*(bld: var BldCnt, a: BlendLayers) = bld.a_u16 = cast[uint16](a)
+func `b=`*(bld: var BldCnt, b: BlendLayers) = bld.b_u16 = cast[uint16](b)
 
 type
-  BlendCoefficient* = uint16
-    ## A blend value ranging from 0..16.
-    ## Values from 17..31 are treated the same as 16.
-  
   BlendAlpha* = distinct uint16
     ## Alpha blending levels.
-    ## Features two coefficients: ``eva`` for the top layer, ``evb`` for the bottom layer.
+    ## Features two coefficients: ``eva`` for layer ``a``, ``evb`` for layer ``b``.
   
   BlendBrightness* = distinct uint16
     ## Brightness level (fade to black or white).
     ## Has a single coefficient ``evy``.
 
-bitdef BlendAlpha, 0..7, eva, BlendCoefficient
-  # Upper layer alpha blending coefficient
+bitdef BlendAlpha, 0..7, eva, uint16
+  # Upper layer alpha blending coefficient.
+  # Values from 17..31 are treated the same as 16.
 
-bitdef BlendAlpha, 8..15, evb, BlendCoefficient
+bitdef BlendAlpha, 8..15, evb, uint16
   # Lower layer alpha blending coefficient
+  # Values from 17..31 are treated the same as 16.
 
 
-proc `evy=`*(bldy: var BlendBrightness, v: BlendCoefficient) =
+proc `evy=`*(bldy: var BlendBrightness, v: uint16) =
   ## Brightness coefficient (write-only!)
+  ## Values from 17..31 are treated the same as 16.
   bldy = v.BlendBrightness
 
 
@@ -497,20 +471,20 @@ else: {.error: "Unknown platform " & natuPlatform.}
 
 type
   ObjMode* {.size:2.} = enum
-    omReg = ATTR0_REG
-    omAff = ATTR0_AFF
-    omHide = ATTR0_HIDE
-    omAffDbl = ATTR0_AFF_DBL
+    omRegular
+    omAffine
+    omHidden
+    omAffineDouble
   
   ObjFxMode* {.size:2.} = enum
-    fxNone = 0
+    fxNone
       ## Normal object, no special effects.
-    fxBlend = ATTR0_BLEND
+    fxBlend
       ## Alpha blending enabled.
       ## The object is effectively placed into the `bldcnt.a` layer to be blended
       ## with the `bldcnt.b` layer using the coefficients from `bldalpha`,
       ## regardless of the current `bldcnt.mode` setting.
-    fxWindow = ATTR0_WINDOW
+    fxWindow
       ## The sprite becomes part of the object window.
   
   ObjSize* {.size:2.} = enum
@@ -675,68 +649,68 @@ func setAttr*(obj: var ObjAttr, src: ObjAttr) = setAttr(obj, src.attr0, src.attr
 
 # getters
 
-func x*(obj: ObjAttr): int = (obj.attr1 and ATTR1_X_MASK).int
-func y*(obj: ObjAttr): int = (obj.attr0 and ATTR0_Y_MASK).int
+func x*(obj: ObjAttr): int = (obj.attr1 and 0x01FF'u16).int
+func y*(obj: ObjAttr): int = (obj.attr0 and 0x00FF'u16).int
 func pos*(obj: ObjAttr): Vec2i = vec2i(obj.x, obj.y)
-func mode*(obj: ObjAttr): ObjMode = (obj.attr0 and ATTR0_MODE_MASK).ObjMode
-func fx*(obj: ObjAttr): ObjFxMode = (obj.attr0 and (ATTR0_BLEND or ATTR0_WINDOW)).ObjFxMode
-func mos*(obj: ObjAttr): bool = (obj.attr0 and ATTR0_MOSAIC) != 0
-func is8bpp*(obj: ObjAttr): bool = (obj.attr0 and ATTR0_8BPP) != 0
-func affId*(obj: ObjAttr): int = ((obj.attr1 and ATTR1_AFF_ID_MASK) shr ATTR1_AFF_ID_SHIFT).int
-func size*(obj: ObjAttr): ObjSize = (((obj.attr0 and ATTR0_SHAPE_MASK) shr 12) or (obj.attr1 shr 14)).ObjSize
-func hflip*(obj: ObjAttr): bool = (obj.attr1 and ATTR1_HFLIP) != 0
-func vflip*(obj: ObjAttr): bool = (obj.attr1 and ATTR1_VFLIP) != 0
-func tileId*(obj: ObjAttr): int = ((obj.attr2 and ATTR2_ID_MASK) shr ATTR2_ID_SHIFT).int
-func palId*(obj: ObjAttr): int = ((obj.attr2 and ATTR2_PALBANK_MASK) shr ATTR2_PALBANK_SHIFT).int
-func prio*(obj: ObjAttr): int = ((obj.attr2 and ATTR2_PRIO_MASK) shr ATTR2_PRIO_SHIFT).int
+func mode*(obj: ObjAttr): ObjMode = ((obj.attr0 and 0x0300'u16) shr 8).ObjMode
+func fx*(obj: ObjAttr): ObjFxMode = ((obj.attr0 and 0x0C00'u16) shr 10).ObjFxMode
+func mos*(obj: ObjAttr): bool = (obj.attr0 and 0x1000'u16) != 0
+func is8bpp*(obj: ObjAttr): bool = (obj.attr0 and 0x2000'u16) != 0
+func affId*(obj: ObjAttr): int = ((obj.attr1 and 0x3E00'u16) shr 9).int
+func size*(obj: ObjAttr): ObjSize = (((obj.attr0 and 0xC000'u16) shr 12) or (obj.attr1 shr 14)).ObjSize
+func hflip*(obj: ObjAttr): bool = (obj.attr1 and 0x1000'u16) != 0
+func vflip*(obj: ObjAttr): bool = (obj.attr1 and 0x2000'u16) != 0
+func tileId*(obj: ObjAttr): int = (obj.attr2 and 0x03FF'u16).int
+func palId*(obj: ObjAttr): int = ((obj.attr2 and 0xF000'u16) shr 12).int
+func prio*(obj: ObjAttr): int = ((obj.attr2 and 0x0C00'u16) shr 10).int
 
 # setters
 
 func `x=`*(obj: var ObjAttr; x: int) =
-  obj.attr1 = (x.uint16 and ATTR1_X_MASK) or (obj.attr1 and not ATTR1_X_MASK)
+  obj.attr1 = (x.uint16 and 0x01FF'u16) or (obj.attr1 and not 0x01FF'u16)
 
 func `y=`*(obj: var ObjAttr; y: int) =
-  obj.attr0 = (y.uint16 and ATTR0_Y_MASK) or (obj.attr0 and not ATTR0_Y_MASK)
+  obj.attr0 = (y.uint16 and 0x00FF'u16) or (obj.attr0 and not 0x00FF'u16)
 
 func `pos=`*(obj: var ObjAttr; v: Vec2i) =
   obj.x = v.x
   obj.y = v.y
 
 func `tileId=`*(obj: var ObjAttr; tileId: int) =
-  obj.attr2 = ((tileId.uint16 shl ATTR2_ID_SHIFT) and ATTR2_ID_MASK) or (obj.attr2 and not ATTR2_ID_MASK)
+  obj.attr2 = (tileId.uint16 and 0x03FF'u16) or (obj.attr2 and not 0x03FF'u16)
 
 func `palId=`*(obj: var ObjAttr; palId: int) =
-  obj.attr2 = ((palId.uint16 shl ATTR2_PALBANK_SHIFT) and ATTR2_PALBANK_MASK) or (obj.attr2 and not ATTR2_PALBANK_MASK)
+  obj.attr2 = ((palId.uint16 shl 12) and 0xF000'u16) or (obj.attr2 and not 0xF000'u16)
 
 func `hflip=`*(obj: var ObjAttr; v: bool) =
-  obj.attr1 = (v.uint16 shl 12) or (obj.attr1 and not ATTR1_HFLIP)
+  obj.attr1 = (v.uint16 shl 12) or (obj.attr1 and not 0x1000'u16)
   
 func `vflip=`*(obj: var ObjAttr; v: bool) =
-  obj.attr1 = (v.uint16 shl 13) or (obj.attr1 and not ATTR1_VFLIP)
+  obj.attr1 = (v.uint16 shl 13) or (obj.attr1 and not 0x2000'u16)
 
 func `mode=`*(obj: var ObjAttr; v: ObjMode) =
-  obj.attr0 = (v.uint16) or (obj.attr0 and not ATTR0_MODE_MASK)
+  obj.attr0 = (v.uint16 shl 8) or (obj.attr0 and not 0x0300'u16)
 
 func `fx=`*(obj: var ObjAttr; v: ObjFxMode) =
-  obj.attr0 = (v.uint16) or (obj.attr0 and not (ATTR0_BLEND or ATTR0_WINDOW))
+  obj.attr0 = (v.uint16 shl 10) or (obj.attr0 and not 0x0C00'u16)
 
 func `mos=`*(obj: var ObjAttr; v: bool) =
-  obj.attr0 = (v.uint16 shl 12) or (obj.attr0 and not ATTR0_MOSAIC)
+  obj.attr0 = (v.uint16 shl 12) or (obj.attr0 and not 0x1000'u16)
 
 func `is8bpp=`*(obj: var ObjAttr; v: bool) =
-  obj.attr0 = (v.uint16 shl 13) or (obj.attr0 and not ATTR0_8BPP)
+  obj.attr0 = (v.uint16 shl 13) or (obj.attr0 and not 0x2000'u16)
 
 func `affId=`*(obj: var ObjAttr; affId: int) =
-  obj.attr1 = ((affId.uint16 shl ATTR1_AFF_ID_SHIFT) and ATTR1_AFF_ID_MASK) or (obj.attr1 and not ATTR1_AFF_ID_MASK)
+  obj.attr1 = ((affId.uint16 shl 9) and 0x3E00'u16) or (obj.attr1 and not 0x3E00'u16)
 
 func `size=`*(obj: var ObjAttr; v: ObjSize) =
-  let shape = (v.uint16 shl 12) and ATTR0_SHAPE_MASK
+  let shape = (v.uint16 shl 12) and 0xC000'u16
   let size = (v.uint16 shl 14)
-  obj.attr0 = shape or (obj.attr0 and not ATTR0_SHAPE_MASK)
-  obj.attr1 = size or (obj.attr1 and not ATTR1_SIZE_MASK)
+  obj.attr0 = shape or (obj.attr0 and not 0xC000'u16)
+  obj.attr1 = size or (obj.attr1 and not 0xC000'u16)
   
 func `prio=`*(obj: var ObjAttr; prio: int) =
-  obj.attr2 = ((prio.uint16 shl ATTR2_PRIO_SHIFT) and ATTR2_PRIO_MASK) or (obj.attr2 and not ATTR2_PRIO_MASK)
+  obj.attr2 = ((prio.uint16 shl 10) and 0x0C00'u16) or (obj.attr2 and not 0x0C00'u16)
 
 # ID shorthands:
 
@@ -853,11 +827,11 @@ func getHeight*(obj: ObjAttr | ObjAttrPtr): int =
 func hide*(obj: var ObjAttr) =
   ## Hide an object.
   ## 
-  ## Equivalent to ``obj.mode = omHide``
+  ## Equivalent to ``obj.mode = omHidden``
   ## 
-  obj.mode = omHide
+  obj.mode = omHidden
 
-func unhide*(obj: var ObjAttr; mode = omReg) =
+func unhide*(obj: var ObjAttr; mode = omRegular) =
   ## Unhide an object.
   ## 
   ## Equivalent to ``obj.mode = mode``
@@ -1289,27 +1263,14 @@ proc frame*(m: var M5Mem; left, top, right, bottom: int; clr: Color) =
 
 # Convenience procs for working with tile map entries
 
-{.push inline.}
-
-func tileId*(se: ScrEntry): int = (se and SE_ID_MASK).int
-func palId*(se: ScrEntry): int = ((se and SE_PALBANK_MASK) shr SE_PALBANK_SHIFT).int
-func hflip*(se: ScrEntry): bool = (se and SE_HFLIP) != 0
-func vflip*(se: ScrEntry): bool = (se and SE_VFLIP) != 0
-
-func `tileId=`*(se: var ScrEntry, val: int) =  se = ((val.uint16 shl SE_ID_SHIFT) and SE_ID_MASK) or (se and not SE_ID_MASK)
-func `palId=`*(se: var ScrEntry, val: int) =   se = ((val.uint16 shl SE_PALBANK_SHIFT) and SE_PALBANK_MASK) or (se and not SE_PALBANK_MASK)
-func `hflip=`*(se: var ScrEntry, val: bool) =  se = (val.uint16 shl 10) or (se and not SE_HFLIP)
-func `vflip=`*(se: var ScrEntry, val: bool) =  se = (val.uint16 shl 11) or (se and not SE_VFLIP)
+bitdef ScrEntry, 0..9, tileId, int
+bitdef ScrEntry, 10, hflip, bool
+bitdef ScrEntry, 11, vflip, bool
+bitdef ScrEntry, 12..15, palId, int
 
 # shorthands:
-
-func tid*(se: ScrEntry): int = se.tileId
-func pal*(se: ScrEntry): int = se.palId
-
-func `tid=`*(se: var ScrEntry, tid: int) =  se.tileId = tid
-func `pal=`*(se: var ScrEntry, pal: int) =  se.palId = pal
-
-{.pop.}
+bitdef ScrEntry, 0..9, tid, int
+bitdef ScrEntry, 12..15, pal, int
 
 
 # BG affine matrix functions

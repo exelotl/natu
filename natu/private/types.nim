@@ -24,7 +24,7 @@ type
     data*: array[8, uint32]
 
 type
-  ScrEntry* = uint16    ## Type for screen entries           TODO: make distinct
+  ScrEntry* = distinct uint16    ## Type for screen entries           TODO: make distinct
   ScrAffEntry* = uint8  ## Type for affine screen entries
 
 type
