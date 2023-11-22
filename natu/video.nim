@@ -419,12 +419,7 @@ proc fill*(m: var M4Mem; clrid: uint8) =
 
 proc plot*(m: var M4Mem; x, y: int; clrid: uint8) =
   ## Plot a `clrid` pixel on the given mode 4 buffer.
-  let p = cast[ptr UncheckedArray[uint16]](addr m)
-  let dst = addr p[(y * Mode4Width + x) shr 1]
-  if (x and 0b1) != 0:
-    dst[] = (dst[] and 0x00ff) or (clrid shl 8)
-  else:
-    dst[] = (dst[] and 0xff00) or (clrid)
+  bmp8_plot(x, y, clrid, addr m, Mode4Width)
 
 proc hline*(m: var M4Mem; x1, y, x2: int; clrid: uint8) =
   ## Draw a `clrid` colored horizontal line in mode 4.
