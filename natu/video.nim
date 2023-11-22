@@ -5,13 +5,11 @@
 {.warning[UnusedImport]: off.}
 
 import std/macros
-import private/[common, types, memmap, memdef]
-from private/privutils import writeFields
+import ./private/[common, types, memmap, memdef]
+from ./private/privutils import writeFields
 import ./math
 import ./utils
 import ./bits
-
-# export oam   # TODO: delete OAM module, move into here.
 
 # types
 export
@@ -85,7 +83,7 @@ type
   
   DispCnt* = distinct uint16
 
-defineBits DispCnt, 0..3, mode, uint16
+bitdef DispCnt, 0..3, mode, uint16
   # Video mode. `0`, `1`, `2` are tiled modes; `3`, `4`, `5` are bitmap modes. 
   # 
   # ===== ===============================================================
@@ -99,34 +97,34 @@ defineBits DispCnt, 0..3, mode, uint16
   # 5     Bitmap mode: 160x128, BGR555 color
   # ===== ===============================================================
 
-defineBit DispCnt, 3, gb, bool, {ReadOnly}
+bitdef DispCnt, 3, gb, bool, {ReadOnly}
   # True if cartridge is a GBC game. Read-only. 
 
-defineBit DispCnt, 4, page, bool
+bitdef DispCnt, 4, page, bool
   # Page select. Modes 4 and 5 can use page flipping for smoother animation.
   # This bit selects the displayed page (and allowing the other one to be drawn on without artifacts). 
 
-defineBit DispCnt, 5, oamHbl, bool
+bitdef DispCnt, 5, oamHbl, bool
   # Allows access to OAM in during HBlank. OAM is normally locked in VDraw.
   # Will reduce the amount of sprite pixels rendered per line. 
 
-defineBit DispCnt, 6, obj1d, bool
+bitdef DispCnt, 6, obj1d, bool
   # Determines whether OBJ-VRAM is treated like an array or a matrix when drawing sprites.
 
-defineBit DispCnt, 7, blank, bool
+bitdef DispCnt, 7, blank, bool
   # Forced Blank: When set, the GBA will display a white screen.
   # This allows fast access to VRAM, PAL RAM, OAM.
 
-defineBit DispCnt, 8, bg0, bool
-defineBit DispCnt, 9, bg1, bool
-defineBit DispCnt, 10, bg2, bool
-defineBit DispCnt, 11, bg3, bool
-defineBit DispCnt, 12, obj, bool
-defineBit DispCnt, 13, win0, bool
-defineBit DispCnt, 14, win1, bool
-defineBit DispCnt, 15, winObj, bool
+bitdef DispCnt, 8, bg0, bool
+bitdef DispCnt, 9, bg1, bool
+bitdef DispCnt, 10, bg2, bool
+bitdef DispCnt, 11, bg3, bool
+bitdef DispCnt, 12, obj, bool
+bitdef DispCnt, 13, win0, bool
+bitdef DispCnt, 14, win1, bool
+bitdef DispCnt, 15, winObj, bool
 
-defineBits DispCnt, 8..12, layersU8, uint8, {Private}
+bitdef DispCnt, 8..12, layersU8, uint8, {Private}
 
 func layers*(dcnt: DispCnt): DisplayLayers =
   ## Get the currently enabled display layers as a bit-set.
@@ -144,29 +142,29 @@ const allDisplayLayers* = { lBg0, lBg1, lBg2, lBg3, lObj }
 
 type DispStat* = distinct uint16
 
-defineBit DispStat, 0, inVBlank, bool, {ReadOnly}
+bitdef DispStat, 0, inVBlank, bool, {ReadOnly}
   # VBlank status, read only.
   # True during VBlank, false during VDraw.
 
-defineBit DispStat, 1, inHBlank, bool, {ReadOnly}
+bitdef DispStat, 1, inHBlank, bool, {ReadOnly}
   # HBlank status, read-only (see getter proc).
 
-defineBit DispStat, 2, inVCountTrigger, bool, {ReadOnly}
+bitdef DispStat, 2, inVCountTrigger, bool, {ReadOnly}
   # VCount trigger status, read-only (see getter proc).
 
-defineBit DispStat, 3, vblankIrq, bool
+bitdef DispStat, 3, vblankIrq, bool
   # VBlank interrupt request.
   # If set, an interrupt will be fired at VBlank.
 
-defineBit DispStat, 4, hblankIrq, bool
+bitdef DispStat, 4, hblankIrq, bool
   # HBlank interrupt request.
   # If set, an interrupt will be fired at HBlank.
 
-defineBit DispStat, 5, vcountIrq, bool
+bitdef DispStat, 5, vcountIrq, bool
   # VCount interrupt request.
   # If set, an interrupt will be fired when current scanline matches the scanline trigger (`vcount` == `dispstat.vcountTrigger`)
 
-defineBits DispStat, 8..15, vcountTrigger, uint16
+bitdef DispStat, 8..15, vcountTrigger, uint16
   # VCount trigger value.
   # If the current scanline is at this value, bit 2 is set and an interrupt is fired if requested. 
 
@@ -197,31 +195,31 @@ type
     ## Background control register value.
 
 
-defineBits BgCnt, 0..1, prio, uint16
+bitdef BgCnt, 0..1, prio, uint16
   # Priority value (0..3)
   # Lower priority BGs will be drawn on top of higher priority BGs.
 
-defineBits BgCnt, 2..3, cbb, uint16
+bitdef BgCnt, 2..3, cbb, uint16
   # Character Base Block (0..3)
   # Determines the base block for tile pixel data
 
-defineBit BgCnt, 6, mos, bool
+bitdef BgCnt, 6, mos, bool
   # Enables mosaic effect.
 
-defineBit BgCnt, 7, is8bpp, bool
+bitdef BgCnt, 7, is8bpp, bool
   # Specifies the color mode of the BG: 4bpp (16 colors) or 8bpp (256 colors)
   # Has no effect on affine BGs, which are always 8bpp.
 
-defineBits BgCnt, 8..12, sbb, uint16
+bitdef BgCnt, 8..12, sbb, uint16
   # Screen Base Block (0..31)
   # Determines the base block for the tilemap
 
-defineBit BgCnt, 13, wrap, bool
+bitdef BgCnt, 13, wrap, bool
   # Affine Wrapping flag.
   # If set, affine background wrap around at their edges.
   # Has no effect on regular backgrounds as they wrap around by default. 
 
-defineBits BgCnt, 14..15, size, BgSize
+bitdef BgCnt, 14..15, size, BgSize
   # Value representing the size of the background in tiles.
   # Regular and affine backgrounds have different sizes available to them, hence
   # the two different types assignable to this field (`RegBgSize`, `AffBgSize`)
@@ -258,10 +256,10 @@ const
 
 type Mosaic* = distinct uint16
 
-defineBits Mosaic, 0..3, bgh, uint16, {WriteOnly}
-defineBits Mosaic, 4..7, bgv, uint16, {WriteOnly}
-defineBits Mosaic, 8..11, objh, uint16, {WriteOnly}
-defineBits Mosaic, 12..15, objv, uint16, {WriteOnly}
+bitdef Mosaic, 0..3, bgh, uint16, {WriteOnly}
+bitdef Mosaic, 4..7, bgv, uint16, {WriteOnly}
+bitdef Mosaic, 8..11, objh, uint16, {WriteOnly}
+bitdef Mosaic, 12..15, objv, uint16, {WriteOnly}
 
 
 # Color Special Effects
@@ -332,10 +330,10 @@ type
     ## Brightness level (fade to black or white).
     ## Has a single coefficient ``evy``.
 
-defineBits BlendAlpha, 0..7, eva, BlendCoefficient
+bitdef BlendAlpha, 0..7, eva, BlendCoefficient
   # Upper layer alpha blending coefficient
 
-defineBits BlendAlpha, 8..15, evb, BlendCoefficient
+bitdef BlendAlpha, 8..15, evb, BlendCoefficient
   # Lower layer alpha blending coefficient
 
 

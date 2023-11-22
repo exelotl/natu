@@ -15,17 +15,17 @@ macro defineBitsImpl(
 ) =
   ## Define a getter/setter template for a range of bits on a distinct type.
   ## 
-  ## Implementation for `defineBits` and `defineBit`.
+  ## Implementation for `bitdef` and `bitdef`.
   ##
   ## Note: ``fromBit..toBit`` range is inclusive.  
   
   let bitfieldTypeDef = getImpl(bitfieldType)
   if bitfieldTypeDef[2].kind != nnkDistinctTy:
-    error("bitfield type not distinct (`defineBits` can only be applied to distinct unsigned integer types)", bitfieldType)
+    error("bitfield type not distinct (`bitdef` can only be applied to distinct unsigned integer types)", bitfieldType)
   
   let distinctType = bitfieldTypeDef[2][0]
   if distinctType.strVal notin ["byte", "uint", "uint8", "uint16", "uint32", "uint64"]:
-    error("bitfield type not an unsigned integer (`defineBits` can only be applied to distinct unsigned integer types)", bitfieldType)
+    error("bitfield type not an unsigned integer (`bitdef` can only be applied to distinct unsigned integer types)", bitfieldType)
   
   if fieldIdent.kind != nnkIdent:
     error("Expect identifier to be used as the name of the getter/setter", fieldIdent)
@@ -68,20 +68,20 @@ macro defineBitsImpl(
   # echo repr(result)
 
 
-template defineBits*(
+template bitdef*(
     bitfieldType: typedesc,
     bits: Slice[SomeInteger],
     fieldIdent: untyped,
-    fieldType: typedesc = int,
+    fieldType: typedesc,
     flags: static set[FieldFlag] = {}
   ) =
     defineBitsImpl(bitfieldType, bits.a, bits.b, fieldIdent, fieldType, flags)
 
-template defineBit*(
+template bitdef*(
     bitfieldType: typedesc,
     bit: SomeInteger,
     fieldIdent: untyped,
-    fieldType: typedesc = bool,
+    fieldType: typedesc,
     flags: static set[FieldFlag] = {}
   ) =
     defineBitsImpl(bitfieldType, bit, bit, fieldIdent, fieldType, flags)
@@ -91,7 +91,6 @@ when isMainModule:
   
   type Foo* = distinct uint16
   
-  Foo.defineBits(0..0, hflip, bool)
-  Foo.defineBit(1, vflip)
-  Foo.defineBits(2..3, doorStyle)
-  
+  Foo.bitdef(0..0, hflip, bool)
+  Foo.bitdef(1, vflip, bool)
+  Foo.bitdef(2..3, doorStyle, int)
