@@ -502,7 +502,7 @@ proc floodfill*(dst: SurfaceChr4c; x, y: int; clr: uint32) {.importc: "schr4c_fl
 
 # Additional routines
 
-proc prepMap*(srf: SurfaceChr4c; map: ptr ScrEntry | ptr UncheckedArray[ScrEntry]; se0: uint16) {.importc: "schr4c_prep_map", tonc.}
+proc prepMap*(srf: SurfaceChr4c; map: ptr ScrEntry | ptr UncheckedArray[ScrEntry]; se0: ScrEntry) {.importc: "schr4c_prep_map", tonc.}
   ## Prepare a screen-entry map for use with chr4.
   ## 
   ## :srf:  Surface with size information.
@@ -596,7 +596,7 @@ proc frame*(dst: SurfaceChr4r; left, top, right, bottom: int; clr: uint32) {.imp
 
 # Additional routines
 
-proc prepMap*(srf: SurfaceChr4r; map: ptr ScrEntry | ptr UncheckedArray[ScrEntry]; se0: uint16) {.importc: "schr4r_prep_map", tonc.}
+proc prepMap*(srf: SurfaceChr4r; map: ptr ScrEntry | ptr UncheckedArray[ScrEntry]; se0: ScrEntry) {.importc: "schr4r_prep_map", tonc.}
   ## Prepare a screen-entry map for use with chr4.
   ## 
   ## :srf:   Surface with size information.
