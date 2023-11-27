@@ -327,7 +327,7 @@ type BgOfs = BgPoint
 
 type
   ReadWriteRegister = DispCnt | DispStat | BgCnt | WinCnt | BldCnt | BlendAlpha
-  WriteOnlyRegister = BgOfs | BgAffine | WinH | WinV | BlendBrightness
+  WriteOnlyRegister = BgOfs | BgAffine | WinH | WinV | BlendBrightness | Mosaic
   WritableRegister = ReadWriteRegister | WriteOnlyRegister
 
 
