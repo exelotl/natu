@@ -1,3 +1,5 @@
+import ./private/common
+
 type
   KeyIndex* = enum
     ## Bit positions for `keyinput` and `keycnt`.
@@ -32,19 +34,36 @@ type
     keys*, mask*: KeyState
     timer*, delay*, period*: uint8
 
-let keyinput* {.importc:"(*(volatile KeyInput*)(0x04000130))", nodecl.}: KeyInput
-  ## Keypad status register (read only).
-  ## 
-  ## This can be used to obtain the current state (up or down) of
-  ## all the buttons on the GBA. Note that the state is inverted.
-  ## 
-  ## It is generally preferable to call `keyPoll` and use the various input
-  ## procedures (`keyIsDown` etc.) rather than reading this directly.
 
-var keycnt* {.importc:"(*(volatile KeyCnt*)(0x04000132))", nodecl.}: KeyCnt
-  ## Key interrupt control register.
-  ## 
-  ## See the `irq <irq.html>`_ module for details.
+# Platform specific code
+# ----------------------
+
+when natuPlatform == "gba":
+  
+  let keyinput* {.importc:"(*(volatile KeyInput*)(0x04000130))", nodecl.}: KeyInput
+    ## Keypad status register (read only).
+    ## 
+    ## This can be used to obtain the current state (up or down) of
+    ## all the buttons on the GBA. Note that the state is inverted.
+    ## 
+    ## It is generally preferable to call `keyPoll` and use the various input
+    ## procedures (`keyIsDown` etc.) rather than reading this directly.
+  
+  var keycnt* {.importc:"(*(volatile KeyCnt*)(0x04000132))", nodecl.}: KeyCnt
+    ## Key interrupt control register.
+    ## 
+    ## See the `irq <irq.html>`_ module for details.
+
+elif natuPlatform == "sdl":
+  
+  {.warning: "Key input registers not implemented".}
+  var keyinput*: KeyInput
+  var keycnt*: KeyCnt
+  
+else:
+  {.error: "Unknown platform " & natuPlatform.}
+
+
 
 var keyCurrState*: KeyState
   ## The set of keys that are currently down on this frame.

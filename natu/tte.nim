@@ -45,26 +45,24 @@ import ./surface
 import ./math
 from video import clrOrange, clrYellow, bgcnt, BgCnt
 
-{.compile(toncPath & "/src/font/sys8.s", toncAsmFlags).}
-{.compile(toncPath & "/src/font/verdana9.s", toncAsmFlags).}
-{.compile(toncPath & "/src/font/verdana10.s", toncAsmFlags).}
-{.compile(toncPath & "/src/font/verdana9_b4.s", toncAsmFlags).}
-{.compile(toncPath & "/src/font/verdana9b.s", toncAsmFlags).}
-{.compile(toncPath & "/src/font/verdana9i.s", toncAsmFlags).}
+{.pragma: tonc, header: "tonc_tte.h".}
+{.pragma: toncinl, header: "tonc_tte.h".}  # inline from header.
+
+{.compile(toncPath & "/src/font/sys8.c", toncCFlags).}
+{.compile(toncPath & "/src/font/verdana9.c", toncCFlags).}
+{.compile(toncPath & "/src/font/verdana10.c", toncCFlags).}
+{.compile(toncPath & "/src/font/verdana9_b4.c", toncCFlags).}
+{.compile(toncPath & "/src/font/verdana9b.c", toncCFlags).}
+{.compile(toncPath & "/src/font/verdana9i.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/tte_main.c", toncCFlags).}
-{.compile(toncPath & "/src/tte/tte_types.s", toncAsmFlags).}
 {.compile(toncPath & "/src/tte/ase_drawg.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/bmp16_drawg_b1cs.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/bmp16_drawg.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/bmp8_drawg_b1cs.c", toncCFlags).}
-{.compile(toncPath & "/src/tte/bmp8_drawg_b1cts_fast.s", toncAsmFlags).}
 {.compile(toncPath & "/src/tte/bmp8_drawg.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/chr4c_drawg_b1cts.c", toncCFlags).}
-{.compile(toncPath & "/src/tte/chr4c_drawg_b1cts_fast.s", toncAsmFlags).}
 {.compile(toncPath & "/src/tte/chr4c_drawg_b4cts.c", toncCFlags).}
-{.compile(toncPath & "/src/tte/chr4c_drawg_b4cts_fast.s", toncAsmFlags).}
 {.compile(toncPath & "/src/tte/chr4r_drawg_b1cts.c", toncCFlags).}
-{.compile(toncPath & "/src/tte/chr4r_drawg_b1cts_fast.s", toncAsmFlags).}
 {.compile(toncPath & "/src/tte/obj_drawg.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/se_drawg.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/tte_init_ase.c", toncCFlags).}
@@ -73,10 +71,38 @@ from video import clrOrange, clrYellow, bgcnt, BgCnt
 {.compile(toncPath & "/src/tte/tte_init_chr4r.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/tte_init_obj.c", toncCFlags).}
 {.compile(toncPath & "/src/tte/tte_init_se.c", toncCFlags).}
-# {.compile(toncPath & "/src/tte/tte_iohook.c", toncCFlags).}  # Natu doesn't support stdio.
 
-{.pragma: tonc, header: "tonc_tte.h".}
-{.pragma: toncinl, header: "tonc_tte.h".}  # inline from header.
+when natuPlatform == "gba":
+  {.compile(toncPath & "/src/tte/bmp8_drawg_b1cts_fast.s", toncAsmFlags).}
+  {.compile(toncPath & "/src/tte/chr4c_drawg_b1cts_fast.s", toncAsmFlags).}
+  {.compile(toncPath & "/src/tte/chr4c_drawg_b4cts_fast.s", toncAsmFlags).}
+  {.compile(toncPath & "/src/tte/chr4r_drawg_b1cts_fast.s", toncAsmFlags).}
+  
+  proc chr4cDrawgB1CTS*(gid: uint) {.importc: "chr4c_drawg_b1cts_fast", tonc.}
+    ## Render 1bpp fonts to 4bpp tiles, column-major
+  
+  proc chr4cDrawgB4CTS*(gid: uint) {.importc: "chr4c_drawg_b4cts_fast", tonc.}
+    ## Render 4bpp fonts to 4bpp tiles, column-major
+  
+  proc chr4rDrawgB1CTS*(gid: uint) {.importc: "chr4r_drawg_b1cts_fast", tonc.}
+    ## Render 1bpp fonts to 4bpp tiles, row-major
+  
+  proc bmp8DrawgB1CTS*(gid: uint) {.importc: "bmp8_drawg_b1cts_fast", tonc.}
+    ## 8bpp bitmap glyph renderer. 1->8bpp recolored, any size, transparent
+
+elif natuPlatform == "sdl":
+  
+  proc chr4cDrawgB1CTS*(gid: uint) {.importc: "chr4c_drawg_b1cts", tonc.}
+  proc chr4cDrawgB4CTS*(gid: uint) {.importc: "chr4c_drawg_b4cts", tonc.}
+  proc chr4rDrawgB1CTS*(gid: uint) {.importc: "chr4r_drawg_b1cts", tonc.}
+  proc bmp8DrawgB1CTS*(gid: uint) {.importc: "bmp8_drawg_b1cts", tonc.}
+
+else:
+  {.error: "Unknown platform " & natuPlatform.}
+
+# {.compile(toncPath & "/src/tte/tte_types.s", toncAsmFlags).}
+
+# {.compile(toncPath & "/src/tte/tte_iohook.c", toncCFlags).}  # Natu doesn't support stdio.
 
 # Constants
 # ---------
@@ -429,13 +455,6 @@ proc initChr4c*(
 proc chr4cErase*(left, top, right, bottom: int) {.importc: "chr4c_erase", tonc.}
   ## Erase part of the 4bpp text canvas.
 
-proc chr4cDrawgB1CTS*(gid: uint) {.importc: "chr4c_drawg_b1cts_fast", tonc.}
-  ## Render 1bpp fonts to 4bpp tiles, column-major
-
-proc chr4cDrawgB4CTS*(gid: uint) {.importc: "chr4c_drawg_b4cts_fast", tonc.}
-  ## Render 4bpp fonts to 4bpp tiles, column-major
-
-
 proc initChr4r*(
   bgnr: int;
   bgcnt: BgCnt = bgcnt[bgnr];
@@ -456,9 +475,6 @@ proc initChr4r*(
 
 proc chr4rErase*(left, top, right, bottom: int) {.importc: "chr4r_erase", tonc.}
   ## Erase part of the 4bpp text canvas.
-
-proc chr4rDrawgB1CTS*(gid: uint) {.importc: "chr4r_drawg_b1cts_fast", tonc.}
-  ## Render 1bpp fonts to 4bpp tiles, row-major
 
 
 # Bitmap Text
@@ -485,8 +501,6 @@ proc bmp8DrawgT*(gid: uint) {.importc: "bmp8_drawg_t", tonc.}
   ## `gid` Character to plot.
   ## Font params: bitmapped, 8bpp. special cattr is transparent.
   ## Untested
-proc bmp8DrawgB1CTS*(gid: uint) {.importc: "bmp8_drawg_b1cts_fast", tonc.}
-  ## 8bpp bitmap glyph renderer. 1->8bpp recolored, any size, transparent
 proc bmp8DrawgB1COS*(gid: uint) {.importc: "bmp8_drawg_b1cos", tonc.}
   ## 8bpp bitmap glyph renderer. 1->8bpp recolored, any size, opaque
 

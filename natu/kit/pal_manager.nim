@@ -52,7 +52,7 @@ type
     palUnused = 0
     palUsed = 1
 
-var objPals {.codegenDecl:EWRAM_DATA.}: array[16, PalState]
+var objPals {.codegenDecl:DataInEwram.}: array[16, PalState]
 
 proc allocObjPal*: int =
   ## Allocate a 4bpp palette in Obj PAL RAM.

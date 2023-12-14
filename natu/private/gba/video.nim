@@ -12,11 +12,6 @@ var bgaff* {.importc:"((volatile BG_AFFINE*)(0x04000020))", header:"tonc_types.h
 var winh* {.importc:"((volatile WinH*)(0x04000040))", nodecl.}: array[2, WinH]  ## [Write only!] Sets the left and right bounds of a window
 var winv* {.importc:"((volatile WinV*)(0x04000044))", nodecl.}: array[2, WinV]  ## [Write only!] Sets the upper and lower bounds of a window
 
-var win0h* {.importc:"(*(volatile WinH*)(0x04000040))", nodecl.}: WinH  ## [Write only!] Sets the left and right bounds of window 0
-var win1h* {.importc:"(*(volatile WinH*)(0x04000042))", nodecl.}: WinH  ## [Write only!] Sets the left and right bounds of window 1 
-var win0v* {.importc:"(*(volatile WinV*)(0x04000044))", nodecl.}: WinV  ## [Write only!] Sets the upper and lower bounds of window 0
-var win1v* {.importc:"(*(volatile WinV*)(0x04000046))", nodecl.}: WinV  ## [Write only!] Sets the upper and lower bounds of window 1
-
 var win0cnt* {.importc:"REG_WIN0CNT", header:"tonc_memmap.h".}: WinCnt  ## Window 0 control
 var win1cnt* {.importc:"REG_WIN1CNT", header:"tonc_memmap.h".}: WinCnt  ## Window 1 control
 var winoutcnt* {.importc:"REG_WINOUTCNT", header:"tonc_memmap.h".}: WinCnt  ## Out window control
@@ -190,8 +185,30 @@ var objAffMem* {.importc:"obj_aff_mem", header:"tonc_memmap.h".}: array[32, ObjA
 {.compile(toncPath & "/src/tonc_color.c", toncCFlags).}
 {.compile(toncPath & "/asm/clr_blend_fast.s", toncAsmFlags).}
 {.compile(toncPath & "/asm/clr_fade_fast.s", toncAsmFlags).}
-
-{.pragma: tonc, header:"tonc_video.h".}
-{.pragma: toncinl, header:"tonc_video.h".}  # inline from header.
-
 {.compile(toncPath & "/src/tonc_obj_affine.c", toncCFlags).}
+
+
+proc clrBlendFast*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_blend_fast", tonc.}
+  ## Blends color arrays `srca` and `srcb` into `dst`.
+  ## 
+  ## :srca: Source array A.
+  ## :srcb: Source array B.
+  ## :dst: Destination array.
+  ## :nclrs: Number of colors.
+  ## :alpha: Blend weight (range: 0-32).
+  ## 
+  ## .. note::
+  ##    This is an ARM assembly routine placed in IWRAM, which makes it very fast, but keep in mind that IWRAM is a limited resource.
+
+
+proc clrFadeFast*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_fade_fast", tonc.}
+  ## Fades color arrays `srca` to `clr` into `dst`.
+  ## 
+  ## :src: Source array.
+  ## :clr: Final color (at alpha=32).
+  ## :dst: Destination array.
+  ## :nclrs: Number of colors.
+  ## :alpha: Blend weight (range: 0-32).
+  ## 
+  ## .. note::
+  ##    This is an ARM assembly routine placed in IWRAM, which makes it very fast, but keep in mind that IWRAM is a limited resource.

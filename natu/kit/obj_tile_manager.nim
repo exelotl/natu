@@ -7,7 +7,7 @@ type ObjTileState {.size: 1.} = enum
 
 const MaxObjTiles = 1024
 
-var objTiles {.codegenDecl:EWRAM_DATA.}: array[MaxObjTiles+1, ObjTileState]  # length+1 for "null terminator"
+var objTiles {.codegenDecl:DataInEwram.}: array[MaxObjTiles+1, ObjTileState]  # length+1 for "null terminator"
 
 # Potential optimisation - keep track of the lowest guaranteed 'free' tile and only begin searching from there.
 # If some memory is freed that is lower than that tile, set it to be equal to that

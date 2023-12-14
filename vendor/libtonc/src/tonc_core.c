@@ -217,7 +217,7 @@ u32 octant(int x, int y)
 
 //! Get the rotated octant that (\a x, \a y) is in.
 /*!	Like \c octant() but with a twist. The 0-octant starts 
-	22.5° earlier so that 3 o'clock falls in the middle of 
+	22.5ï¿½ earlier so that 3 o'clock falls in the middle of 
 	octant 0, instead of at its start. This can be useful for 
 	8 directional pointing.
 */

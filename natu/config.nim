@@ -121,6 +121,16 @@ proc gbaCfg* =
 proc sdlCfg*() =
   echo "Building for PC."
   switch "cincludes", natuDir/"vendor/libtonc/include"
+  switch "passC", "-fPIC"
+  switch "passL", "-lm"
+  switch "cpu", "amd64"
+  switch "threads", "off"
+  # switch "import", natuDir/"natu/private/sdl/applib"
+  switch "app", "lib"
+  switch "nimMainPrefix", "natu"
+  switch "noMain"
+  switch "cincludes", natuDir/"vendor/libtonc/include"
+  switch "cincludes", natuDir/"vendor/maxmod/include"
 
 proc gbaStrip*(elfFile, gbaFile: string) =
   ## Invoke objcopy to create a raw binary file (all debug symbols removed)

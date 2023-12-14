@@ -1,9 +1,12 @@
 # Basic structs and typedefs
 # ==========================
 
-static:
-  # Make sure we're actually compiling for a 32-bit system.
-  doAssert(sizeof(int) == 4)
+# static:
+#   # Make sure we're actually compiling for a 32-bit system.
+#   doAssert(sizeof(int) == 4)
+
+converter to_cint*(x: int): cint {.inline.} = x.cint
+converter to_cuint*(x: uint): cuint {.inline.} = x.cuint
 
 type
   FnPtr* {.exportc.} = proc () {.nimcall.}    ## Function pointer, used for interrupt handlers etc.

@@ -25,7 +25,11 @@
 ]#
 
 from ./math import FixedN
-from natu/private/common import doInclude, natuOutputDir
+import natu/private/common
+
+when natuPlatform != "gba":
+  {.error: "Maxmod is only supported on the gba platform.".}
+
 
 const thisDir = currentSourcePath()[0..^11]
 const mmPath = thisDir & "../vendor/maxmod"
@@ -399,14 +403,3 @@ const mmcbSongFinished* = 0x0000002B'u32
   ## 
   ## `param` will be `0` if the main module has ended, or `1` if the sub module (jingle)
   ## has ended.
-
-# Old names, deprecated.
-
-proc position*(position: uint) {.deprecated, importc:"mmPosition".}
-proc effectRelease*(handle: MmSfxHandle) {.deprecated, importc:"mmEffectRelease".}
-proc effectCancel*(handle: MmSfxHandle) {.deprecated, importc:"mmEffectCancel".}
-proc effectRate*(handle: MmSfxHandle; rate: uint) {.importc:"mmEffectRate".}
-proc effectScaleRate*(handle: MmSfxHandle; factor: uint) {.deprecated, importc:"mmEffectScaleRate".}
-proc effectPanning*(handle: MmSfxHandle; panning: uint8) {.deprecated, importc:"mmEffectPanning".}
-proc effectVolume*(handle: MmSfxHandle; volume: uint) {.deprecated, importc:"mmEffectVolume".}
-proc effectCancelAll*() {.deprecated, importc:"mmEffectCancelAll".}

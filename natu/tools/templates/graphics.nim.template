@@ -23,7 +23,7 @@ const staticGfxData: array[Graphic, GraphicData] = [
   #end for
 ]
 
-var palUsages {.codegenDecl:EWRAM_DATA.}: array[${numPalettes}, uint16]
+var palUsages {.codegenDecl:DataInEwram.}: array[${numPalettes}, uint16]
 
 template data*(g: Graphic): GraphicData = staticGfxData[g]
 template palUsage*(g: Graphic): var uint16 = palUsages[g.data.palNum]

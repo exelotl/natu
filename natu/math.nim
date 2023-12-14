@@ -10,8 +10,8 @@ export std_math.sgn
 export FixedT, FixedN, Fixed
 
 {.compile(toncPath & "/src/tonc_math.c", toncCFlags).}
-{.compile(toncPath & "/asm/div_lut.s", toncAsmFlags).}
-{.compile(toncPath & "/asm/sin_lut.s", toncAsmFlags).}
+{.compile(toncPath & "/asm/div_lut.c", toncCFlags).}
+{.compile(toncPath & "/asm/sin_lut.c", toncCFlags).}
 
 {.pragma: tonc, header: "tonc_math.h".}
 {.pragma: toncinl, header: "tonc_math.h".}  # indicates that the definition is in the header.

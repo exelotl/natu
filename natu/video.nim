@@ -4,6 +4,9 @@
 
 {.warning[UnusedImport]: off.}
 
+{.pragma: tonc, header:"tonc_video.h".}
+{.pragma: toncinl, header:"tonc_video.h".}  # inline from header.
+
 import std/macros
 import ./private/[common, types]
 from ./private/privutils import writeFields
@@ -456,14 +459,6 @@ macro excl*[T:LayerEnum](x: set[T], y: set[T]) =
   let (field, reg) = (x[0], x[1])
   quote do:
     `reg`.`field` = `reg`.`field` - y
-
-
-# Platform specific code
-# ----------------------
-
-when natuPlatform == "gba": include ./private/gba/video 
-elif natuPlatform == "sdl": include ./private/sdl/video
-else: {.error: "Unknown platform " & natuPlatform.}
 
 
 # Objects (sprites)
@@ -1012,32 +1007,17 @@ proc palGradient*(pal: ptr Color; first, last: int; clrFirst, clrLast: Color) {.
   ## :clrFirst: Color of first index.
   ## :clrLast: Color of last index.
 
-proc clrBlendFast*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_blend_fast", tonc.}
-  ## Blends color arrays `srca` and `srcb` into `dst`.
-  ## 
-  ## :srca: Source array A.
-  ## :srcb: Source array B.
-  ## :dst: Destination array.
-  ## :nclrs: Number of colors.
-  ## :alpha: Blend weight (range: 0-32).
-  ## 
-  ## .. note::
-  ##    This is an ARM assembly routine placed in IWRAM, which makes it very fast, but keep in mind that IWRAM is a limited resource.
 
-proc clrFadeFast*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_fade_fast", tonc.}
-  ## Fades color arrays `srca` to `clr` into `dst`.
-  ## 
-  ## :src: Source array.
-  ## :clr: Final color (at alpha=32).
-  ## :dst: Destination array.
-  ## :nclrs: Number of colors.
-  ## :alpha: Blend weight (range: 0-32).
-  ## 
-  ## .. note::
-  ##    This is an ARM assembly routine placed in IWRAM, which makes it very fast, but keep in mind that IWRAM is a limited resource.
+# Platform specific code
+# ----------------------
 
-proc bgIsAffine*(n: int): bool {.importc: "BG_IS_AFFINE", toncinl.}
-proc bgIsAvailable*(n: int): bool {.importc: "BG_IS_AVAIL", toncinl.}
+when natuPlatform == "gba": include ./private/gba/video 
+elif natuPlatform == "sdl": include ./private/sdl/video
+else: {.error: "Unknown platform " & natuPlatform.}
+
+
+# proc bgIsAffine*(n: int): bool {.importc: "BG_IS_AFFINE", toncinl.}
+# proc bgIsAvailable*(n: int): bool {.importc: "BG_IS_AVAIL", toncinl.}
 
 proc bmp8_plot(x, y: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_plot", tonc.}
 proc bmp8_hline(x1, y, x2: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_hline", tonc.}

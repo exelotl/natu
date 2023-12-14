@@ -2,7 +2,8 @@
 ## ==================
 ## Output text to the debug console in mGBA
 
-import posprintf
+proc sprintf(s: cstring; format: cstring) {.varargs, importc, header:"stdio.h".}
+
 import volatile
 
 let REG_DEBUG_ENABLE = cast[ptr uint16](0x4FFF780)
@@ -17,7 +18,7 @@ proc poke[T](address: ptr T, value: T) {.inline.} =
 
 # Wrapper template to work around compiler bug with empty varargs?
 template printfAux(str: cstring, args: varargs[untyped]) =
-  posprintf(REG_DEBUG_STRING, str, args)
+  sprintf(REG_DEBUG_STRING, str, args)
 
 type LogLevel* {.size: sizeof(uint16).} = enum
   logFatal = 0
