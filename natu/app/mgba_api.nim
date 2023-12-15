@@ -1,30 +1,27 @@
-import ./bits
+import ../bits
 
-const mgbaCFlags = """
--DDISABLE_THREADING -DDEBUG -DHAVE_CRC32 -DHAVE_FUTIMENS -DHAVE_FUTIMES -DHAVE_LOCALE -DHAVE_LOCALTIME_R -DHAVE_NEWLOCALE -DHAVE_REALPATH -DHAVE_SETLOCALE -DHAVE_STRDUP -DHAVE_STRNDUP -DHAVE_USELOCALE -DHAVE_VASPRINTF -DM_CORE_GBA -DUSE_EGL -DUSE_EPOXY -DUSE_GLX -DUSE_LIBSWRESAMPLE -DUSE_LIBZIP -DUSE_LZMA -DUSE_PNG -DUSE_SQLITE3 -DUSE_ZLIB -D_7ZIP_PPMD_SUPPPORT -D_GNU_SOURCE -Dmgba_EXPORTS -Imgba/include -Imgba/build/include -Imgba/src -Imgba/src/third-party/lzma -Wall -Wextra -Wno-missing-field-initializers -Werror=implicit-function-declaration -Werror=implicit-int -fwrapv -Werror=incompatible-pointer-types -DNDEBUG -fPIC -MD -MT"""
+const mgbaPath* = currentSourcePath[0..^23] & "/vendor/mgba"
+
+const mgbaCFlags = "-DDISABLE_THREADING -DDEBUG -DHAVE_CRC32 -DHAVE_FUTIMENS -DHAVE_FUTIMES -DHAVE_LOCALE -DHAVE_LOCALTIME_R -DHAVE_NEWLOCALE -DHAVE_REALPATH -DHAVE_SETLOCALE -DHAVE_STRDUP -DHAVE_STRNDUP -DHAVE_USELOCALE -DHAVE_VASPRINTF -DM_CORE_GBA -DUSE_EGL -DUSE_EPOXY -DUSE_GLX -DUSE_LIBSWRESAMPLE -DUSE_LIBZIP -DUSE_LZMA -DUSE_PNG -DUSE_SQLITE3 -DUSE_ZLIB -D_7ZIP_PPMD_SUPPPORT -D_GNU_SOURCE -Dmgba_EXPORTS -I" & mgbaPath & "/include -I" & mgbaPath & "/build/include -I" & mgbaPath & "/src -I" & mgbaPath & "/src/third-party/lzma -Wall -Wextra -Wno-missing-field-initializers -Werror=implicit-function-declaration -Werror=implicit-int -fwrapv -Werror=incompatible-pointer-types -DNDEBUG -fPIC -MD -MT"
 
 {.passC:"-std=c11".}
-{.compile("mgba/src/core/cache-set.c", mgbaCFlags).}
-{.compile("mgba/src/core/bitmap-cache.c", mgbaCFlags).}
-{.compile("mgba/src/core/map-cache.c", mgbaCFlags).}
-{.compile("mgba/src/core/tile-cache.c", mgbaCFlags).}
-{.compile("mgba/src/core/log.c", mgbaCFlags).}  # edited
-{.compile("mgba/src/gba/video.c", mgbaCFlags).} # edited
-{.compile("mgba/src/util/memory.c", mgbaCFlags).}
-{.compile("mgba/src/util/geometry.c", mgbaCFlags).}
-{.compile("mgba/src/util/table.c", mgbaCFlags).}
-{.compile("mgba/src/util/hash.c", mgbaCFlags).}
-{.compile("mgba/src/feature/video-backend.c", mgbaCFlags).}
-{.compile("mgba/src/gba/renderers/cache-set.c", mgbaCFlags).}
-{.compile("mgba/src/gba/renderers/common.c", mgbaCFlags).}
-{.compile("mgba/src/gba/renderers/software-bg.c", mgbaCFlags).}
-{.compile("mgba/src/gba/renderers/software-mode0.c", mgbaCFlags).}
-{.compile("mgba/src/gba/renderers/software-obj.c", mgbaCFlags).}
-{.compile("mgba/src/gba/renderers/video-software.c", mgbaCFlags).}
-
-#[
-/usr/bin/cc -DBUILD_GL -DBUILD_GLES2 -DBUILD_GLES3 -DENABLE_SCRIPTING -DHAVE_CRC32 -DHAVE_FREELOCALE -DHAVE_FUTIMENS -DHAVE_FUTIMES -DHAVE_LOCALE -DHAVE_LOCALTIME_R -DHAVE_NEWLOCALE -DHAVE_PTHREAD_CREATE -DHAVE_PTHREAD_SETNAME_NP -DHAVE_REALPATH -DHAVE_SETLOCALE -DHAVE_STRDUP -DHAVE_STRNDUP -DHAVE_USELOCALE -DHAVE_VASPRINTF '-DLUA_VERSION_ONLY="5.4"' -DMGBA_DLL -DM_CORE_GB -DM_CORE_GBA -DUSE_DEBUGGERS -DUSE_DISCORD_RPC -DUSE_EDITLINE -DUSE_EGL -DUSE_ELF -DUSE_EPOXY -DUSE_FFMPEG -DUSE_GDB_STUB -DUSE_GLX -DUSE_JSON_C -DUSE_LIBSWRESAMPLE -DUSE_LIBZIP -DUSE_LUA -DUSE_LZMA -DUSE_PNG -DUSE_PTHREADS -DUSE_SQLITE3 -DUSE_ZLIB -D_7ZIP_PPMD_SUPPPORT -D_GNU_SOURCE -Dmgba_EXPORTS -I/home/exelotl/Dev/mgba/include -I/home/exelotl/Dev/mgba/build/include -I/home/exelotl/Dev/mgba/src -I/usr/include/editline -I/home/exelotl/Dev/mgba/src/third-party/lzma -I/home/exelotl/Dev/mgba/src/third-party/discord-rpc/include -isystem /usr/include/json-c -Wall -Wextra -Wno-missing-field-initializers -Werror=implicit-function-declaration -Werror=implicit-int -fwrapv -Werror=incompatible-pointer-types -pthread -O3 -DNDEBUG -std=c11 -fPIC -MD -MT CMakeFiles/mgba.dir/src/gba/renderers/video-software.c.o -MF CMakeFiles/mgba.dir/src/gba/renderers/video-software.c.o.d -o CMakeFiles/mgba.dir/src/gba/renderers/video-software.c.o -c /home/exelotl/Dev/mgba/src/gba/renderers/video-software.c
-]#
+{.compile(mgbaPath & "/src/core/cache-set.c", mgbaCFlags).}
+{.compile(mgbaPath & "/src/core/bitmap-cache.c", mgbaCFlags).}
+{.compile(mgbaPath & "/src/core/map-cache.c", mgbaCFlags).}
+{.compile(mgbaPath & "/src/core/tile-cache.c", mgbaCFlags).}
+{.compile(mgbaPath & "/src/core/log.c", mgbaCFlags).}  # edited
+{.compile(mgbaPath & "/src/gba/video.c", mgbaCFlags).} # edited
+{.compile(mgbaPath & "/src/util/memory.c", mgbaCFlags).}
+{.compile(mgbaPath & "/src/util/geometry.c", mgbaCFlags).}
+{.compile(mgbaPath & "/src/util/table.c", mgbaCFlags).}
+{.compile(mgbaPath & "/src/util/hash.c", mgbaCFlags).}
+{.compile(mgbaPath & "/src/feature/video-backend.c", mgbaCFlags).}
+{.compile(mgbaPath & "/src/gba/renderers/cache-set.c", mgbaCFlags).}
+{.compile(mgbaPath & "/src/gba/renderers/common.c", mgbaCFlags).}
+{.compile(mgbaPath & "/src/gba/renderers/software-bg.c", mgbaCFlags).}
+{.compile(mgbaPath & "/src/gba/renderers/software-mode0.c", mgbaCFlags).}
+{.compile(mgbaPath & "/src/gba/renderers/software-obj.c", mgbaCFlags).}
+{.compile(mgbaPath & "/src/gba/renderers/video-software.c", mgbaCFlags).}
 
 type mStateExtdataItem = object # fwd decl
 type mInputMapImpl = object # fwd decl
@@ -934,72 +931,72 @@ type
 
 type GBARegisterDISPCNT* = distinct uint16
 
-defineBits GBARegisterDISPCNT, 0..3, mode, uint16
-defineBit GBARegisterDISPCNT, 3, cgb
-defineBit GBARegisterDISPCNT, 4, frameSelect
-defineBit GBARegisterDISPCNT, 5, hblankIntervalFree
-defineBit GBARegisterDISPCNT, 6, objCharacterMapping
-defineBit GBARegisterDISPCNT, 7, forcedBlank
-defineBit GBARegisterDISPCNT, 8, bg0Enable
-defineBit GBARegisterDISPCNT, 9, bg1Enable
-defineBit GBARegisterDISPCNT, 10, bg2Enable
-defineBit GBARegisterDISPCNT, 11, bg3Enable
-defineBit GBARegisterDISPCNT, 12, objEnable
-defineBit GBARegisterDISPCNT, 13, win0Enable
-defineBit GBARegisterDISPCNT, 14, win1Enable
-defineBit GBARegisterDISPCNT, 15, objwinEnable
+bitdef GBARegisterDISPCNT, 0..3, mode, uint16
+bitdef GBARegisterDISPCNT, 3, cgb, bool
+bitdef GBARegisterDISPCNT, 4, frameSelect, bool
+bitdef GBARegisterDISPCNT, 5, hblankIntervalFree, bool
+bitdef GBARegisterDISPCNT, 6, objCharacterMapping, bool
+bitdef GBARegisterDISPCNT, 7, forcedBlank, bool
+bitdef GBARegisterDISPCNT, 8, bg0Enable, bool
+bitdef GBARegisterDISPCNT, 9, bg1Enable, bool
+bitdef GBARegisterDISPCNT, 10, bg2Enable, bool
+bitdef GBARegisterDISPCNT, 11, bg3Enable, bool
+bitdef GBARegisterDISPCNT, 12, objEnable, bool
+bitdef GBARegisterDISPCNT, 13, win0Enable, bool
+bitdef GBARegisterDISPCNT, 14, win1Enable, bool
+bitdef GBARegisterDISPCNT, 15, objwinEnable, bool
 
 type GBARegisterDISPSTAT* = distinct uint16
 
-defineBit GBARegisterDISPSTAT, 0, inVblank
-defineBit GBARegisterDISPSTAT, 1, inHblank
-defineBit GBARegisterDISPSTAT, 2, vcounter
-defineBit GBARegisterDISPSTAT, 3, vblankIRQ
-defineBit GBARegisterDISPSTAT, 4, hblankIRQ
-defineBit GBARegisterDISPSTAT, 5, vcounterIRQ
-defineBits GBARegisterDISPSTAT, 8..15, vcountSetting, uint16
+bitdef GBARegisterDISPSTAT, 0, inVblank, bool
+bitdef GBARegisterDISPSTAT, 1, inHblank, bool
+bitdef GBARegisterDISPSTAT, 2, vcounter, bool
+bitdef GBARegisterDISPSTAT, 3, vblankIRQ, bool
+bitdef GBARegisterDISPSTAT, 4, hblankIRQ, bool
+bitdef GBARegisterDISPSTAT, 5, vcounterIRQ, bool
+bitdef GBARegisterDISPSTAT, 8..15, vcountSetting, uint16
 
 type GBARegisterBGCNT* = distinct uint16
 
-defineBits GBARegisterBGCNT, 0..1, priority, uint16
-defineBits GBARegisterBGCNT, 2..3, charBase, uint16
-defineBit GBARegisterBGCNT, 6, mosaic
-defineBit GBARegisterBGCNT, 7, is8bpp
-defineBits GBARegisterBGCNT, 8..12, screenBase, uint16
-defineBit GBARegisterBGCNT, 13, overflow
-defineBits GBARegisterBGCNT, 14..15, size, uint16
+bitdef GBARegisterBGCNT, 0..1, priority, uint16
+bitdef GBARegisterBGCNT, 2..3, charBase, uint16
+bitdef GBARegisterBGCNT, 6, mosaic, bool
+bitdef GBARegisterBGCNT, 7, is8bpp, bool
+bitdef GBARegisterBGCNT, 8..12, screenBase, uint16
+bitdef GBARegisterBGCNT, 13, overflow, bool
+bitdef GBARegisterBGCNT, 14..15, size, uint16
 
 type GBARegisterBLDCNT* = distinct uint16
 
-defineBit GBARegisterBLDCNT, 0, target1Bg0
-defineBit GBARegisterBLDCNT, 1, target1Bg1
-defineBit GBARegisterBLDCNT, 2, target1Bg2
-defineBit GBARegisterBLDCNT, 3, target1Bg3
-defineBit GBARegisterBLDCNT, 4, target1Obj
-defineBit GBARegisterBLDCNT, 5, target1Bd
-defineBits GBARegisterBLDCNT, 6..7, effect, uint16
-defineBit GBARegisterBLDCNT, 8, target2Bg0
-defineBit GBARegisterBLDCNT, 9, target2Bg1
-defineBit GBARegisterBLDCNT, 10, target2Bg2
-defineBit GBARegisterBLDCNT, 11, target2Bg3
-defineBit GBARegisterBLDCNT, 12, target2Obj
-defineBit GBARegisterBLDCNT, 13, target2Bd
+bitdef GBARegisterBLDCNT, 0, target1Bg0, bool
+bitdef GBARegisterBLDCNT, 1, target1Bg1, bool
+bitdef GBARegisterBLDCNT, 2, target1Bg2, bool
+bitdef GBARegisterBLDCNT, 3, target1Bg3, bool
+bitdef GBARegisterBLDCNT, 4, target1Obj, bool
+bitdef GBARegisterBLDCNT, 5, target1Bd, bool
+bitdef GBARegisterBLDCNT, 6..7, effect, uint16
+bitdef GBARegisterBLDCNT, 8, target2Bg0, bool
+bitdef GBARegisterBLDCNT, 9, target2Bg1, bool
+bitdef GBARegisterBLDCNT, 10, target2Bg2, bool
+bitdef GBARegisterBLDCNT, 11, target2Bg3, bool
+bitdef GBARegisterBLDCNT, 12, target2Obj, bool
+bitdef GBARegisterBLDCNT, 13, target2Bd, bool
 
 type GBAWindowControl* = distinct uint8
 
-defineBit GBAWindowControl, 0, bg0Enable
-defineBit GBAWindowControl, 1, bg1Enable
-defineBit GBAWindowControl, 2, bg2Enable
-defineBit GBAWindowControl, 3, bg3Enable
-defineBit GBAWindowControl, 4, objEnable
-defineBit GBAWindowControl, 5, blendEnable
+bitdef GBAWindowControl, 0, bg0Enable, bool
+bitdef GBAWindowControl, 1, bg1Enable, bool
+bitdef GBAWindowControl, 2, bg2Enable, bool
+bitdef GBAWindowControl, 3, bg3Enable, bool
+bitdef GBAWindowControl, 4, objEnable, bool
+bitdef GBAWindowControl, 5, blendEnable, bool
 
 type GBAMosaicControl* = distinct uint16
 
-defineBits GBAMosaicControl, 0..3, bgH, uint16
-defineBits GBAMosaicControl, 4..7, bgV, uint16
-defineBits GBAMosaicControl, 8..11, objH, uint16
-defineBits GBAMosaicControl, 12..15, objV, uint16
+bitdef GBAMosaicControl, 0..3, bgH, uint16
+bitdef GBAMosaicControl, 4..7, bgV, uint16
+bitdef GBAMosaicControl, 8..11, objH, uint16
+bitdef GBAMosaicControl, 12..15, objV, uint16
 
 type
   GBAVideoRenderer* {.bycopy.} = object

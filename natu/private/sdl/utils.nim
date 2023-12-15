@@ -10,7 +10,7 @@ proc memcpy16_impl(dst: pointer, src: pointer, hwcount: cuint) {.exportc: "memcp
   let s = cast[ptr UncheckedArray[uint16]](src)
   for i in 0..<hwcount:
     d[i] = s[i]
-  
+
 proc memcpy32_impl(dst: pointer, src: pointer, wcount: cuint) {.exportc: "memcpy32".} =
   let d = cast[ptr UncheckedArray[uint32]](dst)
   let s = cast[ptr UncheckedArray[uint32]](src)

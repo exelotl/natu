@@ -1,9 +1,10 @@
 import ./appcommon
 export appcommon
 
-import ../../bios  # must be linked.
-
 var natuMem*: ptr NatuAppMem
+
+import ../../bios  # must be linked.
+import ./panics
 
 proc natuNimMain() {.importc.}
 proc natuUpdate() {.importc.}
