@@ -5,11 +5,11 @@ import ./applib
 # The registers are exposed directly, but for most purposes you don't need to
 # worry about them as the IRQ management procs can take care of everything.
 
-template ie*: IrqIndices     = cast[ptr IrqIndices](addr natuMem.regs[0x200])[]
-template `if`*: IrqIndices   = cast[ptr IrqIndices](addr natuMem.regs[0x202])[]
-template ime*: bool          = cast[ptr bool](addr natuMem.regs[0x208])[]
-template ifbios*: IrqIndices = cast[ptr IrqIndices](addr natuMem.regs[0x1f8])[]  # just uses a random unused index.
-template isr*: FnPtr         = cast[ptr FnPtr](addr natuMem.regs[0x1fc])[]  # ditto
+template ie*: IrqIndices     = cast[ptr IrqIndices](addr natuMem.regs[0x200 shr 1])[]
+template `if`*: IrqIndices   = cast[ptr IrqIndices](addr natuMem.regs[0x202 shr 1])[]
+template ime*: bool          = cast[ptr bool](addr natuMem.regs[0x208 shr 1])[]
+template ifbios*: IrqIndices = cast[ptr IrqIndices](addr natuMem.regs[0x1f8 shr 1])[]  # just uses a random unused index.
+template isr*: FnPtr         = cast[ptr FnPtr](addr natuMem.regs[0x1fc shr 1])[]  # ditto
 
 
 # Interrupt management procedures

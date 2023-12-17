@@ -7,4 +7,4 @@ const
   ThumbCodeInEwram* = "$# $#$#"  ## Put procedure in EWRAM.
 
 
-template waitcnt*: WaitCnt = cast[ptr WaitCnt](addr natuMem.regs[0x204])[]
+template waitcnt*: WaitCnt = cast[ptr WaitCnt](addr natuMem.regs[0x204 shr 1])[]
