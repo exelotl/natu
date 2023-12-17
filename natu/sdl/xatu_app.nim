@@ -1,12 +1,12 @@
 import sdl2_nim/sdl
-import ./mgba_api
+import ./xatu_mgba
 import ../private/sdl/appcommon
 
 # mGBA Renderer + app mem
 # -----------------------
 
 var swr: GBAVideoSoftwareRenderer  # internal mGBA renderer state
-var mem*: NatuAppMem                # memory passed to the game shared lib
+var mem*: NatuAppMem               # memory passed to the game shared lib
 
 proc vidSetBuffer*(pitch: cint, buf: pointer) =
   const bytesPerPixel = 4

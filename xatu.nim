@@ -1,12 +1,14 @@
 import std/[parseopt]
 import sdl2_nim/sdl
-import ../private/sdl/appcommon
-import ./sdlapp
-import ./loader
+import ./natu/private/sdl/appcommon
+import ./natu/sdl/xatu_app
+import ./natu/sdl/xatu_loader
 
 const helpMsg = """
+Runner for natu PC games.
+
 Usage:
-  natu_runner filename.so
+  xatu your_game.so|dll|dylib
 """
 
 var sharedlib = ""
