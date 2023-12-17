@@ -13,10 +13,10 @@ template bgaff*: array[4, BgAffine] = cast[ptr array[2..3, BgAffine]](addr natuM
 template winh*: array[2, WinH] = cast[ptr array[2, WinH]](addr natuMem.regs[0x40 shr 1])[]
 template winv*: array[2, WinV] = cast[ptr array[2, WinV]](addr natuMem.regs[0x44 shr 1])[]
 
-template win0cnt*: WinCnt   = cast[ptr WinCnt](addr natuMem.regs[0x48 shr 1])[]
-template win1cnt*: WinCnt   = cast[ptr WinCnt](addr natuMem.regs[0x49 shr 1])[]
-template winoutcnt*: WinCnt = cast[ptr WinCnt](addr natuMem.regs[0x4A shr 1])[]
-template winobjcnt*: WinCnt = cast[ptr WinCnt](addr natuMem.regs[0x4B shr 1])[]
+template win0cnt*: WinCnt   = cast[ptr array[2, WinCnt]](addr natuMem.regs[0x48 shr 1])[0]
+template win1cnt*: WinCnt   = cast[ptr array[2, WinCnt]](addr natuMem.regs[0x48 shr 1])[1]
+template winoutcnt*: WinCnt = cast[ptr array[2, WinCnt]](addr natuMem.regs[0x4A shr 1])[0]
+template winobjcnt*: WinCnt = cast[ptr array[2, WinCnt]](addr natuMem.regs[0x4A shr 1])[1]
 
 template mosaic*: Mosaic        = cast[ptr Mosaic](addr natuMem.regs[0x4C shr 1])[]
 template bldcnt*: BldCnt        = cast[ptr BldCnt](addr natuMem.regs[0x50 shr 1])[]
