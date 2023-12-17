@@ -319,13 +319,13 @@ proc pickRandom*[N,T](arr: List[N,T]): T =
 # Sector checking
 # ---------------
 
-proc octant*(x, y: int): uint {.importc: "octant", tonc.}
+proc octant*(x, y: cint): cuint {.importc: "octant", tonc.}
   ## Get the octant that (`x`, `y`) is in.
   ## 
   ## This function divides the circle in 8 parts. The angle starts at the `y=0` line and then moves in the direction
   ## of the `x=0` line. On the screen, this would be like starting at the 3 o'clock position and moving clockwise.
 
-proc octantRot*(x0, y0: int): uint {.importc: "octant_rot", tonc.}
+proc octantRot*(x0, y0: cint): cuint {.importc: "octant_rot", tonc.}
   ## Get the rotated octant that (`x`, `y`) is in.
   ## 
   ## Like `octant()` but with a twist. The 0-octant starts 22.5° earlier so that 3 o'clock falls in the middle of 

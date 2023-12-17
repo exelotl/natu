@@ -188,7 +188,7 @@ var objAffMem* {.importc:"obj_aff_mem", header:"tonc_memmap.h".}: array[32, ObjA
 {.compile(toncPath & "/src/tonc_obj_affine.c", toncCFlags).}
 
 
-proc clrBlendFast*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_blend_fast", tonc.}
+proc clrBlendFast*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: cint; alpha: cint) {.importc: "clr_blend_fast", tonc.}
   ## Blends color arrays `srca` and `srcb` into `dst`.
   ## 
   ## :srca: Source array A.
@@ -201,7 +201,7 @@ proc clrBlendFast*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: int;
   ##    This is an ARM assembly routine placed in IWRAM, which makes it very fast, but keep in mind that IWRAM is a limited resource.
 
 
-proc clrFadeFast*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_fade_fast", tonc.}
+proc clrFadeFast*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: cint; alpha: cint) {.importc: "clr_fade_fast", tonc.}
   ## Fades color arrays `srca` to `clr` into `dst`.
   ## 
   ## :src: Source array.

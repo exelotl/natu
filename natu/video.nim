@@ -923,10 +923,10 @@ func `b=`*(color: var Color, b: int) =
 
 # TODO: Rework color/pal function signatures?
 
-proc clrRotate*(clrs: ptr Color; nclrs: int; ror: int) {.importc: "clr_rotate", tonc.}
+proc clrRotate*(clrs: ptr Color; nclrs: cint; ror: cint) {.importc: "clr_rotate", tonc.}
   ## Rotate `nclrs` colors at `clrs` to the right by `ror`.
 
-proc clrBlend*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_blend", tonc.}
+proc clrBlend*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: cint; alpha: cint) {.importc: "clr_blend", tonc.}
   ## Blends color arrays `srca` and `srcb` into `dst`.
   ## Specific transitional blending effects can be created by making a 'target' color array
   ## with other routines, then using `alpha` to morph into it.
@@ -937,7 +937,7 @@ proc clrBlend*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: int; alp
   ## :nclrs: Number of colors.
   ## :alpha: Blend weight (range: 0-32). 0 Means full `srca`
 
-proc clrFade*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_fade", tonc.}
+proc clrFade*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: cint; alpha: cint) {.importc: "clr_fade", tonc.}
   ## Fades color arrays `srca` to `clr` into `dst`.
   ## 
   ## :src: Source array.
@@ -946,14 +946,14 @@ proc clrFade*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: int; alpha: int
   ## :nclrs: Number of colors.
   ## :alpha: Blend weight (range: 0-32). 0 Means full `srca`
 
-proc clrGrayscale*(dst: ptr Color; src: ptr Color; nclrs: int) {.importc: "clr_grayscale", tonc.}
+proc clrGrayscale*(dst: ptr Color; src: ptr Color; nclrs: cint) {.importc: "clr_grayscale", tonc.}
   ## Transform colors to grayscale.
   ## 
   ## :dst: Destination color array
   ## :src: Source color array.
   ## :nclrs: Number of colors.
 
-proc clrRgbscale*(dst: ptr Color; src: ptr Color; nclrs: int; clr: Color) {.importc: "clr_rgbscale", tonc.}
+proc clrRgbscale*(dst: ptr Color; src: ptr Color; nclrs: cint; clr: Color) {.importc: "clr_rgbscale", tonc.}
   ## Transform colors to an rgb-scale.
   ## .. note::
   ##    `clr` indicates a color vector in RGB-space. Each source color is converted to a brightness value (i.e. grayscale)
@@ -964,7 +964,7 @@ proc clrRgbscale*(dst: ptr Color; src: ptr Color; nclrs: int; clr: Color) {.impo
   ## :nclrs: Number of colors.
   ## :clr: Destination color vector.
 
-proc clrAdjBrightness*(dst: ptr Color; src: ptr Color; nclrs: int; bright: Fixed) {.importc: "clr_adj_brightness", tonc.}
+proc clrAdjBrightness*(dst: ptr Color; src: ptr Color; nclrs: cint; bright: Fixed) {.importc: "clr_adj_brightness", tonc.}
   ## Adjust brightness by `bright`
   ## Operation: `color= color+dB`;
   ## 
@@ -973,7 +973,7 @@ proc clrAdjBrightness*(dst: ptr Color; src: ptr Color; nclrs: int; bright: Fixed
   ## :nclrs: Number of colors.
   ## :bright: Brightness difference, dB (in 24.8f)
 
-proc clrAdjContrast*(dst: ptr Color; src: ptr Color; nclrs: int; contrast: Fixed) {.importc: "clr_adj_contrast", tonc.}
+proc clrAdjContrast*(dst: ptr Color; src: ptr Color; nclrs: cint; contrast: Fixed) {.importc: "clr_adj_contrast", tonc.}
   ## Adjust contrast by `contrast`
   ## Operation: `color = color*(1+dC) - MAX*dC/2`
   ## 
@@ -982,7 +982,7 @@ proc clrAdjContrast*(dst: ptr Color; src: ptr Color; nclrs: int; contrast: Fixed
   ## :nclrs: Number of colors.
   ## :contrast: Contrast difference, dC (in 24.8f)
 
-proc clrAdjIntensity*(dst: ptr Color; src: ptr Color; nclrs: int; intensity: Fixed) {.importc: "clr_adj_intensity", tonc.}
+proc clrAdjIntensity*(dst: ptr Color; src: ptr Color; nclrs: cint; intensity: Fixed) {.importc: "clr_adj_intensity", tonc.}
   ## Adjust intensity by `intensity`. 
   ## Operation: `color = (1+dI)*color`.
   ## 
@@ -991,14 +991,14 @@ proc clrAdjIntensity*(dst: ptr Color; src: ptr Color; nclrs: int; intensity: Fix
   ## :nclrs: Number of colors.
   ## :intensity: Intensity difference, dI (in 24.8f)
 
-proc palGradient*(pal: ptr Color; first: int; last: int) {.importc: "pal_gradient", tonc.}
+proc palGradient*(pal: ptr Color; first: cint; last: cint) {.importc: "pal_gradient", tonc.}
   ## Create a gradient between `pal[first]` and `pal[last]`.
   ## 
   ## :pal: Palette to work on.
   ## :first: First index of gradient.
   ## :last: Last index of gradient.
 
-proc palGradient*(pal: ptr Color; first, last: int; clrFirst, clrLast: Color) {.importc: "pal_gradient_ex", tonc.}
+proc palGradient*(pal: ptr Color; first, last: cint; clrFirst, clrLast: Color) {.importc: "pal_gradient_ex", tonc.}
   ## Create a gradient between `pal[first]` and `pal[last]`.
   ## 
   ## :pal: Palette to work on.
@@ -1019,18 +1019,18 @@ else: {.error: "Unknown platform " & natuPlatform.}
 # proc bgIsAffine*(n: int): bool {.importc: "BG_IS_AFFINE", toncinl.}
 # proc bgIsAvailable*(n: int): bool {.importc: "BG_IS_AVAIL", toncinl.}
 
-proc bmp8_plot(x, y: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_plot", tonc.}
-proc bmp8_hline(x1, y, x2: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_hline", tonc.}
-proc bmp8_vline(x, y1, y2: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_vline", tonc.}
-proc bmp8_line(x1, y1, x2: int; y2: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_line", tonc.}
-proc bmp8_rect(left, top, right, bottom: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_rect", tonc.}
-proc bmp8_frame(left, top, right, bottom: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_frame", tonc.}
-proc bmp16_plot(x, y, clr: Color; dstBase: pointer; dstP: uint) {.importc:"bmp16_plot", tonc.}
-proc bmp16_hline(x1, y, x2: int; clr: Color; dstBase: pointer; dstP: uint) {.importc:"bmp16_hline", tonc.}
-proc bmp16_vline(x, y1, y2: int; clr: Color; dstBase: pointer; dstP: uint) {.importc:"bmp16_vline", tonc.}
-proc bmp16_line(x1, y1, x2, y2: int; clr: Color; dstBase: pointer; dstP: uint) {.importc:"bmp16_line", tonc.}
-proc bmp16_rect(left, top, right, bottom: int; clr: Color; dstBase: pointer; dstP: uint) {.importc:"bmp16_rect", tonc.}
-proc bmp16_frame(left, top, right, bottom: int; clr: Color; dstBase: pointer; dstP: uint) {.importc:"bmp16_frame", tonc.}
+proc bmp8_plot(x, y: cint; clrid: uint8; dstBase: pointer; dstP: cuint) {.importc:"bmp8_plot", tonc.}
+proc bmp8_hline(x1, y, x2: cint; clrid: uint8; dstBase: pointer; dstP: cuint) {.importc:"bmp8_hline", tonc.}
+proc bmp8_vline(x, y1, y2: cint; clrid: uint8; dstBase: pointer; dstP: cuint) {.importc:"bmp8_vline", tonc.}
+proc bmp8_line(x1, y1, x2: cint; y2: cint; clrid: uint8; dstBase: pointer; dstP: cuint) {.importc:"bmp8_line", tonc.}
+proc bmp8_rect(left, top, right, bottom: cint; clrid: uint8; dstBase: pointer; dstP: cuint) {.importc:"bmp8_rect", tonc.}
+proc bmp8_frame(left, top, right, bottom: cint; clrid: uint8; dstBase: pointer; dstP: cuint) {.importc:"bmp8_frame", tonc.}
+proc bmp16_plot(x, y, clr: Color; dstBase: pointer; dstP: cuint) {.importc:"bmp16_plot", tonc.}
+proc bmp16_hline(x1, y, x2: cint; clr: Color; dstBase: pointer; dstP: cuint) {.importc:"bmp16_hline", tonc.}
+proc bmp16_vline(x, y1, y2: cint; clr: Color; dstBase: pointer; dstP: cuint) {.importc:"bmp16_vline", tonc.}
+proc bmp16_line(x1, y1, x2, y2: cint; clr: Color; dstBase: pointer; dstP: cuint) {.importc:"bmp16_line", tonc.}
+proc bmp16_rect(left, top, right, bottom: cint; clr: Color; dstBase: pointer; dstP: cuint) {.importc:"bmp16_rect", tonc.}
+proc bmp16_frame(left, top, right, bottom: cint; clr: Color; dstBase: pointer; dstP: cuint) {.importc:"bmp16_frame", tonc.}
 
 
 proc clear*[T: Screenblock | Charblock | Charblock8 | Tile | Tile8 | M3Mem | M4Mem | M5Mem](dst: var T) {.inline.} =
@@ -1046,27 +1046,27 @@ proc fill*(sbb: var Screenblock; se: ScrEntry) =
   ## Fill screenblock `sbb` with `se`.
   memset32(addr sbb, dup16(se.uint16), sizeof(sbb) div 4)
 
-proc plot*(sbb: var Screenblock; x, y: int; se: ScrEntry) =
+proc plot*(sbb: var Screenblock; x, y: cint; se: ScrEntry) =
   ## Plot a screen entry at (`x`,`y`) of screenblock `sbb`.
   sbb[x,y] = se
 
-proc hline*(sbb: var Screenblock; x0, x1, y: int; se: ScrEntry) =
+proc hline*(sbb: var Screenblock; x0, x1, y: cint; se: ScrEntry) =
   ## Draw a horizontal line on screenblock `sbb` with `se`.
   bmp16_hline(x0, y, x1, se.Color, addr sbb, 32*2)
 
-proc vline*(sbb: var Screenblock; x, y0, y1: int; se: ScrEntry) =
+proc vline*(sbb: var Screenblock; x, y0, y1: cint; se: ScrEntry) =
   ## Draw a vertical line on screenblock `sbb` with `se`.
   bmp16_vline(x, y0, y1, se.Color, addr sbb, 32*2)
 
-proc rect*(sbb: var Screenblock; left, top, right, bottom: int; se: ScrEntry) =
+proc rect*(sbb: var Screenblock; left, top, right, bottom: cint; se: ScrEntry) =
   ## Fill a rectangle on `sbb` with `se`.
   bmp16_rect(left, top, right, bottom, se.Color, addr sbb, 32*2)
 
-proc frame*(sbb: var Screenblock; left, top, right, bottom: int; se: ScrEntry) =
+proc frame*(sbb: var Screenblock; left, top, right, bottom: cint; se: ScrEntry) =
   ## Create a border on `sbb` with `se`.
   bmp16_frame(left, top, right, bottom, se.Color, addr sbb, 32*2)
 
-proc window*(sbb: var Screenblock; left, top, right, bottom: int; se0: ScrEntry) {.importc: "se_window", tonc.}
+proc window*(sbb: var Screenblock; left, top, right, bottom: cint; se0: ScrEntry) {.importc: "se_window", tonc.}
   ## Create a fancy rectangle.
   ## 
   ## In contrast to `frame`, this uses nine tiles starting at `se0` for the frame,
@@ -1091,23 +1091,23 @@ proc fill*(m: var M3Mem; clr: Color) =
   ## Fill the mode 3 background with color `clr`.
   memset32(addr m, dup16(clr.uint16), sizeof(m) div 4)
 
-proc plot*(m: var M3Mem; x, y: int; clr: Color) =
+proc plot*(m: var M3Mem; x, y: cint; clr: Color) =
   ## Plot a single colored pixel in mode 3 at (`x`, `y`).
   m[y][x] = clr
 
-proc hline*(m: var M3Mem; x1, y, x2: int; clr: Color) =
+proc hline*(m: var M3Mem; x1, y, x2: cint; clr: Color) =
   ## Draw a colored horizontal line in mode 3.
   bmp16_hline(x1, y, x2, clr, addr m, Mode3Width*2)
 
-proc vline*(m: var M3Mem; x, y1, y2: int; clr: Color) =
+proc vline*(m: var M3Mem; x, y1, y2: cint; clr: Color) =
   ## Draw a colored vertical line in mode 3.
   bmp16_vline(x, y1, y2, clr, addr m, Mode3Width*2)
 
-proc line*(m: var M3Mem; x1, y1, x2, y2: int; clr: Color) =
+proc line*(m: var M3Mem; x1, y1, x2, y2: cint; clr: Color) =
   ## Draw a colored line in mode 3.
   bmp16_line(x1, y1, x2, y2, clr, addr m, Mode3Width*2)
 
-proc rect*(m: var M3Mem; left, top, right, bottom: int; clr: Color) =
+proc rect*(m: var M3Mem; left, top, right, bottom: cint; clr: Color) =
   ## Draw a colored rectangle in mode 3.
   ## 
   ## **Parameters:**
@@ -1121,7 +1121,7 @@ proc rect*(m: var M3Mem; left, top, right, bottom: int; clr: Color) =
   ##    The rectangle is normalized, but not clipped.
   bmp16_rect(left, top, right, bottom, clr, addr m, Mode3Width*2)
 
-proc frame*(m: var M3Mem; left, top, right, bottom: int; clr: Color) =
+proc frame*(m: var M3Mem; left, top, right, bottom: cint; clr: Color) =
   ## Draw a colored frame in mode 3.
   ## 
   ## :left: Left side, inclusive.
@@ -1143,23 +1143,23 @@ proc fill*(m: var M4Mem; clrid: uint8) =
   ## Fill the given mode 4 buffer with `clrid`.
   memset32(addr m, quad8(clrid), sizeof(m) div 4)
 
-proc plot*(m: var M4Mem; x, y: int; clrid: uint8) =
+proc plot*(m: var M4Mem; x, y: cint; clrid: uint8) =
   ## Plot a `clrid` pixel on the given mode 4 buffer.
   bmp8_plot(x, y, clrid, addr m, Mode4Width)
 
-proc hline*(m: var M4Mem; x1, y, x2: int; clrid: uint8) =
+proc hline*(m: var M4Mem; x1, y, x2: cint; clrid: uint8) =
   ## Draw a `clrid` colored horizontal line in mode 4.
   bmp8_hline(x1, y, x2, clrid, addr m, Mode4Width)
 
-proc vline*(m: var M4Mem; x, y1, y2: int; clrid: uint8) =
+proc vline*(m: var M4Mem; x, y1, y2: cint; clrid: uint8) =
   ## Draw a `clrid` colored vertical line in mode 4.
   bmp8_vline(x, y1, y2, clrid, addr m, Mode4Width)
 
-proc line*(m: var M4Mem; x1, y1, x2, y2: int; clrid: uint8) =
+proc line*(m: var M4Mem; x1, y1, x2, y2: cint; clrid: uint8) =
   ## Draw a `clrid` colored line in mode 4.
   bmp8_line(x1, y1, x2, y2, clrid, addr m, Mode4Width)
 
-proc rect*(m: var M4Mem; left, top, right, bottom: int; clrid: uint8) =
+proc rect*(m: var M4Mem; left, top, right, bottom: cint; clrid: uint8) =
   ## Draw a `clrid` colored rectangle in mode 4.
   ## 
   ## :left: Left side, inclusive.
@@ -1172,7 +1172,7 @@ proc rect*(m: var M4Mem; left, top, right, bottom: int; clrid: uint8) =
   ##    The rectangle is normalized, but not clipped.
   bmp8_rect(left, top, right, bottom, clrid, addr m, Mode4Width)
 
-proc frame*(m: var M4Mem; left, top, right, bottom: int; clrid: uint8) =
+proc frame*(m: var M4Mem; left, top, right, bottom: cint; clrid: uint8) =
   ## Draw a `clrid` colored frame in mode 4.
   ## 
   ## :left: Left side, inclusive.
@@ -1193,23 +1193,23 @@ proc fill*(m: var M5Mem; clr: Color) =
   ## Fill the given mode 5 buffer with `clr`.
   memset32(addr m, dup16(clr.uint16), sizeof(m) div 4)
 
-proc plot*(m: var M5Mem; x, y: int; clr: Color) =
+proc plot*(m: var M5Mem; x, y: cint; clr: Color) =
   ## Plot a `clrid` pixel on the given mode 5 buffer.
   m[y][x] = clr
 
-proc hline*(m: var M5Mem; x1, y, x2: int; clr: Color) =
+proc hline*(m: var M5Mem; x1, y, x2: cint; clr: Color) =
   ## Draw a colored horizontal line in mode 5.
   bmp16_hline(x1, y, x2, clr, addr m, Mode5Width*2)
 
-proc vline*(m: var M5Mem; x, y1, y2: int; clr: Color) =
+proc vline*(m: var M5Mem; x, y1, y2: cint; clr: Color) =
   ## Draw a colored vertical line in mode 5.
   bmp16_vline(x, y1, y2, clr, addr m, Mode5Width*2)
 
-proc line*(m: var M5Mem; x1, y1, x2, y2: int; clr: Color) =
+proc line*(m: var M5Mem; x1, y1, x2, y2: cint; clr: Color) =
   ## Draw a colored line in mode 5.
   bmp16_line(x1, y1, x2, y2, clr, addr m, Mode5Width*2)
 
-proc rect*(m: var M5Mem; left, top, right, bottom: int; clr: Color) =
+proc rect*(m: var M5Mem; left, top, right, bottom: cint; clr: Color) =
   ## Draw a colored rectangle in mode 5.
   ## 
   ## :left: Left side, inclusive.
@@ -1222,7 +1222,7 @@ proc rect*(m: var M5Mem; left, top, right, bottom: int; clr: Color) =
   ##    The rectangle is normalized, but not clipped.
   bmp16_rect(left, top, right, bottom, clr, addr m, Mode5Width*2)
 
-proc frame*(m: var M5Mem; left, top, right, bottom: int; clr: Color) =
+proc frame*(m: var M5Mem; left, top, right, bottom: cint; clr: Color) =
   ## Draw a colored frame in mode 5.
   ## 
   ## :left: Left side, inclusive.
