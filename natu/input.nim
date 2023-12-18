@@ -55,11 +55,11 @@ when natuPlatform == "gba":
     ## See the `irq <irq.html>`_ module for details.
 
 elif natuPlatform == "sdl":
-  
-  {.warning: "Key input registers not implemented".}
-  var keyinput*: KeyInput
-  var keycnt*: KeyCnt
-  
+
+  import ./private/sdl/applib
+  template keyinput*: KeyInput = cast[ptr KeyInput](addr natuMem.regs[0x130 shr 1])[]
+  template keycnt*: KeyCnt = cast[ptr KeyCnt](addr natuMem.regs[0x132 shr 1])[]
+
 else:
   {.error: "Unknown platform " & natuPlatform.}
 

@@ -1,5 +1,6 @@
 import sdl2_nim/sdl
 import ./xatu_mgba
+import ./xatu_input
 import ../private/sdl/appcommon
 
 # mGBA Renderer + app mem
@@ -204,6 +205,14 @@ proc handleEvents*(app: App) =
       # Show what key was pressed
       sdl.logInfo(sdl.LogCategoryApplication, "Pressed %s", $e.key.keysym.sym)
       
+      pressKey(e.key)
+      
       # Exit on Escape key press
       if e.key.keysym.sym == sdl.K_Escape:
         app.running = false
+    
+    elif e.kind == sdl.KeyUp:
+      releaseKey(e.key)
+  
+  mem.regs[GBA_REG_KEYINPUT shr 1] = not cast[uint16](gbaKeys)
+  updateKeys()
