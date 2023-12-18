@@ -15,7 +15,7 @@ type
   FixedT*[T: SomeInteger, N: static int] = distinct T
     ## A fixed-point number based on type `T`, with `N` bits of precision.
   
-  FixedN*[N: static int] = FixedT[int, N]
+  FixedN*[N: static int] = FixedT[cint, N]
     ## A signed 32-bit fixed-point number with `N` bits of precision.
   
   Fixed* = FixedN[8]
