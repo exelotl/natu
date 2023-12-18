@@ -12,9 +12,9 @@ int GBAVideoRendererCleanOAM(struct GBAObj* oam, struct GBAVideoRendererSprite* 
 	int oamMax = 0;
 	for (i = 0; i < 128; ++i) {
 		struct GBAObj obj;
-		LOAD_16LE(obj.a, 0, &oam[i].a);
-		LOAD_16LE(obj.b, 0, &oam[i].b);
-		LOAD_16LE(obj.c, 0, &oam[i].c);
+		LOAD_32LE(obj.a, 0, &oam[i].a);
+		LOAD_32LE(obj.b, 0, &oam[i].b);
+		LOAD_32LE(obj.c, 0, &oam[i].c);
 		if (GBAObjAttributesAIsTransformed(obj.a) || !GBAObjAttributesAIsDisable(obj.a)) {
 			int width = GBAVideoObjSizes[GBAObjAttributesAGetShape(obj.a) * 4 + GBAObjAttributesBGetSize(obj.b)][0];
 			int height = GBAVideoObjSizes[GBAObjAttributesAGetShape(obj.a) * 4 + GBAObjAttributesBGetSize(obj.b)][1];

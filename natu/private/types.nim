@@ -1,5 +1,4 @@
-# Basic structs and typedefs
-# ==========================
+import ./common
 
 # static:
 #   # Make sure we're actually compiling for a 32-bit system.
@@ -82,14 +81,6 @@ type
     pa*, pb*, pc*, pd*: FixedT[int16, 8]
     dx*, dy*: int32
 
-# Memory map structs
-# ==================
-
-# Tertiary types
-# These types are used for memory mapping of VRAM, affine registers 
-#  and other areas that would benefit from logical memory mapping.
-
-# Regular bg points; range: :0010 - :001F
 
 type
   BgPoint* = Point16
@@ -162,35 +153,67 @@ template allowUnboundedAccess(A: typedesc, Len:static[int], T: typedesc) =
 allowUnboundedAccess(UnboundedCharblock, 512, Tile)
 allowUnboundedAccess(UnboundedCharblock8, 256, Tile8)
 
-
-type
-  ObjAttr* {.importc: "OBJ_ATTR", header: "tonc_types.h", bycopy, completeStruct.} = object
-    ## Object attributes. i.e. a sprite.
-    ## 
-    ## .. note::
-    ##    The `fill` field exists as padding for the interlace with `ObjAffine`.
-    ##    It will not be copied when assigning one `ObjAttr` to another.
-    attr0* {.importc: "attr0".}: uint16
-    attr1* {.importc: "attr1".}: uint16
-    attr2* {.importc: "attr2".}: uint16
-    fill* {.importc: "fill".}: int16
+when natuPlatform == "gba":
   
-  ObjAffine* {.importc: "OBJ_AFFINE", header: "tonc_types.h", bycopy, completeStruct.} = object
-    ## Object affine parameters.
-    fill0 {.importc: "fill0".}: array[3, uint16]
-    pa* {.importc: "pa".}: int16
-    fill1 {.importc: "fill1".}: array[3, uint16]
-    pb* {.importc: "pb".}: int16
-    fill2 {.importc: "fill2".}: array[3, uint16]
-    pc* {.importc: "pc".}: int16
-    fill3 {.importc: "fill3".}: array[3, uint16]
-    pd* {.importc: "pd".}: int16
-  
-  ObjAttrPtr* = ptr ObjAttr
-    ## Pointer to object attributes.
+  type
+    OAMuint* = uint16
+    OAMint* = int16
     
-  ObjAffinePtr* = ptr ObjAffine
-    ## Pointer to object affine parameters.
+    ObjAttr* {.importc: "OBJ_ATTR", header: "tonc_types.h", bycopy, completeStruct.} = object
+      ## Object attributes. i.e. a sprite.
+      ## 
+      ## .. note::
+      ##    The `fill` field exists as padding for the interlace with `ObjAffine`.
+      ##    It will not be copied when assigning one `ObjAttr` to another.
+      attr0* {.importc: "attr0".}: uint16
+      attr1* {.importc: "attr1".}: uint16
+      attr2* {.importc: "attr2".}: uint16
+      fill* {.importc: "fill".}: int16
+    
+    ObjAffine* {.importc: "OBJ_AFFINE", header: "tonc_types.h", bycopy, completeStruct.} = object
+      ## Object affine parameters.
+      fill0 {.importc: "fill0".}: array[3, uint16]
+      pa* {.importc: "pa".}: int16
+      fill1 {.importc: "fill1".}: array[3, uint16]
+      pb* {.importc: "pb".}: int16
+      fill2 {.importc: "fill2".}: array[3, uint16]
+      pc* {.importc: "pc".}: int16
+      fill3 {.importc: "fill3".}: array[3, uint16]
+      pd* {.importc: "pd".}: int16
+    
+    ObjAttrPtr* = ptr ObjAttr
+      ## Pointer to object attributes.
+      
+    ObjAffinePtr* = ptr ObjAffine
+      ## Pointer to object affine parameters.
+
+elif natuPlatform == "sdl":
+  type
+    OAMuint* = uint32
+    OAMint* = int32
+    
+    ObjAttr* = object
+      attr0*: uint32
+      attr1*: uint32
+      attr2*: uint32
+      fill*: int32
+    
+    ObjAffine* = object
+      fill0: array[3, uint32]
+      pa*: int32
+      fill1: array[3, uint32]
+      pb*: int32
+      fill2: array[3, uint32]
+      pc*: int32
+      fill3: array[3, uint32]
+      pd*: int32
+    
+    ObjAttrPtr* = ptr ObjAttr
+    ObjAffinePtr* = ptr ObjAffine
+  
+else:
+  {.error: "Unknown platform " & natuPlatform.}
+  
 
 {.push inline.}
 

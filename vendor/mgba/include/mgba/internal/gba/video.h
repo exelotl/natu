@@ -53,8 +53,8 @@ enum GBAVideoBlendEffect {
 	BLEND_DARKEN = 3
 };
 
-DECL_BITFIELD(GBAObjAttributesA, uint16_t);
-DECL_BITS(GBAObjAttributesA, Y, 0, 8);
+DECL_BITFIELD(GBAObjAttributesA, uint32_t);
+DECL_BITS(GBAObjAttributesA, Y, 16, 16);
 DECL_BIT(GBAObjAttributesA, Transformed, 8);
 DECL_BIT(GBAObjAttributesA, Disable, 9);
 DECL_BIT(GBAObjAttributesA, DoubleSize, 9);
@@ -63,14 +63,14 @@ DECL_BIT(GBAObjAttributesA, Mosaic, 12);
 DECL_BIT(GBAObjAttributesA, 256Color, 13);
 DECL_BITS(GBAObjAttributesA, Shape, 14, 2);
 
-DECL_BITFIELD(GBAObjAttributesB, uint16_t);
-DECL_BITS(GBAObjAttributesB, X, 0, 9);
+DECL_BITFIELD(GBAObjAttributesB, uint32_t);
+DECL_BITS(GBAObjAttributesB, X, 16, 16);
 DECL_BITS(GBAObjAttributesB, MatIndex, 9, 5);
 DECL_BIT(GBAObjAttributesB, HFlip, 12);
 DECL_BIT(GBAObjAttributesB, VFlip, 13);
 DECL_BITS(GBAObjAttributesB, Size, 14, 2);
 
-DECL_BITFIELD(GBAObjAttributesC, uint16_t);
+DECL_BITFIELD(GBAObjAttributesC, uint32_t);
 DECL_BITS(GBAObjAttributesC, Tile, 0, 10);
 DECL_BITS(GBAObjAttributesC, Priority, 10, 2);
 DECL_BITS(GBAObjAttributesC, Palette, 12, 4);
@@ -79,24 +79,24 @@ struct GBAObj {
 	GBAObjAttributesA a;
 	GBAObjAttributesB b;
 	GBAObjAttributesC c;
-	uint16_t d;
+	uint32_t d;
 };
 
 struct GBAOAMMatrix {
-	int16_t padding0[3];
-	int16_t a;
-	int16_t padding1[3];
-	int16_t b;
-	int16_t padding2[3];
-	int16_t c;
-	int16_t padding3[3];
-	int16_t d;
+	int32_t padding0[3];
+	int32_t a;
+	int32_t padding1[3];
+	int32_t b;
+	int32_t padding2[3];
+	int32_t c;
+	int32_t padding3[3];
+	int32_t d;
 };
 
 union GBAOAM {
 	struct GBAObj obj[128];
 	struct GBAOAMMatrix mat[32];
-	uint16_t raw[512];
+	uint32_t raw[512];
 };
 
 struct GBAVideoWindowRegion {

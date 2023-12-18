@@ -151,8 +151,8 @@ int GBAVideoSoftwareRendererPreprocessSprite(struct GBAVideoSoftwareRenderer* re
 	if ((flags & FLAG_OBJWIN) && (renderer->currentWindow.priority < renderer->objwin.priority || renderer->d.disableOBJWIN)) {
 		return 0;
 	}
-	int32_t x = (uint32_t) GBAObjAttributesBGetX(sprite->b) << 23;
-	x >>= 23;
+	int32_t x = (uint32_t) GBAObjAttributesBGetX(sprite->b) << 16;  // large values are treated as negative
+	x >>= 16;
 	x += renderer->objOffsetX;
 	uint16_t* vramBase = &renderer->d.vram[BASE_TILE >> 1];
 	unsigned align = GBAObjAttributesAIs256Color(sprite->a) && !GBARegisterDISPCNTIsObjCharacterMapping(renderer->dispcnt);
@@ -314,7 +314,7 @@ int GBAVideoSoftwareRendererPreprocessSprite(struct GBAVideoSoftwareRenderer* re
 				condition += mosaicH - (condition % mosaicH);
 			}
 		}
-		if ((int) GBAObjAttributesAGetY(sprite->a) + height - 256 >= 0) {
+		if ((int) GBAObjAttributesAGetY(sprite->a) + height - 256 >= 0) {  // muffin
 			inY += 256;
 		}
 		if (GBAObjAttributesBIsVFlip(sprite->b)) {

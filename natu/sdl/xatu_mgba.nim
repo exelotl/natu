@@ -917,36 +917,31 @@ const
 
 
 type
-  GBAObjAttributesA* = uint16
-  GBAObjAttributesB* = uint16
-  GBAObjAttributesC* = uint16
-
-proc GBAObjAttributesAIsY*(src: GBAObjAttributesA): GBAObjAttributesA {.inline,
-    importc: "GBAObjAttributesAIsY".} =
-  return (src) and (((1 shl (((0) + (8)) - ((0)))) - 1) shl ((0)))
-
+  GBAObjAttributesA* = uint32
+  GBAObjAttributesB* = uint32
+  GBAObjAttributesC* = uint32
 
 type
   GBAObj* {.bycopy.} = object
     a*: GBAObjAttributesA
     b*: GBAObjAttributesB
     c*: GBAObjAttributesC
-    d*: uint16
+    d*: uint32
 
   GBAOAMMatrix* {.bycopy.} = object
-    padding0*: array[3, int16]
-    a*: int16
-    padding1*: array[3, int16]
-    b*: int16
-    padding2*: array[3, int16]
-    c*: int16
-    padding3*: array[3, int16]
-    d*: int16
+    padding0*: array[3, int32]
+    a*: int32
+    padding1*: array[3, int32]
+    b*: int32
+    padding2*: array[3, int32]
+    c*: int32
+    padding3*: array[3, int32]
+    d*: int32
 
   GBAOAM* {.bycopy, union.} = object
     obj*: array[128, GBAObj]
     mat*: array[32, GBAOAMMatrix]
-    raw*: array[512, uint16]
+    raw*: array[512, uint32]
 
   GBAVideoWindowRegion* {.bycopy.} = object
     `end`*: uint16
