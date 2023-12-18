@@ -764,10 +764,10 @@ const
   GBA_REG_BG3X_HI* = 0x03A
   GBA_REG_BG3Y_LO* = 0x03C
   GBA_REG_BG3Y_HI* = 0x03E
-  GBA_REG_WIN0H* = 0x040
-  GBA_REG_WIN1H* = 0x042
-  GBA_REG_WIN0V* = 0x044
-  GBA_REG_WIN1V* = 0x046
+  # GBA_REG_WIN0H* = 0x040
+  # GBA_REG_WIN1H* = 0x042
+  # GBA_REG_WIN0V* = 0x044
+  # GBA_REG_WIN1V* = 0x046
   GBA_REG_WININ* = 0x048
   GBA_REG_WINOUT* = 0x04A
   GBA_REG_MOSAIC* = 0x04C
@@ -857,6 +857,16 @@ const
   GBA_REG_INTERNAL_MAX* = 0x214
   GBA_REG_POSTFLG* = 0x300
   GBA_REG_HALTCNT* = 0x301
+  
+  XATU_REG_WIN0X1* = 0x310
+  XATU_REG_WIN0X2* = 0x312
+  XATU_REG_WIN1X1* = 0x314
+  XATU_REG_WIN1X2* = 0x316
+  XATU_REG_WIN0Y1* = 0x318
+  XATU_REG_WIN0Y2* = 0x31A
+  XATU_REG_WIN1Y1* = 0x31C
+  XATU_REG_WIN1Y2* = 0x31E
+  
   GBA_REG_EXWAITCNT_LO* = 0x800
   GBA_REG_EXWAITCNT_HI* = 0x802
   GBA_REG_DEBUG_STRING* = 0xFFF600
@@ -939,8 +949,8 @@ type
     raw*: array[512, uint16]
 
   GBAVideoWindowRegion* {.bycopy.} = object
-    `end`*: uint8
-    start*: uint8
+    `end`*: uint16
+    start*: uint16
 
 type GBARegisterDISPCNT* = distinct uint16
 

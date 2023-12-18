@@ -10,8 +10,8 @@ template bgcnt*: array[4, BgCnt] = cast[ptr array[4, BgCnt]](addr natuMem.regs[0
 template bgofs*: array[4, BgOfs] = cast[ptr array[4, BgOfs]](addr natuMem.regs[0x10 shr 1])[]
 template bgaff*: array[4, BgAffine] = cast[ptr array[2..3, BgAffine]](addr natuMem.regs[0x20 shr 1])[]
 
-template winh*: array[2, WinH] = cast[ptr array[2, WinH]](addr natuMem.regs[0x40 shr 1])[]
-template winv*: array[2, WinV] = cast[ptr array[2, WinV]](addr natuMem.regs[0x44 shr 1])[]
+template winh*: array[2, WinH] = cast[ptr array[2, WinH]](addr natuMem.regs[0x310 shr 1])[]
+template winv*: array[2, WinV] = cast[ptr array[2, WinV]](addr natuMem.regs[0x318 shr 1])[]
 
 template win0cnt*: WinCnt   = cast[ptr array[2, WinCnt]](addr natuMem.regs[0x48 shr 1])[0]
 template win1cnt*: WinCnt   = cast[ptr array[2, WinCnt]](addr natuMem.regs[0x48 shr 1])[1]

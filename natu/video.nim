@@ -242,16 +242,28 @@ converter toBgSize*(a: AffBgSize): BgSize = (a.BgSize)
 # Window Registers
 # ----------------
 
-type
-  WinH* {.exportc:"WinH".} = object
-    ## Defines the horizontal bounds of a window (left ..< right)
-    right*: uint8
-    left*: uint8
-  WinV* {.exportc:"WinV".} = object
-    ## Defines the vertical bounds of a window (top ..< bottom)
-    bottom*: uint8
-    top*: uint8
+when natuPlatform == "gba":
+  type
+    WinH* {.exportc:"WinH".} = object
+      ## Defines the horizontal bounds of a window (left ..< right)
+      right*: uint8
+      left*: uint8
+    WinV* {.exportc:"WinV".} = object
+      ## Defines the vertical bounds of a window (top ..< bottom)
+      bottom*: uint8
+      top*: uint8
+else:
+  type
+    WinH* {.exportc:"WinH".} = object
+      ## Defines the horizontal bounds of a window (left ..< right)
+      right*: uint16
+      left*: uint16
+    WinV* {.exportc:"WinV".} = object
+      ## Defines the vertical bounds of a window (top ..< bottom)
+      bottom*: uint16
+      top*: uint16
   
+type
   WindowLayer* {.size:1.} = enum
     wlBg0, wlBg1, wlBg2, wlBg3, wlObj, wlBlend
   

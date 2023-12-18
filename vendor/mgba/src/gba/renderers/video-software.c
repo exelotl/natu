@@ -316,6 +316,68 @@ static uint16_t GBAVideoSoftwareRendererWriteVideoRegister(struct GBAVideoRender
 			softwareRenderer->blendDirty = true;
 		}
 		break;
+	
+	case XATU_REG_WIN0X1:
+		softwareRenderer->winN[0].h.start = value;
+		if (softwareRenderer->winN[0].h.start > natuVideoHorizontalPixels && softwareRenderer->winN[0].h.start > softwareRenderer->winN[0].h.end) {
+			softwareRenderer->winN[0].h.start = 0;
+		}
+		break;
+	case XATU_REG_WIN0X2:
+		softwareRenderer->winN[0].h.end = value;
+		if (softwareRenderer->winN[0].h.end > natuVideoHorizontalPixels) {
+			softwareRenderer->winN[0].h.end = natuVideoHorizontalPixels;
+			if (softwareRenderer->winN[0].h.start > natuVideoHorizontalPixels) {
+				softwareRenderer->winN[0].h.start = natuVideoHorizontalPixels;
+			}
+		}
+		break;
+	case XATU_REG_WIN1X1:
+		softwareRenderer->winN[1].h.start = value;
+		if (softwareRenderer->winN[1].h.start > natuVideoHorizontalPixels && softwareRenderer->winN[1].h.start > softwareRenderer->winN[1].h.end) {
+			softwareRenderer->winN[1].h.start = 0;
+		}
+		break;
+	case XATU_REG_WIN1X2:
+		softwareRenderer->winN[1].h.end = value;
+		if (softwareRenderer->winN[1].h.end > natuVideoHorizontalPixels) {
+			softwareRenderer->winN[1].h.end = natuVideoHorizontalPixels;
+			if (softwareRenderer->winN[1].h.start > natuVideoHorizontalPixels) {
+				softwareRenderer->winN[1].h.start = natuVideoHorizontalPixels;
+			}
+		}
+		break;
+	case XATU_REG_WIN0Y1:
+		softwareRenderer->winN[0].v.start = value;
+		if (softwareRenderer->winN[0].v.start > natuVideoVerticalPixels && softwareRenderer->winN[0].v.start > softwareRenderer->winN[0].v.end) {
+			softwareRenderer->winN[0].v.start = 0;
+		}
+		break;
+	case XATU_REG_WIN0Y2:
+		softwareRenderer->winN[0].v.end = value;
+		if (softwareRenderer->winN[0].v.end > natuVideoVerticalPixels) {
+			softwareRenderer->winN[0].v.end = natuVideoVerticalPixels;
+			if (softwareRenderer->winN[0].v.start > natuVideoVerticalPixels) {
+				softwareRenderer->winN[0].v.start = natuVideoVerticalPixels;
+			}
+		}
+		break;
+	case XATU_REG_WIN1Y1:
+		softwareRenderer->winN[1].v.start = value;
+		if (softwareRenderer->winN[1].v.start > natuVideoVerticalPixels && softwareRenderer->winN[1].v.start > softwareRenderer->winN[1].v.end) {
+			softwareRenderer->winN[1].v.start = 0;
+		}
+		break;
+	case XATU_REG_WIN1Y2:
+		softwareRenderer->winN[1].v.end = value;
+		if (softwareRenderer->winN[1].v.end > natuVideoVerticalPixels) {
+			softwareRenderer->winN[1].v.end = natuVideoVerticalPixels;
+			if (softwareRenderer->winN[1].v.start > natuVideoVerticalPixels) {
+				softwareRenderer->winN[1].v.start = natuVideoVerticalPixels;
+			}
+		}
+		break;
+	/*
 	case GBA_REG_WIN0H:
 		softwareRenderer->winN[0].h.end = value;
 		softwareRenderer->winN[0].h.start = value >> 8;
@@ -368,6 +430,7 @@ static uint16_t GBAVideoSoftwareRendererWriteVideoRegister(struct GBAVideoRender
 			}
 		}
 		break;
+	*/
 	case GBA_REG_WININ:
 		value &= 0x3F3F;
 		softwareRenderer->winN[0].control.packed = value;
