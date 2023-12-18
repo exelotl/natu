@@ -67,7 +67,7 @@ proc vidDraw* =
   
   dispstat[].inVblank = true
   
-  for i in 0..<160:
+  for i in 0 ..< natuVideoVerticalPixels.int:
     swr.oamDirty = true
     # echo "---------- ", cast[uint32](addr swr.oamDirty).toHex(16)
     # swr.writeOAM(0)
