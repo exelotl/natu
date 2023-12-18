@@ -35,8 +35,8 @@ void GBAVideoCacheInit(struct mCacheSet* cache) {
 	mBitmapCacheSystemInfo bitConfig;
 	bitConfig = mBitmapCacheSystemInfoSetEntryBPP(0, 4);
 	bitConfig = mBitmapCacheSystemInfoClearUsesPalette(bitConfig);
-	bitConfig = mBitmapCacheSystemInfoSetHeight(bitConfig, 160);
-	bitConfig = mBitmapCacheSystemInfoSetWidth(bitConfig, 240);
+	bitConfig = mBitmapCacheSystemInfoSetHeight(bitConfig, GBA_VIDEO_VERTICAL_MAX_PIXELS);
+	bitConfig = mBitmapCacheSystemInfoSetWidth(bitConfig, GBA_VIDEO_HORIZONTAL_MAX_PIXELS);
 	bitConfig = mBitmapCacheSystemInfoSetBuffers(bitConfig, 1);
 	mBitmapCacheConfigureSystem(mBitmapCacheSetGetPointer(&cache->bitmaps, 0), bitConfig);
 	mBitmapCacheSetGetPointer(&cache->bitmaps, 0)->bitsStart[0] = 0;
@@ -44,8 +44,8 @@ void GBAVideoCacheInit(struct mCacheSet* cache) {
 
 	bitConfig = mBitmapCacheSystemInfoSetEntryBPP(0, 3);
 	bitConfig = mBitmapCacheSystemInfoFillUsesPalette(bitConfig);
-	bitConfig = mBitmapCacheSystemInfoSetHeight(bitConfig, 160);
-	bitConfig = mBitmapCacheSystemInfoSetWidth(bitConfig, 240);
+	bitConfig = mBitmapCacheSystemInfoSetHeight(bitConfig, GBA_VIDEO_VERTICAL_MAX_PIXELS);
+	bitConfig = mBitmapCacheSystemInfoSetWidth(bitConfig, GBA_VIDEO_HORIZONTAL_MAX_PIXELS);
 	bitConfig = mBitmapCacheSystemInfoSetBuffers(bitConfig, 2);
 	mBitmapCacheConfigureSystem(mBitmapCacheSetGetPointer(&cache->bitmaps, 1), bitConfig);
 	mBitmapCacheSetGetPointer(&cache->bitmaps, 1)->bitsStart[0] = 0;
@@ -133,8 +133,8 @@ static void GBAVideoCacheWriteDISPCNT(struct mCacheSet* cache, uint16_t value) {
 	case 3:
 		bitConfig = mBitmapCacheSystemInfoSetEntryBPP(0, 4);
 		bitConfig = mBitmapCacheSystemInfoClearUsesPalette(bitConfig);
-		bitConfig = mBitmapCacheSystemInfoSetHeight(bitConfig, 160);
-		bitConfig = mBitmapCacheSystemInfoSetWidth(bitConfig, 240);
+		bitConfig = mBitmapCacheSystemInfoSetHeight(bitConfig, GBA_VIDEO_VERTICAL_MAX_PIXELS);
+		bitConfig = mBitmapCacheSystemInfoSetWidth(bitConfig, GBA_VIDEO_HORIZONTAL_MAX_PIXELS);
 		bitConfig = mBitmapCacheSystemInfoSetBuffers(bitConfig, 1);
 		mBitmapCacheConfigureSystem(mBitmapCacheSetGetPointer(&cache->bitmaps, 0), bitConfig);
 		mBitmapCacheSetGetPointer(&cache->bitmaps, 0)->buffer = 0;
@@ -142,8 +142,8 @@ static void GBAVideoCacheWriteDISPCNT(struct mCacheSet* cache, uint16_t value) {
 	case 5:
 		bitConfig = mBitmapCacheSystemInfoSetEntryBPP(0, 4);
 		bitConfig = mBitmapCacheSystemInfoClearUsesPalette(bitConfig);
-		bitConfig = mBitmapCacheSystemInfoSetHeight(bitConfig, 128);
-		bitConfig = mBitmapCacheSystemInfoSetWidth(bitConfig, 160);
+		bitConfig = mBitmapCacheSystemInfoSetHeight(bitConfig, 128);  // muffin (mode 5)
+		bitConfig = mBitmapCacheSystemInfoSetWidth(bitConfig, 160);   // .
 		bitConfig = mBitmapCacheSystemInfoSetBuffers(bitConfig, 2);
 		mBitmapCacheConfigureSystem(mBitmapCacheSetGetPointer(&cache->bitmaps, 0), bitConfig);
 		mBitmapCacheSetGetPointer(&cache->bitmaps, 0)->buffer = GBARegisterDISPCNTGetFrameSelect(value);
