@@ -30,8 +30,11 @@ for kind, k, v in p.getopt():
       quit(helpMsg, 0)
 
 
+loadNatuGame(sharedlib)
+
+let (w, h) = natuAppGetLcdSize()
 let app = App()
-app.start()
+app.start(w, h)
 assert(app.running)
 
 proc xatuPanic(msg1, msg2: cstring) {.exportc.} =
@@ -39,7 +42,6 @@ proc xatuPanic(msg1, msg2: cstring) {.exportc.} =
 
 mem.panic = xatuPanic
 
-loadNatuGame(sharedlib)
 natuAppInit(addr mem)
 
 while app.running:

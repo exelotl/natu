@@ -118,10 +118,12 @@ proc gbaCfg* =
     # Ensure subprocesses can see the DLLs in tools/bin
     putEnv "PATH", devkitPro()/"tools"/"bin" & PathSep & getEnv("PATH")
 
-proc sdlCfg*() =
+proc sdlCfg*(w, h: int) =
   echo "Building for PC."
   switch "cincludes", natuDir/"vendor/libtonc/include"
   switch "passC", "-fPIC"
+  switch "define", "natuLcdWidth:" & $w
+  switch "define", "natuLcdHeight:" & $h
   switch "passL", "-lm"
   switch "cpu", "amd64"
   switch "threads", "off"

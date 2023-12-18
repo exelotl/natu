@@ -125,8 +125,7 @@ proc vidDraw* =
 
 const
   Title = "SDL2 App"
-  ScreenW = 240*3 # Window width
-  ScreenH = 160*3 # Window height
+  WindowScale = 3
 
 type
   App* = ref AppObj
@@ -146,7 +145,7 @@ template check(res: pointer) =
   doAssert res != nil, "Err = " & $sdl.getError()
 
 
-proc start*(app: App) =
+proc start*(app: App; lcdW, lcdH: int) =
   
   assert(not app.running)
   
@@ -156,8 +155,8 @@ proc start*(app: App) =
     title = Title,
     x = sdl.WindowPosUndefined,
     y = sdl.WindowPosUndefined,
-    w = ScreenW,
-    h = ScreenH,
+    w = lcdW * WindowScale,
+    h = lcdH * WindowScale,
     flags = 0
   )
   check app.window
@@ -179,7 +178,7 @@ proc start*(app: App) =
     app.renderer,
     sdl.PIXELFORMAT_ABGR8888,   # ABGR1555 doesn't work cause mGBA already converts to true color for us.
     sdl.TEXTUREACCESS_STREAMING,
-    240, 160                        # muffin
+    lcdW, lcdH
   )
   doAssert(app.texture != nil)
   

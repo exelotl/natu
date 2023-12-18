@@ -15,6 +15,11 @@ proc natuAppInit*(mem: ptr NatuAppMem) {.exportc, dynlib.} =
   natuMem = mem
   natuNimMain()
 
+proc natuAppGetLcdSize*(): (int, int) {.exportc, dynlib.} =
+  const natuLcdWidth {.intdefine.} = 240
+  const natuLcdHeight {.intdefine.} = 160
+  (natuLcdWidth, natuLcdHeight)
+
 proc natuAppUpdate*() {.exportc, dynlib.} =
   natuUpdate()
   

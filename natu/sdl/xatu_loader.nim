@@ -14,6 +14,7 @@ var handle: LibHandle = nil
 var natuAppInit*: proc (mem: ptr NatuAppMem) {.nimcall.} = nil
 var natuAppUpdate*: proc () {.nimcall.} = nil
 var natuAppDraw*: proc () {.nimcall.} = nil
+var natuAppGetLcdSize*: proc (): (int, int) {.nimcall.} = nil
 
 template loadSymbol(ident: untyped) =
   ident = cast[type(ident)](checkedSymAddr(handle, astToStr(ident)))
@@ -28,3 +29,4 @@ proc loadNatuGame*(sharedlib: string) =
   loadSymbol natuAppInit
   loadSymbol natuAppUpdate
   loadSymbol natuAppDraw
+  loadSymbol natuAppGetLcdSize

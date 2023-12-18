@@ -23,6 +23,13 @@ const mgbaCFlags = "-DDISABLE_THREADING -DDEBUG -DHAVE_CRC32 -DHAVE_FUTIMENS -DH
 {.compile(mgbaPath & "/src/gba/renderers/software-obj.c", mgbaCFlags).}
 {.compile(mgbaPath & "/src/gba/renderers/video-software.c", mgbaCFlags).}
 
+const natuLcdWidth {.intdefine.} = 240
+const natuLcdHeight {.intdefine.} = 160
+
+const
+  GBA_VIDEO_HORIZONTAL_PIXELS* = natuLcdWidth
+  GBA_VIDEO_VERTICAL_PIXELS* = natuLcdHeight
+
 type mStateExtdataItem = object # fwd decl
 type mInputMapImpl = object # fwd decl
 type mCacheSet = object
@@ -608,10 +615,6 @@ proc mTimingCurrentTime*(timing: ptr mTiming): int32 {.importc: "mTimingCurrentT
 proc mTimingGlobalTime*(timing: ptr mTiming): uint64 {.importc: "mTimingGlobalTime".}
 proc mTimingNextEvent*(timing: ptr mTiming): int32 {.importc: "mTimingNextEvent".}
 proc mTimingUntil*(timing: ptr mTiming; a2: ptr mTimingEvent): int32 {.importc: "mTimingUntil".}
-
-const
-  GBA_VIDEO_HORIZONTAL_PIXELS* = 240
-  GBA_VIDEO_VERTICAL_PIXELS* = 160
 
 type
   GBASIOMode* {.size:4.} = enum
