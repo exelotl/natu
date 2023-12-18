@@ -11,9 +11,9 @@ else:
 var handle: LibHandle = nil
 
 # Must be called as early as possible by the host!
-var natuAppInit*: proc (mem: ptr NatuAppMem) {.cdecl, raises: [].} = nil
-var natuAppUpdate*: proc () {.cdecl, raises: [].} = nil
-var natuAppDraw*: proc () {.cdecl, raises: [].} = nil
+var natuAppInit*: proc (mem: ptr NatuAppMem) {.nimcall.} = nil
+var natuAppUpdate*: proc () {.nimcall.} = nil
+var natuAppDraw*: proc () {.nimcall.} = nil
 
 template loadSymbol(ident: untyped) =
   ident = cast[type(ident)](checkedSymAddr(handle, astToStr(ident)))

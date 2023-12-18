@@ -9,6 +9,16 @@ import ../private/sdl/appcommon
 var swr: GBAVideoSoftwareRenderer  # internal mGBA renderer state
 var mem*: NatuAppMem               # memory passed to the game shared lib
 
+proc gbaInit() =
+  
+  mem.regs[GBA_REG_KEYINPUT shr 1] = 0xffff  # no keys held
+
+  # BG affine matrices
+  mem.regs[0x020 shr 1] = 0x100
+  mem.regs[0x026 shr 1] = 0x100
+  mem.regs[0x030 shr 1] = 0x100
+  mem.regs[0x036 shr 1] = 0x100
+
 proc vidSetBuffer*(pitch: cint, buf: pointer) =
   const bytesPerPixel = 4
   swr.outputBuffer = cast[ptr color_t](buf)
@@ -31,7 +41,7 @@ proc vidStart*(pitch: cint, buf: pointer) =
   
   block:
     # swr.dispcnt.forcedBlank = false
-    mem.palram[0] = 0x0f
+    mem.palram[0] = 0x0
 
 proc vidWritePalMem* =
   # happens once per scanline so could do with optimising probably...
@@ -52,7 +62,11 @@ proc vidWritePalMem* =
 
 proc vidDraw* =
   vidWritePalMem()
-  # echo "Frame"
+  
+  let dispstat = cast[ptr GBARegisterDISPSTAT](addr mem.regs[GBA_REG_DISPSTAT shr 1])
+  
+  dispstat[].inVblank = true
+  
   for i in 0..<160:
     swr.oamDirty = true
     # echo "---------- ", cast[uint32](addr swr.oamDirty).toHex(16)
@@ -103,6 +117,7 @@ proc vidDraw* =
     # mem.palram[0] = (i*2).uint16
     swr.drawScanline(i.cint)
   swr.finishFrame()
+  dispstat[].inVblank = false
 
 
 # SDL App definition
@@ -167,6 +182,8 @@ proc start*(app: App) =
     240, 160                        # muffin
   )
   doAssert(app.texture != nil)
+  
+  gbaInit()
   
   var pitch: cint
   var buffer: pointer
