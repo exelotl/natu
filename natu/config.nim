@@ -112,7 +112,7 @@ proc gbaCfg* =
   
   # Natu panic handler
   switch "import", natuDir/"natu/private/gba/essentials"
-  patchFile("stdlib", "fatal", natuDir/"natu/private/gba/fatal")
+  patchFile("stdlib", "fatal", natuDir/"natu/private/fatal")
   
   if useDkp:
     # Ensure subprocesses can see the DLLs in tools/bin
@@ -131,6 +131,10 @@ proc sdlCfg*() =
   switch "noMain"
   switch "cincludes", natuDir/"vendor/libtonc/include"
   switch "cincludes", natuDir/"vendor/maxmod/include"
+  switch "lineTrace", "off"
+  switch "stackTrace", "off"
+  switch "excessiveStackTrace", "off"
+  patchFile("stdlib", "fatal", natuDir/"natu/private/fatal")
 
 proc gbaStrip*(elfFile, gbaFile: string) =
   ## Invoke objcopy to create a raw binary file (all debug symbols removed)

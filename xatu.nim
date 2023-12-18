@@ -34,8 +34,10 @@ let app = App()
 app.start()
 assert(app.running)
 
-mem.panic = proc (msg1, msg2: cstring) =
+proc xatuPanic(msg1, msg2: cstring) {.exportc.} =
   raise newException(Exception, "Panic!\n" & $msg1 & "\n" & $msg2)
+
+mem.panic = xatuPanic
 
 loadNatuGame(sharedlib)
 natuAppInit(addr mem)
