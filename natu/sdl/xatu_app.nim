@@ -182,6 +182,7 @@ proc start*(app: App; lcdW, lcdH: int) =
   )
   doAssert(app.texture != nil)
   
+  natuMgbaSetLcdSize(lcdW, lcdH)
   gbaInit()
   
   var pitch: cint

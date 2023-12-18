@@ -23,12 +23,22 @@ const mgbaCFlags = "-DDISABLE_THREADING -DDEBUG -DHAVE_CRC32 -DHAVE_FUTIMENS -DH
 {.compile(mgbaPath & "/src/gba/renderers/software-obj.c", mgbaCFlags).}
 {.compile(mgbaPath & "/src/gba/renderers/video-software.c", mgbaCFlags).}
 
-const natuLcdWidth {.intdefine.} = 240
-const natuLcdHeight {.intdefine.} = 160
+var natuVideoHorizontalPixels* {.exportc.}: cint
+var natuVideoVerticalPixels* {.exportc.}: cint
+var natuVideoVerticalTotalPixels* {.exportc.}: cint
 
 const
-  GBA_VIDEO_HORIZONTAL_PIXELS* = natuLcdWidth
-  GBA_VIDEO_VERTICAL_PIXELS* = natuLcdHeight
+  GBA_VIDEO_HORIZONTAL_MAX_PIXELS* = 512
+  GBA_VIDEO_VERTICAL_MAX_PIXELS* = 256
+
+
+proc natuMgbaSetLcdSize*(w, h: int) =
+  assert(w <= GBA_VIDEO_HORIZONTAL_MAX_PIXELS)
+  assert(h <= GBA_VIDEO_VERTICAL_MAX_PIXELS)
+  echo "Set screen size: ", (w, h)
+  natuVideoHorizontalPixels = w.cint
+  natuVideoVerticalPixels = h.cint
+  natuVideoVerticalTotalPixels = h.cint + 68
 
 type mStateExtdataItem = object # fwd decl
 type mInputMapImpl = object # fwd decl
@@ -870,7 +880,7 @@ const
   VIDEO_HBLANK_LENGTH* = 224
   VIDEO_HORIZONTAL_LENGTH* = 1232
   VIDEO_VBLANK_PIXELS* = 68
-  VIDEO_VERTICAL_TOTAL_PIXELS* = 228
+  # VIDEO_VERTICAL_TOTAL_PIXELS* = 228
   VIDEO_TOTAL_LENGTH* = 280896
   OBJ_HBLANK_FREE_LENGTH* = 954
   OBJ_LENGTH* = 1210
@@ -1106,7 +1116,7 @@ type
     priority*: int8
   
   Window* {.bycopy.} = object
-    endX*: uint8
+    endX*: uint16
     control*: WindowControl
   
   WindowN* {.bycopy.} = object
@@ -1126,8 +1136,8 @@ type
     outputBufferStride*: cint
     temporaryBuffer*: ptr uint32
     dispcnt*: GBARegisterDISPCNT
-    row*: array[GBA_VIDEO_HORIZONTAL_PIXELS, uint32]
-    spriteLayer*: array[GBA_VIDEO_HORIZONTAL_PIXELS, uint32]
+    row*: array[GBA_VIDEO_HORIZONTAL_MAX_PIXELS, uint32]
+    spriteLayer*: array[GBA_VIDEO_HORIZONTAL_MAX_PIXELS, uint32]
     spriteCyclesRemaining*: int32
     target1Obj*: cuint
     target1Bd*: cuint
@@ -1157,9 +1167,9 @@ type
     sprites*: array[128, GBAVideoRendererSprite]
     objOffsetX*: int16
     objOffsetY*: int16
-    scanlineDirty*: array[5, uint32]            # muffin
+    scanlineDirty*: array[8, uint32]            # muffin
     nextIo*: array[iolen, uint16]
-    cache*: array[GBA_VIDEO_VERTICAL_PIXELS, ScanlineCache]
+    cache*: array[GBA_VIDEO_VERTICAL_MAX_PIXELS, ScanlineCache]
     nextY*: cint
     start*: cint
     `end`*: cint

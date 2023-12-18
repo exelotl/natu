@@ -10,6 +10,7 @@
 
 CXX_GUARD_START
 
+#include <mgba/xatu_globals.h>
 #include <mgba/core/core.h>
 #include <mgba/gba/interface.h>
 #include <mgba/internal/gba/io.h>
@@ -73,7 +74,7 @@ struct WindowControl {
 #define MAX_WINDOW 5
 
 struct Window {
-	uint8_t endX;
+	uint16_t endX;
 	struct WindowControl control;
 };
 
@@ -87,8 +88,8 @@ struct GBAVideoSoftwareRenderer {
 
 	GBARegisterDISPCNT dispcnt;
 
-	uint32_t row[GBA_VIDEO_HORIZONTAL_PIXELS];
-	uint32_t spriteLayer[GBA_VIDEO_HORIZONTAL_PIXELS];
+	uint32_t row[GBA_VIDEO_HORIZONTAL_MAX_PIXELS];
+	uint32_t spriteLayer[GBA_VIDEO_HORIZONTAL_MAX_PIXELS];
 	int32_t spriteCyclesRemaining;
 
 	// BLDCNT
@@ -135,12 +136,12 @@ struct GBAVideoSoftwareRenderer {
 	int16_t objOffsetX;
 	int16_t objOffsetY;
 
-	uint32_t scanlineDirty[5];
+	uint32_t scanlineDirty[8];
 	uint16_t nextIo[GBA_REG(SOUND1CNT_LO)];
 	struct ScanlineCache {
 		uint16_t io[GBA_REG(SOUND1CNT_LO)];
 		int32_t scale[2][2];
-	} cache[GBA_VIDEO_VERTICAL_PIXELS];
+	} cache[GBA_VIDEO_VERTICAL_MAX_PIXELS];
 	int nextY;
 
 	int start;

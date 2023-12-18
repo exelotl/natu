@@ -205,7 +205,7 @@ static inline void _compositeNoBlendNoObjwin(struct GBAVideoSoftwareRenderer* re
 	if (background->mosaic) {                                                                                         \
 		int mosaicV = GBAMosaicControlGetBgV(renderer->mosaic) + 1;                                                   \
 		mosaicH = GBAMosaicControlGetBgH(renderer->mosaic) + 1;                                                       \
-		mosaicWait = (mosaicH - renderer->start + GBA_VIDEO_HORIZONTAL_PIXELS * mosaicH) % mosaicH;                   \
+		mosaicWait = (mosaicH - renderer->start + natuVideoHorizontalPixels * mosaicH) % mosaicH;                   \
 		int32_t startX = renderer->start - (renderer->start % mosaicH);                                               \
 		--mosaicH;                                                                                                    \
 		localX = -(inY % mosaicV) * background->dmx;                                                                  \

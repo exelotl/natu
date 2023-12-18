@@ -22,7 +22,8 @@ proc IntrWait*(clear: bool; irq: set[IrqIndex]) {.error: "Unimplemented.".} =
   discard
 
 proc VBlankIntrWait*() =
-  echo "VBlankIntrWait"
+  discard
+  # echo "VBlankIntrWait"
 
 # Arithmetic
 # ----------

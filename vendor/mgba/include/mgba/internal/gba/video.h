@@ -10,6 +10,7 @@
 
 CXX_GUARD_START
 
+#include <mgba/xatu_globals.h>
 #include <mgba/core/log.h>
 #include <mgba/core/timing.h>
 #include <mgba/gba/interface.h>
@@ -23,7 +24,7 @@ enum {
 	VIDEO_HORIZONTAL_LENGTH = 1232,
 
 	VIDEO_VBLANK_PIXELS = 68,
-	VIDEO_VERTICAL_TOTAL_PIXELS = 228,
+	// VIDEO_VERTICAL_TOTAL_PIXELS = 228,
 
 	VIDEO_TOTAL_LENGTH = 280896,
 

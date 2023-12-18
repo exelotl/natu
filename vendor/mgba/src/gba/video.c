@@ -148,7 +148,7 @@ MGBA_EXPORT const int GBAVideoObjSizes[16][2] = {
 //	}
 //	video->p->memory.io[GBA_REG(VCOUNT)] = video->vcount;
 //
-//	if (video->vcount < GBA_VIDEO_VERTICAL_PIXELS) {
+//	if (video->vcount < natuVideoVerticalPixels) {
 //		video->shouldStall = 1;
 //	}
 //
@@ -169,7 +169,7 @@ MGBA_EXPORT const int GBAVideoObjSizes[16][2] = {
 //	case 0:
 //		GBAFrameStarted(video->p);
 //		break;
-//	case GBA_VIDEO_VERTICAL_PIXELS:
+//	case natuVideoVerticalPixels:
 //		video->p->memory.io[GBA_REG(DISPSTAT)] = GBARegisterDISPSTATFillInVblank(dispstat);
 //		if (video->frameskipCounter <= 0) {
 //			video->renderer->finishFrame(video->renderer);
@@ -201,14 +201,14 @@ MGBA_EXPORT const int GBAVideoObjSizes[16][2] = {
 //	// Begin Hblank
 //	GBARegisterDISPSTAT dispstat = video->p->memory.io[GBA_REG(DISPSTAT)];
 //	dispstat = GBARegisterDISPSTATFillInHblank(dispstat);
-//	if (video->vcount < GBA_VIDEO_VERTICAL_PIXELS && video->frameskipCounter <= 0) {
+//	if (video->vcount < natuVideoVerticalPixels && video->frameskipCounter <= 0) {
 //		video->renderer->drawScanline(video->renderer, video->vcount);
 //	}
 //
-//	if (video->vcount < GBA_VIDEO_VERTICAL_PIXELS) {
+//	if (video->vcount < natuVideoVerticalPixels) {
 //		GBADMARunHblank(video->p, -cyclesLate);
 //	}
-//	if (video->vcount >= 2 && video->vcount < GBA_VIDEO_VERTICAL_PIXELS + 2) {
+//	if (video->vcount >= 2 && video->vcount < natuVideoVerticalPixels + 2) {
 //		GBADMARunDisplayStart(video->p, -cyclesLate);
 //	}
 //	if (GBARegisterDISPSTATIsHblankIRQ(dispstat)) {

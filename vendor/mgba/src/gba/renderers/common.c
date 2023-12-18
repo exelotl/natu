@@ -24,10 +24,10 @@ int GBAVideoRendererCleanOAM(struct GBAObj* oam, struct GBAVideoRendererSprite* 
 				width <<= GBAObjAttributesAGetDoubleSize(obj.a);
 				cycles = 10 + width * 2;
 			}
-			if (GBAObjAttributesAGetY(obj.a) >= GBA_VIDEO_VERTICAL_PIXELS && GBAObjAttributesAGetY(obj.a) + height < VIDEO_VERTICAL_TOTAL_PIXELS) {
+			if (GBAObjAttributesAGetY(obj.a) >= natuVideoVerticalPixels && GBAObjAttributesAGetY(obj.a) + height < natuVideoVerticalTotalPixels) {
 				continue;
 			}
-			if (GBAObjAttributesBGetX(obj.b) >= GBA_VIDEO_HORIZONTAL_PIXELS && GBAObjAttributesBGetX(obj.b) + width < 512) {
+			if (GBAObjAttributesBGetX(obj.b) >= natuVideoHorizontalPixels && GBAObjAttributesBGetX(obj.b) + width < 512) {
 				continue;
 			}
 			int y = GBAObjAttributesAGetY(obj.a) + offsetY;
