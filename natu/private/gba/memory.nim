@@ -5,6 +5,12 @@ const
   ArmCodeInIwram* = "__attribute__((section(\".iwram.text\"), target(\"arm\"), long_call)) $# $#$#"      ## Put procedure in IWRAM.
   ThumbCodeInEwram* = "__attribute__((section(\".ewram.text\"), target(\"thumb\"), long_call)) $# $#$#"  ## Put procedure in EWRAM.
 
+# ROM
+export romMem
+
+# SRAM
+export sramMem
+
 var waitcnt* {.importc:"(*(volatile WaitCnt*)(0x04000204))", nodecl.}: WaitCnt
   ## Waitstate control register.
   ## 

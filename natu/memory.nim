@@ -10,14 +10,6 @@ when (NimMajor, NimMinor) >= (1, 6):
 else:
   {.pragma: overloadable, pure.}
 
-
-# ROM
-export romMem
-
-# SRAM
-export sramMem
-
-
 type
   WsSram* {.overloadable.} = enum
     ## SRAM access timings
