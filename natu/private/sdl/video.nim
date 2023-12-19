@@ -10,18 +10,18 @@ template bgcnt*: array[4, BgCnt] = cast[ptr array[4, BgCnt]](addr natuMem.regs[0
 template bgofs*: array[4, BgOfs] = cast[ptr array[4, BgOfs]](addr natuMem.regs[0x10 shr 1])[]
 template bgaff*: array[4, BgAffine] = cast[ptr array[2..3, BgAffine]](addr natuMem.regs[0x20 shr 1])[]
 
-template winh*: array[2, WinH] = cast[ptr array[2, WinH]](addr natuMem.regs[0x310 shr 1])[]
-template winv*: array[2, WinV] = cast[ptr array[2, WinV]](addr natuMem.regs[0x318 shr 1])[]
+template winh*: array[2, WinH] = cast[ptr array[2, WinH]](addr natuMem.regs[0x040 shr 1])[]
+template winv*: array[2, WinV] = cast[ptr array[2, WinV]](addr natuMem.regs[0x048 shr 1])[]
 
-template win0cnt*: WinCnt   = cast[ptr array[2, WinCnt]](addr natuMem.regs[0x48 shr 1])[0]
-template win1cnt*: WinCnt   = cast[ptr array[2, WinCnt]](addr natuMem.regs[0x48 shr 1])[1]
-template winoutcnt*: WinCnt = cast[ptr array[2, WinCnt]](addr natuMem.regs[0x4A shr 1])[0]
-template winobjcnt*: WinCnt = cast[ptr array[2, WinCnt]](addr natuMem.regs[0x4A shr 1])[1]
+template win0cnt*: WinCnt   = cast[ptr array[2, WinCnt]](addr natuMem.regs[0x50 shr 1])[0]
+template win1cnt*: WinCnt   = cast[ptr array[2, WinCnt]](addr natuMem.regs[0x50 shr 1])[1]
+template winoutcnt*: WinCnt = cast[ptr array[2, WinCnt]](addr natuMem.regs[0x52 shr 1])[0]
+template winobjcnt*: WinCnt = cast[ptr array[2, WinCnt]](addr natuMem.regs[0x52 shr 1])[1]
 
-template mosaic*: Mosaic        = cast[ptr Mosaic](addr natuMem.regs[0x4C shr 1])[]
-template bldcnt*: BldCnt        = cast[ptr BldCnt](addr natuMem.regs[0x50 shr 1])[]
-template bldalpha*: BlendAlpha  = cast[ptr BlendAlpha](addr natuMem.regs[0x52 shr 1])[]
-template bldy*: BlendBrightness = cast[ptr BlendBrightness](addr natuMem.regs[0x54 shr 1])[]
+template mosaic*: Mosaic        = cast[ptr Mosaic](addr natuMem.regs[0x54 shr 1])[]
+template bldcnt*: BldCnt        = cast[ptr BldCnt](addr natuMem.regs[0x56 shr 1])[]
+template bldalpha*: BlendAlpha  = cast[ptr BlendAlpha](addr natuMem.regs[0x58 shr 1])[]
+template bldy*: BlendBrightness = cast[ptr BlendBrightness](addr natuMem.regs[0x5A shr 1])[]
 
 
 # Memory mapped arrays
