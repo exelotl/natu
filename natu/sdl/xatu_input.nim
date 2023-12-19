@@ -28,8 +28,8 @@ keyMap = {
   K_LEFT: kiLeft,
   K_UP: kiUp,
   K_DOWN: kiDown,
-  K_A: kiR,
-  K_S: kiL,
+  K_A: kiL,
+  K_S: kiR,
 }.toTable[:sdl.Keycode, GbaKeyIndex]()
 
 proc pressKey*(key: sdl.KeyboardEventObj) =
