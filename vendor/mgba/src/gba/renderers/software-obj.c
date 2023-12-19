@@ -198,7 +198,10 @@ int GBAVideoSoftwareRendererPreprocessSprite(struct GBAVideoSoftwareRenderer* re
 		}
 	}
 
-	int inY = y - ((int) GBAObjAttributesAGetY(sprite->a) + renderer->objOffsetY);
+	int32_t yy = (uint32_t) GBAObjAttributesAGetY(sprite->a) << 16;  // large values are treated as negative
+	yy >>= 16;
+	yy += renderer->objOffsetX;
+	int inY = y - yy;
 	int stride = GBARegisterDISPCNTIsObjCharacterMapping(renderer->dispcnt) ? (width >> !GBAObjAttributesAIs256Color(sprite->a)) : 0x80;
 
 	uint32_t current;
@@ -211,9 +214,9 @@ int GBAVideoSoftwareRendererPreprocessSprite(struct GBAVideoSoftwareRenderer* re
 		LOAD_16(mat.c, 0, &renderer->d.oam->mat[GBAObjAttributesBGetMatIndex(sprite->b)].c);
 		LOAD_16(mat.d, 0, &renderer->d.oam->mat[GBAObjAttributesBGetMatIndex(sprite->b)].d);
 
-		if (inY < 0) {
-			inY += 256;
-		}
+		// if (inY < 0) {
+		// 	inY += 256;
+		// }
 		int outX = x >= start ? x : start;
 		int condition = x + totalWidth;
 		int inX = outX - x;
@@ -314,9 +317,9 @@ int GBAVideoSoftwareRendererPreprocessSprite(struct GBAVideoSoftwareRenderer* re
 				condition += mosaicH - (condition % mosaicH);
 			}
 		}
-		if ((int) GBAObjAttributesAGetY(sprite->a) + height - 256 >= 0) {  // muffin
-			inY += 256;
-		}
+		// if ((int) GBAObjAttributesAGetY(sprite->a) + height - 256 >= 0) {  // muffin
+		// 	inY += 256;
+		// }
 		if (GBAObjAttributesBIsVFlip(sprite->b)) {
 			inY = height - inY - 1;
 		}
