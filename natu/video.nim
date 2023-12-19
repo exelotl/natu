@@ -59,11 +59,15 @@ export ObjAttr, ObjAffine, ObjAttrPtr, ObjAffinePtr
 const natuLcdWidth {.intdefine.} = 240
 const natuLcdHeight {.intdefine.} = 160
 
+when natuPlatform == "gba":
+  static:
+    assert(natuLcdWidth == 240 and natuLcdHeight == 160, "Can't change screen size on a real GBA.")
+
 # Sizes in pixels
 const
-  ScreenWidth* = natuLcdWidth   ## Width in pixels
-  ScreenHeight* = natuLcdHeight ## Height in pixels
-  ScreenLines* = 228          ## Total number of scanlines (max vcount value)
+  ScreenWidth* = natuLcdWidth        ## Width in pixels
+  ScreenHeight* = natuLcdHeight      ## Height in pixels
+  ScreenLines* = natuLcdHeight + 68  ## Total number of scanlines (max vcount value)
   Mode3Width* = ScreenWidth
   Mode3Height* = ScreenHeight
   Mode4Width* = ScreenWidth
@@ -71,15 +75,10 @@ const
   Mode5Width* = 160
   Mode5Height* = 128
 
-static:
-  assert(ScreenLines >= ScreenHeight)
-  if natuPlatform == "gba":
-    assert(ScreenWidth == 240 and ScreenHeight == 160, "Can't change screen size when targeting a real GBA.")
-
 # Size in tiles
 const
-  ScreenWidthInTiles* = (ScreenWidth div 8)    ## Width in tiles
-  ScreenHeightInTiles* = (ScreenHeight div 8)  ## Height in tiles
+  ScreenWidthInTiles* = (ScreenWidth+7) div 8    ## Width in tiles
+  ScreenHeightInTiles* = (ScreenHeight+7) div 8  ## Height in tiles
 
 
 # Display Control Register
