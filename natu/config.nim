@@ -362,11 +362,12 @@ proc readAudio*(script: static string) =
   cd natuCurrentDir
 
 
-proc mmConvert*(script: static string) =
+proc mmConvert*(script: static string, sdl = false) =
   readAudio(script)
   mkDir("output")
-  exec natuExe() & " mmconvert --script:$# --sfxdir:. --moddir:. --outdir:output $# $#" % [
+  exec natuExe() & " mmconvert --script:$# --sfxdir:. --moddir:. --outdir:output $# $# $#" % [
     script,
+    if sdl: "--sdl" else: "",
     natuSamples.join(" "),
     natuModules.join(" "),
   ]

@@ -1,6 +1,7 @@
 import sdl2_nim/sdl
 import ./xatu_mgba
 import ./xatu_input
+import ./xatu_audio
 import ../private/sdl/appcommon
 
 # mGBA Renderer + app mem
@@ -12,7 +13,7 @@ var mem*: NatuAppMem               # memory passed to the game shared lib
 proc gbaInit() =
   
   mem.regs[GBA_REG_KEYINPUT shr 1] = 0xffff  # no keys held
-
+  
   # BG affine matrices
   mem.regs[0x020 shr 1] = 0x100
   mem.regs[0x026 shr 1] = 0x100
@@ -112,10 +113,6 @@ proc vidDraw* =
     discard swr.writeVideoRegister(XATU_REG_WIN1X2, mem.regs[XATU_REG_WIN1X2 shr 1])
     discard swr.writeVideoRegister(XATU_REG_WIN1Y1, mem.regs[XATU_REG_WIN1Y1 shr 1])
     discard swr.writeVideoRegister(XATU_REG_WIN1Y2, mem.regs[XATU_REG_WIN1Y2 shr 1])
-    # discard swr.writeVideoRegister(GBA_REG_WIN0H, mem.regs[GBA_REG_WIN0H shr 1])
-    # discard swr.writeVideoRegister(GBA_REG_WIN1H, mem.regs[GBA_REG_WIN1H shr 1])
-    # discard swr.writeVideoRegister(GBA_REG_WIN0V, mem.regs[GBA_REG_WIN0V shr 1])
-    # discard swr.writeVideoRegister(GBA_REG_WIN1V, mem.regs[GBA_REG_WIN1V shr 1])
     discard swr.writeVideoRegister(GBA_REG_WININ, mem.regs[GBA_REG_WININ shr 1])
     discard swr.writeVideoRegister(GBA_REG_WINOUT, mem.regs[GBA_REG_WINOUT shr 1])
     discard swr.writeVideoRegister(GBA_REG_MOSAIC, mem.regs[GBA_REG_MOSAIC shr 1])
@@ -157,7 +154,7 @@ proc start*(app: App; lcdW, lcdH: int) =
   
   assert(not app.running)
   
-  check sdl.init(sdl.InitVideo)
+  check sdl.init(sdl.InitVideo or sdl.InitAudio)
   
   app.window = sdl.createWindow(
     title = Title,
@@ -178,6 +175,8 @@ proc start*(app: App; lcdW, lcdH: int) =
   
   check app.renderer
   check app.renderer.setRenderDrawColor(0x22, 0x11, 0x22, 0xFF)
+  
+  openMixer()
   
   sdl.logInfo(sdl.LogCategoryApplication, "SDL initialized successfully")
   app.running = true
@@ -213,6 +212,7 @@ proc draw*(app: App) =
 proc exit*(app: App) =
   app.renderer.destroyRenderer()
   app.window.destroyWindow()
+  closeMixer()
   sdl.logInfo(sdl.LogCategoryApplication, "SDL shutdown completed")
   sdl.quit()
 

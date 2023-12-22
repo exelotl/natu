@@ -2,6 +2,7 @@ import std/[parseopt]
 import sdl2_nim/sdl
 import ./natu/private/sdl/appcommon
 import ./natu/sdl/xatu_app
+import ./natu/sdl/xatu_audio
 import ./natu/sdl/xatu_loader
 
 const helpMsg = """
@@ -41,6 +42,17 @@ proc xatuPanic(msg1, msg2: cstring) {.exportc.} =
   raise newException(Exception, "Panic!\n" & $msg1 & "\n" & $msg2)
 
 mem.panic = xatuPanic
+mem.loadMusic = xatuLoadMusic
+mem.freeMusic = xatuFreeMusic
+mem.startMusic = xatuStartMusic
+mem.pauseMusic = xatuPauseMusic
+mem.resumeMusic = xatuResumeMusic
+mem.stopMusic = xatuStopMusic
+mem.setMusicPosition = xatuSetMusicPosition
+mem.setMusicVolume = xatuSetMusicVolume
+mem.loadSample = xatuLoadSample
+mem.freeSample = xatuFreeSample
+mem.playSample = xatuPlaySample
 
 natuAppInit(addr mem)
 

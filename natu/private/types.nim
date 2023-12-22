@@ -189,8 +189,8 @@ when natuPlatform == "gba":
 
 elif natuPlatform == "sdl":
   type
-    OAMuint* = uint32
-    OAMint* = int32
+    OamUint* = uint32
+    OamInt* = int32
     
     ObjAttr* = object
       attr0*: uint32
