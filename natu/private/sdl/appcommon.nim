@@ -1,11 +1,14 @@
 # import ./mgbavid
 
 type
-  NatuMusic* {.borrow.} = distinct pointer
-  NatuSample* {.borrow.} = distinct pointer  # corresponds to an SDL_Mixer 'Chunk'
+  NatuSource* {.borrow.} = distinct pointer
+    ## A thing that emits audio
+  
+  NatuSample* {.borrow.} = distinct pointer
+    ## RAW PCM data in memory (can be used by a NatuSource)
 
-proc `==`*(a, b: NatuMusic): bool {.borrow.}
-proc isNil*(a: NatuMusic): bool {.borrow.}
+proc `==`*(a, b: NatuSource): bool {.borrow.}
+proc isNil*(a: NatuSource): bool {.borrow.}
 
 proc `==`*(a, b: NatuSample): bool {.borrow.}
 proc isNil*(a: NatuSample): bool {.borrow.}
@@ -20,14 +23,19 @@ type
     # api:
     panic*: proc (msg1: cstring; msg2: cstring = nil) {.nimcall.}
     
-    loadMusic*: proc (f: cstring): NatuMusic {.nimcall.}
-    freeMusic*: proc (music: NatuMusic) {.nimcall.}
-    startMusic*: proc (music: NatuMusic; loops: cint) {.nimcall.}
-    pauseMusic*: proc () {.nimcall.}
-    resumeMusic*: proc () {.nimcall.}
-    stopMusic*: proc () {.nimcall.}
-    setMusicPosition*: proc (pos: cdouble) {.nimcall.}
-    setMusicVolume*: proc (vol: cfloat) {.nimcall.}
-    loadSample*: proc (f: cstring): NatuSample {.nimcall.}
-    freeSample*: proc (sample: NatuSample) {.nimcall.}
-    playSample*: proc (sample: NatuSample) {.nimcall.}
+    createSample*: proc (f: cstring): NatuSample {.nimcall.}
+    destroySample*: proc (smp: NatuSample) {.nimcall.}
+    
+    createSourceFromSample*: proc (smp: NatuSample): NatuSource {.nimcall.}
+    createSourceFromFile*: proc (f: cstring; loop: bool): NatuSource {.nimcall.}
+    destroySource*: proc (s: NatuSource) {.nimcall.}
+    playSource*: proc (s: NatuSource) {.nimcall.}
+    pauseSource*: proc (s: NatuSource) {.nimcall.}
+    stopSource*: proc (s: NatuSource) {.nimcall.}
+    # resumeMusic*: proc () {.nimcall.}
+    # stopMusic*: proc () {.nimcall.}
+    # setMusicPosition*: proc (pos: cdouble) {.nimcall.}
+    # setMusicVolume*: proc (vol: cfloat) {.nimcall.}
+    # loadSample*: proc (f: cstring): NatuSample {.nimcall.}
+    # freeSample*: proc (sample: NatuSample) {.nimcall.}
+    # playSample*: proc (sample: NatuSample) {.nimcall.}

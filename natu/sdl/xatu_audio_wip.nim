@@ -1,14 +1,7 @@
 import std/[random, os, math]
 import sdl2_nim/sdl
 import ./stb_vorbis
-
-# modplug is not the best library but it's public domain and widely available
-# apparently xmp-lite is MIT so we could use that in future?
-import ./modplug
-
-const
-  Channels = 2
-  BufLen = 1024
+import ./modplug   # apparently xmp-lite is MIT so we could use that in future?
 
 proc fillAudio(udata: pointer; stream: ptr uint8; nbytes: cint) {.cdecl.}
 
@@ -40,17 +33,19 @@ static:
   # ensure the sample data starts on a word boundary
   doAssert sizeof(SampleObj) == (sizeof(SampleObj) div 4) * 4
 
+const
+  Channels = 2
+  BufSize = 1024
+  BufMul = (44100/48000)
+  MpBufSize = ceil(1024 * BufMul).int
+
 proc allocSample(nsamples: int): Sample =
-  result = cast[Sample](createU(byte, sizeof(SampleObj) + nsamples * Channels * sizeof(float32)))
+  result = allocU(sizeof(SampleObj) + nsamples * Channels * sizeof(float32))
   result.len = nsamples
 
 proc data*(s: Sample): ptr UncheckedArray[float32] {.inline.} =
   let bytes = cast[ptr UncheckedArray[byte]](s)
   cast[ptr UncheckedArray[float32]](addr bytes[sizeof(SampleObj)])
-
-
-var sources: seq[Source]
-var mpBuf: array[BufLen * Channels, int32]
 
 proc mixInto*(s: Source; dst: ptr UncheckedArray[float32]; nsamples: int) =
   case s.kind
@@ -59,20 +54,24 @@ proc mixInto*(s: Source; dst: ptr UncheckedArray[float32]; nsamples: int) =
   of Ogg:
     discard # TODO
   of Mod:
-    let bytesRead = s.module.read(addr mpBuf, sizeof(mpBuf))
+    var arr: array[MpBufSize * Channels, int32]
+    let bytesRead = s.module.read(addr arr, sizeof(arr))
+    var n = 0.0
     for i in 0..<nsamples:
-      let j = i*2
-      dst[j] += mpBuf[j] / int32.high
-      dst[j+1] += mpBuf[j+1] / int32.high
-    if bytesRead < sizeof(mpBuf):
+      dst[i*2] += arr[(n.int)*2] / int32.high
+      dst[i*2 + 1] += arr[(n.int)*2 + 1] / int32.high
+      n += BufMul
+    if bytesRead < sizeof(arr):
       s.active = false
 
+var sources: seq[SourceObj]
+
 var mixerSpec = sdl.AudioSpec(
-  freq: 44100,
+  freq: 48000,
   # format: AudioS16,
   format: AudioF32,
   channels: 2,
-  samples: BufLen,
+  samples: 1024,
   callback: fillAudio,
   userdata: nil,
 )
@@ -80,33 +79,35 @@ var mixerSpec = sdl.AudioSpec(
 proc fillAudio(udata: pointer; stream: ptr uint8; nbytes: cint) {.cdecl.} =
   let buf = cast[ptr UncheckedArray[float32]](stream)
   let nsamples = (nbytes div sizeof(float32)) div mixerSpec.channels
-  zeroMem(buf, nbytes)
+  clearMem(buf, nbytes)
   for s in sources:
-    s.mixInto(buf, nsamples)
+    (addr s).mixInto(buf, nsamples)
 
 proc openMixer* =
-  
-  # so apparently you have to pass the loop count in settings and _then_ load the module.
-  var mpSettings = ModPlugSettings(
-    flags: {Oversampling},
-    channels: 2,
-    bits: 32,
-    frequency: 44100 div 4,
-    resamplingMode: ResampleNearest,
-    stereoSeparation: 128,
-    maxMixChannels: 32,
-    reverbDepth: 50,
-    reverbDelay: 50,
-    bassAmount: 50,
-    bassRange: 50,
-    surroundDepth: 60,
-    surroundDelay: 10,
-    # loopCount: (if loop: -1 else: 0),
-    loopCount: -1,
-  )
-  modplug.setSettings(addr mpSettings)
-  
   doAssert sdl.openAudio(addr mixerSpec, nil) == 0, "Failed to open audio: " & $sdl.getError()
+  
+  var mpSettings: ModPlugSettings
+  modplug.getSettings(addr mpSettings)
+  echo mpSettings
+  
+  # var mpSettings = ModPlugSettings(
+  #   flags: {Oversampling},
+  #   channels: 2,
+  #   bits: 32,
+  #   frequency: 44100,
+  #   resamplingMode: ResampleNearest,
+  #   stereoSeparation: 128,
+  #   maxMixChannels: 32,
+  #   reverbDepth: 50,
+  #   reverbDelay: 50,
+  #   bassAmount: 50,
+  #   bassRange: 50,
+  #   surroundDepth: 60,
+  #   surroundDelay: 10,
+  #   loopCount: -1,
+  # )
+  # modplug.setSettings(mpSettings)
+  
   sdl.pauseAudio(0)
 
 proc closeMixer* =
@@ -121,7 +122,7 @@ proc closeMixer* =
   # for i in 0..<mixNumOpened:
   #   mix.closeAudio()
   
-proc createSample*(f: string): Sample =
+proc createSample*(f: cstring): Sample =
 
   var wavSpec: sdl.AudioSpec
   var len: uint32
@@ -130,57 +131,42 @@ proc createSample*(f: string): Sample =
   
   # convert sample to the mixer's own internal format:
   var cvt: AudioCvt
-  let res = sdl.buildAudioCvt(
-    cvt = addr cvt,
-    src_format = wavSpec.format,
-    src_channels = wavSpec.channels,
-    src_rate = wavSpec.freq,
-    dst_format = AudioF32,
-    dst_channels = mixerSpec.channels,
-    dst_rate = mixerSpec.freq,
+  sdl.buildAudioCvt(
+    cvt: addr cvt,
+    src_format: wavSpec.format,
+    src_channels: wavSpec.channels,
+    src_rate: wavSpec.freq,
+    dst_format: AudioF32,
+    dst_channels: mixerSpec.channels,
+    dst_rate: mixerSpec.rate,
   )
-  doAssert res != -1, "Failed to set up wav converter."
-  cvt.len = len.int32
-  cvt.buf = createU(byte, len * cvt.len_mult.uint32)
+  cvt.len = len
+  cvt.buf = allocU(len * cvt.len_mult)
   copyMem(cvt.buf, buf, len)
-  doAssert sdl.convertAudio(addr cvt) == 0, "Failed to convert wav " & $f & ": " & $sdl.getError()
+  sdl.convertAudio(cvt)
   sdl.freeWav(buf)
 
-proc createSource(smp: Sample; loop: bool): Source =
+proc createSource(smp: Sample): Source =
   result = createU(SourceObj)
   result[] = SourceObj(
     kind: Wav,
     sample: smp,
-    loop: loop
   )
-  sources.add(result)
 
-proc createSource*(path: string; loop: bool): Source =
+proc createSource*(f: cstring): Source =
   result = createU(SourceObj)
+  let path = $f
   case splitFile(path).ext
   of ".wav":
-    assert(false, "TODO")
     result[] = SourceObj(kind: Wav)
-  
   of ".ogg": 
-    assert(false, "TODO")
     result[] = SourceObj(kind: Ogg)
-  
   of ".mod", ".s3m", ".xm", ".it":
-    
-    
     var data = readFile(path)
-    result[] = SourceObj(
-      kind: Mod,
-      module: modplug.load(addr data[0], data.len),
-      loop: loop
-    )
-    doAssert(result.module != nil, "Failed to load module " & path)
-  
+    result[] = SourceObj(kind: Mod, module: modplug.load(addr data[0], data.len))
+    doAssert(res.module != nil, "Failed to load module " & path)
   else:
     doAssert(false, "Unsupported file extension for " & path)
-  
-  sources.add(result)
 
 proc destroySource*(s: Source) =
   # TODO
@@ -190,28 +176,26 @@ proc destroySource*(s: Source) =
 import ../private/sdl/appcommon
 
 proc xatuCreateSample*(f: cstring): NatuSample =
-  createSample($f).NatuSample  
+  createSample(f).NatuSample  
 
-proc xatuCreateSourceFromFile*(f: cstring; loop: bool): NatuSource =
-  createSource($f, loop).NatuSource
+proc xatuCreateSourceFromFile*(f: cstring): NatuSource =
+  createSource(f).NatuSample  
 
-proc xatuCreateSourceFromSample*(smp: NatuSample): NatuSource =
-  let loop = false # TODO: determine from whether sample has loop points.
-  createSource(cast[Sample](smp), loop).NatuSource
+proc xatuCreateSourceFromSample*(f: cstring): NatuSource =
+  createSource(f).NatuSample 
 
 proc xatuDestroySource*(s: NatuSource) =
-  discard
-  # let s = s.Source
-  # dealloc(s)
+  let s = s.Source
+  dealloc(s)
 
 proc xatuPlaySource*(s: NatuSource) =
-  discard
+  let s = s.Source
 
 proc xatuPauseSource*(s: NatuSource) =
-  discard
+  let s = s.Source
 
 proc xatuStopSource*(s: NatuSource) =
-  discard
+  let s = s.Source
 
 # proc xatuPauseSource*() =
 #   discard
