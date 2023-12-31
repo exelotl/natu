@@ -1,10 +1,7 @@
 import std/[random, os, math]
 import sdl2_nim/sdl
 import ./stb_vorbis
-
-# modplug is not the best library but it's public domain and widely available
-# apparently xmp-lite is MIT so we could use that in future?
-import ./modplug
+import xmp
 
 const
   Channels = 2
@@ -34,7 +31,7 @@ type
     of Ogg:
       vorbis*: Vorbis
     of Mod:
-      module*: ModPlugFile
+      ctx*: XmpContext
 
 static:
   # ensure the sample data starts on a word boundary
@@ -50,7 +47,7 @@ proc data*(s: Sample): ptr UncheckedArray[float32] {.inline.} =
 
 
 var sources: seq[Source]
-var mpBuf: array[BufLen * Channels, int32]
+var xmpBuf: array[BufLen * Channels, int16]
 
 proc mixInto*(s: Source; dst: ptr UncheckedArray[float32]; nsamples: int) =
   case s.kind
@@ -59,13 +56,17 @@ proc mixInto*(s: Source; dst: ptr UncheckedArray[float32]; nsamples: int) =
   of Ogg:
     discard # TODO
   of Mod:
-    let bytesRead = s.module.read(addr mpBuf, sizeof(mpBuf))
+    let res = s.ctx.playBuffer(
+      buffer = addr xmpBuf,
+      size = sizeof(xmpBuf),
+      loop = 0  # forever
+    )
+    if res < 0:
+      s.active = false
     for i in 0..<nsamples:
       let j = i*2
-      dst[j] += mpBuf[j] / int32.high
-      dst[j+1] += mpBuf[j+1] / int32.high
-    if bytesRead < sizeof(mpBuf):
-      s.active = false
+      dst[j] += xmpBuf[j] / int16.high
+      dst[j+1] += xmpBuf[j+1] / int16.high
 
 var mixerSpec = sdl.AudioSpec(
   freq: 44100,
@@ -85,27 +86,6 @@ proc fillAudio(udata: pointer; stream: ptr uint8; nbytes: cint) {.cdecl.} =
     s.mixInto(buf, nsamples)
 
 proc openMixer* =
-  
-  # so apparently you have to pass the loop count in settings and _then_ load the module.
-  var mpSettings = ModPlugSettings(
-    flags: {Oversampling},
-    channels: 2,
-    bits: 32,
-    frequency: 44100 div 4,
-    resamplingMode: ResampleNearest,
-    stereoSeparation: 128,
-    maxMixChannels: 32,
-    reverbDepth: 50,
-    reverbDelay: 50,
-    bassAmount: 50,
-    bassRange: 50,
-    surroundDepth: 60,
-    surroundDelay: 10,
-    # loopCount: (if loop: -1 else: 0),
-    loopCount: -1,
-  )
-  modplug.setSettings(addr mpSettings)
-  
   doAssert sdl.openAudio(addr mixerSpec, nil) == 0, "Failed to open audio: " & $sdl.getError()
   sdl.pauseAudio(0)
 
@@ -167,15 +147,13 @@ proc createSource*(path: string; loop: bool): Source =
     result[] = SourceObj(kind: Ogg)
   
   of ".mod", ".s3m", ".xm", ".it":
-    
-    
-    var data = readFile(path)
+    let ctx = xmp.createContext()
+    doAssert ctx.loadModule(path) == 0, "Failed to load module " & path
     result[] = SourceObj(
       kind: Mod,
-      module: modplug.load(addr data[0], data.len),
+      ctx: ctx,
       loop: loop
     )
-    doAssert(result.module != nil, "Failed to load module " & path)
   
   else:
     doAssert(false, "Unsupported file extension for " & path)
@@ -186,6 +164,18 @@ proc destroySource*(s: Source) =
   # TODO
   discard
 
+proc play*(s: Source) =
+  case s.kind
+  of Wav:
+    discard # TODO
+  of Ogg:
+    discard # TODO
+  of Mod:
+    let res = s.ctx.startPlayer(
+      rate = mixerSpec.freq,
+      flags = {}  # 16 bit, signed
+    )
+    doAssert res == 0, $res
 
 import ../private/sdl/appcommon
 
@@ -205,7 +195,7 @@ proc xatuDestroySource*(s: NatuSource) =
   # dealloc(s)
 
 proc xatuPlaySource*(s: NatuSource) =
-  discard
+  cast[Source](s).play()
 
 proc xatuPauseSource*(s: NatuSource) =
   discard
