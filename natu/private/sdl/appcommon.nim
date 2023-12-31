@@ -32,10 +32,4 @@ type
     playSource*: proc (s: NatuSource) {.nimcall.}
     pauseSource*: proc (s: NatuSource) {.nimcall.}
     stopSource*: proc (s: NatuSource) {.nimcall.}
-    # resumeMusic*: proc () {.nimcall.}
-    # stopMusic*: proc () {.nimcall.}
-    # setMusicPosition*: proc (pos: cdouble) {.nimcall.}
-    # setMusicVolume*: proc (vol: cfloat) {.nimcall.}
-    # loadSample*: proc (f: cstring): NatuSample {.nimcall.}
-    # freeSample*: proc (sample: NatuSample) {.nimcall.}
-    # playSample*: proc (sample: NatuSample) {.nimcall.}
+    setSourceRate*: proc (s: NatuSource, rate: float32) {.nimcall.}

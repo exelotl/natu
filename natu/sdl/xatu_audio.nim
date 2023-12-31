@@ -24,10 +24,12 @@ type
   
   SourceObj* = object
     loop*: bool
-    active*: bool
+    playing*: bool = true
+    rateMul*: float32 = 1.0f
     case kind: SourceKind
     of Wav:
       sample*: Sample
+      samplePos*: float32
     of Ogg:
       vorbis*: Vorbis
     of Mod:
@@ -52,7 +54,20 @@ var xmpBuf: array[BufLen * Channels, int16]
 proc mixInto*(s: Source; dst: ptr UncheckedArray[float32]; nsamples: int) =
   case s.kind
   of Wav:
-    discard # TODO
+    var data = s.sample.data
+    var pos = s.samplePos
+    var count = nsamples
+    let remaining = s.sample.len - pos.int
+    if remaining < nsamples:
+      count = remaining
+      s.playing = false
+    for i in 0..<count:
+      let j = i*2
+      let k = (pos.int) * 2
+      dst[j] += data[k]
+      dst[j+1] += data[k+1]
+      pos += s.rateMul
+    s.samplePos = pos
   of Ogg:
     discard # TODO
   of Mod:
@@ -62,7 +77,7 @@ proc mixInto*(s: Source; dst: ptr UncheckedArray[float32]; nsamples: int) =
       loop = 0  # forever
     )
     if res < 0:
-      s.active = false
+      s.playing = false
     for i in 0..<nsamples:
       let j = i*2
       dst[j] += xmpBuf[j] / int16.high
@@ -102,7 +117,7 @@ proc closeMixer* =
   #   mix.closeAudio()
   
 proc createSample*(f: string): Sample =
-
+  
   var wavSpec: sdl.AudioSpec
   var len: uint32
   var buf: ptr uint8
@@ -121,12 +136,20 @@ proc createSample*(f: string): Sample =
   )
   doAssert res != -1, "Failed to set up wav converter."
   cvt.len = len.int32
-  cvt.buf = createU(byte, len * cvt.len_mult.uint32)
+  let newlen = len.int * cvt.len_mult.int
+  
+  let size = ceil(len.float * cvt.len_ratio.float * 0.5).int * 2
+  let nsamples = (size div Channels) div sizeof(float32)
+  
+  result = cast[Sample](createU(byte, sizeof(SampleObj) + newlen))
+  result.len = nsamples
+  
+  cvt.buf = cast[ptr byte](result.data)
   copyMem(cvt.buf, buf, len)
   doAssert sdl.convertAudio(addr cvt) == 0, "Failed to convert wav " & $f & ": " & $sdl.getError()
   sdl.freeWav(buf)
 
-proc createSource(smp: Sample; loop: bool): Source =
+proc createSource*(smp: Sample; loop: bool): Source =
   result = createU(SourceObj)
   result[] = SourceObj(
     kind: Wav,
@@ -139,7 +162,7 @@ proc createSource*(path: string; loop: bool): Source =
   result = createU(SourceObj)
   case splitFile(path).ext
   of ".wav":
-    assert(false, "TODO")
+    assert(false, "TODO")  # make wav discard itself after the source is done?
     result[] = SourceObj(kind: Wav)
   
   of ".ogg": 
@@ -167,7 +190,7 @@ proc destroySource*(s: Source) =
 proc play*(s: Source) =
   case s.kind
   of Wav:
-    discard # TODO
+    s.samplePos = 0
   of Ogg:
     discard # TODO
   of Mod:
@@ -202,6 +225,10 @@ proc xatuPauseSource*(s: NatuSource) =
 
 proc xatuStopSource*(s: NatuSource) =
   discard
+
+proc xatuSetSourceRate*(s: NatuSource, rate: float32) =
+  let s = cast[Source](s)
+  s.rateMul = rate
 
 # proc xatuPauseSource*() =
 #   discard

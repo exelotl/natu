@@ -51,6 +51,7 @@ mem.playSource = xatuPlaySource
 mem.pauseSource = xatuPauseSource
 # mem.resumeSource = xatuResumeSource
 mem.stopSource = xatuStopSource
+mem.setSourceRate = xatuSetSourceRate
 # mem.setSourcePosition = xatuSetSourcePosition
 # mem.setSourceVolume = xatuSetSourceVolume
 # mem.loadSample = xatuLoadSample
