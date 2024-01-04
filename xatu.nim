@@ -42,21 +42,16 @@ proc xatuPanic(msg1, msg2: cstring) {.exportc.} =
   raise newException(Exception, "Panic!\n" & $msg1 & "\n" & $msg2)
 
 mem.panic = xatuPanic
-mem.createSample = xatuCreateSample
-# mem.destroySample = xatuDestroySample
+mem.setSampleData = xatuSetSampleData
 mem.createSourceFromFile = xatuCreateSourceFromFile
 mem.createSourceFromSample = xatuCreateSourceFromSample
 mem.destroySource = xatuDestroySource
 mem.playSource = xatuPlaySource
 mem.pauseSource = xatuPauseSource
-# mem.resumeSource = xatuResumeSource
 mem.stopSource = xatuStopSource
 mem.setSourceRate = xatuSetSourceRate
-# mem.setSourcePosition = xatuSetSourcePosition
-# mem.setSourceVolume = xatuSetSourceVolume
-# mem.loadSample = xatuLoadSample
-# mem.freeSample = xatuFreeSample
-# mem.playSample = xatuPlaySample
+mem.setSourceVolume = xatuSetSourceVolume
+mem.setSourcePosition = xatuSetSourcePosition
 
 natuAppInit(addr mem)
 

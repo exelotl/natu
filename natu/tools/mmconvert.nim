@@ -1,28 +1,22 @@
-import strutils, strformat, parseopt
-import options, os, osproc, times
-import trick
+import std/[strutils, strformat, parseopt, options, os, osproc, times, streams]
+import trick, riff
 import ./common
 
 proc writeSoundbankNim(f: File; sfxList, modList: seq[string]) =
   include "templates/soundbank.nim.template"
 
-proc writeSdlSoundbankNim(f: File; sfxFilePaths, modFilePaths, sfxList, modList: seq[string]) =
-  include "templates/sdl_soundbank.nim.template"
-
-proc mmConvert*(script, sfxdir, moddir, outdir: string, files: seq[string], sdl: bool) =
+proc mmConvert*(script, sfxdir, moddir, outdir: string, files: seq[string]) =
   var sfxFilePaths, modFilePaths, sfxList, modList: seq[string]
   
   let outputBinPath = outdir / "soundbank.bin"
   let outputNimPath = outdir / "soundbank.nim"
-  let outputNimPathSdl = outdir / "sdl_soundbank.nim"
   
   var newestModifiedIn = getLastModificationTime(script)
-  var oldestModifiedOut = oldest(outputBinPath, outputNimPath, outputNimPathSdl)
+  var oldestModifiedOut = oldest(outputBinPath, outputNimPath)
   
   # collate and check modification dates of input files
   
-  let modExts = if sdl: @[".ogg", ".mod", ".xm", ".s3m", ".it"]
-                else: @[".mod", ".xm", ".s3m", ".it"]
+  let modExts = [".mod", ".xm", ".s3m", ".it"]
   
   for f in files:
     
@@ -39,7 +33,7 @@ proc mmConvert*(script, sfxdir, moddir, outdir: string, files: seq[string], sdl:
       modList.add toCamelCase("mod_" & name)
       modFilePaths.add inPath
     else:
-      raiseAssert("Unrecognised audio asset " & name & ext & ", only the following formats are accepted: .wav " & modExts.join(" "))
+      raiseAssert(&"Unrecognised audio asset {name}{ext} only the following formats are accepted: .wav " & modExts.join(" "))
     
     doAssert(fileExists(inPath), "No such file " & inPath)
     newestModifiedIn = newest(newestModifiedIn, inPath, inPath.parentDir)
@@ -49,39 +43,32 @@ proc mmConvert*(script, sfxdir, moddir, outdir: string, files: seq[string], sdl:
   
   if newestModifiedIn > oldestModifiedOut:
     
-    if sdl:
-      echo "Building sound list:"
-      
-      withFile(outputNimPathSdl, fmWrite):
-        file.writeSdlSoundbankNim(sfxFilePaths, modFilePaths, sfxList, modList)
+    echo "Building soundbank:"
     
-    else:
-      echo "Building soundbank:"
+    var mmutilPath = getAppDir() / "mmutil".addFileExt(ExeExt)
+    
+    if not fileExists(mmutilPath):
+      # Find mmutil in system path
+      mmutilPath = findExe("mmutil")
       
-      var mmutilPath = getAppDir() / "mmutil".addFileExt(ExeExt)
-      
-      if not fileExists(mmutilPath):
-        # Find mmutil in system path
-        mmutilPath = findExe("mmutil")
-        
-        # If none was found, try devkitPro tools directory as a fallback?
-        if mmutilPath == "" and existsEnv("DEVKITPRO"):
-          mmutilPath = getEnv("DEVKITPRO")/"tools"/"bin"/"mmutil".addFileExt(ExeExt)
-      
-      proc mmutil(args: string) =
-        doAssert(
-          fileExists(mmutilPath),
-          "Could not find mmutil executable! (mmutilPath = \"" & mmutilPath & "\")\n" &
-          "Ensure the directory containing the mmutil executable is in your PATH, or try reinstalling Natu."
-        )
-        let res = execCmd(mmutilPath & " " & args)
-        if res != 0:
-          raiseAssert("mmutil failed with code " & $res)
-      
-      mmutil "-o" & outputBinPath & " " & sfxFilePaths.join(" ") & " " & modFilePaths.join(" ")
-      
-      withFile(outputNimPath, fmWrite):
-        file.writeSoundbankNim(sfxList, modList)
+      # If none was found, try devkitPro tools directory as a fallback?
+      if mmutilPath == "" and existsEnv("DEVKITPRO"):
+        mmutilPath = getEnv("DEVKITPRO")/"tools"/"bin"/"mmutil".addFileExt(ExeExt)
+    
+    proc mmutil(args: string) =
+      doAssert(
+        fileExists(mmutilPath),
+        "Could not find mmutil executable! (mmutilPath = \"" & mmutilPath & "\")\n" &
+        "Ensure the directory containing the mmutil executable is in your PATH, or try reinstalling Natu."
+      )
+      let res = execCmd(mmutilPath & " " & args)
+      if res != 0:
+        raiseAssert("mmutil failed with code " & $res)
+    
+    mmutil "-o" & outputBinPath & " " & sfxFilePaths.join(" ") & " " & modFilePaths.join(" ")
+    
+    withFile(outputNimPath, fmWrite):
+      file.writeSoundbankNim(sfxList, modList)
   
   else:
     echo "Skipping audio."
@@ -90,7 +77,7 @@ proc mmConvert*(script, sfxdir, moddir, outdir: string, files: seq[string], sdl:
 # Command Line Interface
 # ----------------------
 
-proc mmConvert*(p: var OptParser, progName: static[string] = "gfxconvert") =
+proc mmConvert*(p: var OptParser, progName: static[string] = "mmconvert") =
   
   const helpMsg = """
 
@@ -106,7 +93,6 @@ Invokes the maxmod utility program to generate a soundbank, and produces Nim-fri
     sfxdir: string
     moddir: string
     outdir: string
-    sdl: bool = false
   
   while true:
     next(p)
@@ -119,7 +105,6 @@ Invokes the maxmod utility program to generate a soundbank, and produces Nim-fri
       of "sfxdir": sfxdir = p.val
       of "moddir": moddir = p.val
       of "outdir": outdir = p.val
-      of "sdl": sdl = p.val == "" or parseBool(p.val)
       of "h","help": quit(helpMsg, 0)
       else: quit("Unrecognised option '" & p.key & "'\n" & helpMsg)
     of cmdEnd:
@@ -131,5 +116,4 @@ Invokes the maxmod utility program to generate a soundbank, and produces Nim-fri
   if moddir == "": quit("Please specify --moddir\n" & helpMsg, 0)
   if outdir == "": quit("Please specify --outdir\n" & helpMsg, 0)
   
-  mmConvert(script, sfxdir, moddir, outdir, files, sdl)
-
+  mmConvert(script, sfxdir, moddir, outdir, files)

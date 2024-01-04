@@ -48,3 +48,8 @@ proc updateKeys*() =
   # To be called *after* the game logic for this frame?
   prevKeys = currKeys
   currKeys.clear()
+
+proc keyIsDown*(sym: sdl.Keycode): bool =
+  ord(sym) in currKeys
+
+export sdl.Keycode
