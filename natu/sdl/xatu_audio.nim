@@ -33,8 +33,10 @@ type
     of Mod:
       ctx: XmpContext
 
-  # ah fun, to minimize waiting on locks we'll need a command queue I guess
+  # to minimize waiting on locks we use a command queue which
+  # gets processed at the start of each request to fill the buffer
   CommandKind = enum
+    AddSource
     PlaySource
     PauseSource
     CancelSource
@@ -52,10 +54,10 @@ type
   MixerState = object
     spec: sdl.AudioSpec
     lock: Lock
+    commandLock: Lock
     sources {.guard: lock.}: seq[Source]
-    sourcesToDestroy: seq[Source]
-    commandsLock: Lock
-    commands {.guard: commandsLock.}: seq[Command]
+    sourcesToDestroy: seq[Source]   # should only be accessed from the audio thread
+    commands {.guard: commandLock.}: seq[Command]
     xmpBuf: array[BufLen * Channels, int16]
     sampleData: ptr UncheckedArray[float32]
 
@@ -69,7 +71,6 @@ proc handleCommand(m: ptr MixerState; cmd: Command) {.gcsafe.}
 proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; nsamples: int; m: ptr MixerState) =
   case s.kind
   of Wav:
-    # echo (cast[uint](m.sampleData), s.sample.dataStart)
     var data = cast[ptr UncheckedArray[float32]](addr m.sampleData[s.sample.dataStart])
     var pos = s.samplePos
     
@@ -153,13 +154,13 @@ proc fillAudio(udata: pointer; stream: ptr uint8; nbytes: cint) {.cdecl, gcsafe.
   let nsamples = (nbytes div sizeof(float32)) div m.spec.channels
   zeroMem(buf, nbytes)
   withLock m.lock:
-    withLock m.commandsLock:
-      echo (m.commands, m.sources.len)
+    withLock m.commandLock:
       for cmd in m.commands:
         handleCommand(m, cmd)
       m.commands.setLen(0)
     for s in m.sources:
       s.mixInto(buf, nsamples, m)
+    
     for s in m.sourcesToDestroy:
       let i = m.sources.find(s)
       assert(i != -1, "Tried to destroy source that's not in the sources list??")
@@ -169,6 +170,8 @@ proc fillAudio(udata: pointer; stream: ptr uint8; nbytes: cint) {.cdecl, gcsafe.
     m.sourcesToDestroy.setLen(0)
 
 proc openMixer* =
+  initLock(mixer.lock)
+  initLock(mixer.commandLock)
   mixer.spec = sdl.AudioSpec(
     freq: 44100,
     # format: AudioS16,
@@ -184,22 +187,19 @@ proc openMixer* =
 proc closeMixer* =
   discard
 
-proc createSource*(smp: ptr SampleInfo; loop: bool): Source =
+proc createSource(smp: ptr SampleInfo; loop: bool): Source =
   result = createU(SourceObj)
   result[] = SourceObj(
     kind: Wav,
     sample: smp,
     loop: loop
   )
-  # TODO: avoid blocking by storing sources in an add-list which gets copied to the main list 
-  withLock mixer.lock:
-    mixer.sources.add(result)
 
-proc createSource*(path: string; loop: bool): Source =
+proc createSource(path: string; loop: bool): Source =
   result = createU(SourceObj)
   case splitFile(path).ext
   of ".wav":
-    assert(false, "TODO")  # make wav discard itself after the source is done?
+    assert(false, "Loading .wav from filesystem is unsupported. Maybe try playSound instead of playMusic/playJingle.")
     result[] = SourceObj(kind: Wav)
   
   of ".ogg": 
@@ -217,10 +217,6 @@ proc createSource*(path: string; loop: bool): Source =
   
   else:
     doAssert(false, "Unsupported file extension for " & path)
-  
-  # TODO: ditto
-  withLock mixer.lock:
-    mixer.sources.add(result)
 
 proc destroy(m: ptr MixerState; s: Source) {.gcsafe.} =
   m.sourcesToDestroy.add(s)
@@ -281,6 +277,9 @@ proc setPosition(m: ptr MixerState; s: Source; pos: float32) {.gcsafe.} =
 
 proc handleCommand(m: ptr MixerState; cmd: Command) {.gcsafe.} =
   case cmd.kind
+  of AddSource:
+    {.locks: [m.lock].}:  # this is ok because handleCommands is only called within a section where m is locked.
+      m.sources.add(cmd.source)
   of PlaySource: m.play(cmd.source)
   of PauseSource: m.pause(cmd.source)
   of CancelSource: m.cancel(cmd.source)
@@ -299,18 +298,26 @@ proc xatuSetSampleData*(data: pointer) =
   mixer.sampleData = cast[ptr UncheckedArray[float32]](data)
 
 proc xatuCreateSourceFromFile*(f: cstring; loop: bool): NatuSource =
-  createSource($f, loop).NatuSource
+  let s = createSource($f, loop)
+  let c = Command(kind: AddSource, source: s)
+  withLock mixer.commandLock:
+    mixer.commands.add c
+  s.NatuSource
 
 proc xatuCreateSourceFromSample*(smp: ptr SampleInfo): NatuSource =
   let loop = (smp.loopKind == LoopForward)
-  createSource(smp, loop).NatuSource
+  let s = createSource(smp, loop)
+  let c = Command(kind: AddSource, source: s)
+  withLock mixer.commandLock:
+    mixer.commands.add c
+  s.NatuSource
 
 proc xatuDestroySource*(s: NatuSource) =
   let c = Command(
     kind: DestroySource,
     source: cast[Source](s),
   )
-  withLock mixer.commandsLock:
+  withLock mixer.commandLock:
     mixer.commands.add c
 
 proc xatuPlaySource*(s: NatuSource) =
@@ -318,7 +325,7 @@ proc xatuPlaySource*(s: NatuSource) =
     kind: PlaySource,
     source: cast[Source](s),
   )
-  withLock mixer.commandsLock:
+  withLock mixer.commandLock:
     mixer.commands.add c
 
 proc xatuSourceDone*(s: NatuSource): bool =
@@ -329,7 +336,7 @@ proc xatuPauseSource*(s: NatuSource) =
     kind: PauseSource,
     source: cast[Source](s),
   )
-  withLock mixer.commandsLock:
+  withLock mixer.commandLock:
     mixer.commands.add c
 
 proc xatuCancelSource*(s: NatuSource) =
@@ -337,7 +344,7 @@ proc xatuCancelSource*(s: NatuSource) =
     kind: CancelSource,
     source: cast[Source](s),
   )
-  withLock mixer.commandsLock:
+  withLock mixer.commandLock:
     mixer.commands.add c
 
 proc xatuSetSourceRate*(s: NatuSource, rate: float32) =
@@ -346,7 +353,7 @@ proc xatuSetSourceRate*(s: NatuSource, rate: float32) =
     source: cast[Source](s),
     val: rate
   )
-  withLock mixer.commandsLock:
+  withLock mixer.commandLock:
     mixer.commands.add c
 
 proc xatuSetSourceVolume*(s: NatuSource, vol: float32) =
@@ -355,7 +362,7 @@ proc xatuSetSourceVolume*(s: NatuSource, vol: float32) =
     source: cast[Source](s),
     val: vol
   )
-  withLock mixer.commandsLock:
+  withLock mixer.commandLock:
     mixer.commands.add c
 
 proc xatuSetSourcePanning*(s: NatuSource, pan: float32) =
@@ -364,7 +371,7 @@ proc xatuSetSourcePanning*(s: NatuSource, pan: float32) =
     source: cast[Source](s),
     val: pan
   )
-  withLock mixer.commandsLock:
+  withLock mixer.commandLock:
     mixer.commands.add c
 
 proc xatuSetSourcePosition*(s: NatuSource, pos: float32) =
@@ -373,5 +380,5 @@ proc xatuSetSourcePosition*(s: NatuSource, pos: float32) =
     source: cast[Source](s),
     val: pos
   )
-  withLock mixer.commandsLock:
+  withLock mixer.commandLock:
     mixer.commands.add c
