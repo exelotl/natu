@@ -34,9 +34,10 @@ type
     createSourceFromSample*: proc (smp: ptr SampleInfo): NatuSource {.nimcall.}
     createSourceFromFile*: proc (f: cstring; loop: bool): NatuSource {.nimcall.}
     destroySource*: proc (s: NatuSource) {.nimcall.}
+    sourceDone*: proc (s: NatuSource): bool {.nimcall.}
     playSource*: proc (s: NatuSource) {.nimcall.}
     pauseSource*: proc (s: NatuSource) {.nimcall.}
-    stopSource*: proc (s: NatuSource) {.nimcall.}
+    cancelSource*: proc (s: NatuSource) {.nimcall.}
     setSourceRate*: proc (s: NatuSource, rate: float32) {.nimcall.}
     setSourceVolume*: proc (s: NatuSource, vol: float32) {.nimcall.}
     setSourcePanning*: proc (s: NatuSource, pan: float32) {.nimcall.}
