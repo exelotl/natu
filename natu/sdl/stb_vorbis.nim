@@ -2,6 +2,11 @@ type
   Vorbis* = ptr VorbisObj
   VorbisObj = object
   
+  VorbisComment* = object
+    vendor*: cstring
+    commentListLength*: cint
+    commentList*: cstringArray
+  
   VorbisInfo* = object
     sampleRate*: cuint
     channels*: cint
@@ -15,6 +20,7 @@ proc open*(filename: cstring, error: ptr cint, allocBuffer: pointer): Vorbis {.i
 proc open*(data: pointer, len: cint, error: ptr cint, allocBuffer: pointer): Vorbis {.importc: "stb_vorbis_open_memory", noconv.}
 proc close*(f: Vorbis) {.importc: "stb_vorbis_close", noconv.}
 proc getInfo*(f: Vorbis): VorbisInfo {.importc: "stb_vorbis_get_info", noconv.}
+proc getComment*(f: Vorbis): VorbisComment {.importc: "stb_vorbis_get_comment", noconv.}
 proc streamLengthInSamples*(f: Vorbis): cuint {.importc: "stb_vorbis_stream_length_in_samples", noconv.}
 proc getSamplesShortInterleaved*(f: Vorbis, channels: cint, buffer: ptr UncheckedArray[uint16], numShorts: cint): cint {.importc: "stb_vorbis_get_samples_short_interleaved", noconv.}
 proc getSamplesFloatInterleaved*(f: Vorbis, channels: cint, buffer: ptr UncheckedArray[float32], numFloats: cint): cint {.importc: "stb_vorbis_get_samples_float_interleaved", noconv.}

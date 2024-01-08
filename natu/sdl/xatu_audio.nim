@@ -1,4 +1,4 @@
-import std/[random, os, math, locks, atomics]
+import std/[random, os, math, locks, atomics, strutils, strscans]
 import ../private/sdl/appcommon
 import sdl2_nim/sdl
 import ./stb_vorbis
@@ -26,10 +26,12 @@ type
     pan: float32 = 0.0f
     case kind: SourceKind
     of Wav:
-      sample: ptr SampleInfo
       samplePos: float32
+      sample: ptr SampleInfo
     of Ogg:
       vorbis: Vorbis
+      loopStart, loopEnd: int
+      vorbisSamplePos: int
     of Mod:
       ctx: XmpContext
 
@@ -58,17 +60,19 @@ type
     sources {.guard: lock.}: seq[Source]
     sourcesToDestroy: seq[Source]   # should only be accessed from the audio thread
     commands {.guard: commandLock.}: seq[Command]
-    xmpBuf: array[BufLen * Channels, int16]
+    tempBuf: array[BufLen * Channels, float32]
     sampleData: ptr UncheckedArray[float32]
 
 var mixer: MixerState
+initLock(mixer.lock)
+initLock(mixer.commandLock)
 
 proc len*(smp: ptr SampleInfo): int =
   (smp.dataEnd - smp.dataStart).int div smp.channels.int
 
 proc handleCommand(m: ptr MixerState; cmd: Command) {.gcsafe.}
 
-proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; nsamples: int; m: ptr MixerState) =
+proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; numSamples: int; m: ptr MixerState) =
   case s.kind
   of Wav:
     var data = cast[ptr UncheckedArray[float32]](addr m.sampleData[s.sample.dataStart])
@@ -82,7 +86,7 @@ proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; nsamples: int; m: ptr 
       case s.sample.channels
       of 1:
         # looping, mono
-        for i in 0..<nsamples:
+        for i in 0..<numSamples:
           let j = i*2
           let v = data[pos.int]
           dst[j] += v
@@ -92,7 +96,7 @@ proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; nsamples: int; m: ptr 
             pos -= loopLen
       of 2:
         # looping, stereo
-        for i in 0..<nsamples:
+        for i in 0..<numSamples:
           let j = i*2
           let k = (pos.int) * 2
           dst[j] += data[k]
@@ -103,9 +107,9 @@ proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; nsamples: int; m: ptr 
       else:
         echo "Bad channel count ", s.sample.channels
     else:
-      var count = nsamples
+      var count = numSamples
       let remaining = s.sample.len - pos.int
-      if remaining < nsamples:
+      if remaining < numSamples:
         count = remaining
         s.playing = false
         s.done.store(true)
@@ -132,9 +136,34 @@ proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; nsamples: int; m: ptr 
     s.samplePos = pos
   
   of Ogg:
-    discard # TODO
+    let buf = cast[ptr UncheckedArray[float32]](addr m.tempBuf)
+    let numFloats = numSamples * Channels
+    # let posBefore = s.vorbis.getSampleOffset().int  # broken after a seek :(
+    let posBefore = s.vorbisSamplePos
+    let posAfter = posBefore + numSamples
+    if s.loop and posAfter >= s.loopEnd:
+      # loop seam.
+      let lenB = posAfter - s.loopEnd
+      let lenA = numSamples - lenB
+      discard s.vorbis.getSamplesFloatInterleaved(Channels, buf, lenA * Channels)
+      discard s.vorbis.seek(s.loopStart.cuint)
+      let subBuf = cast[ptr UncheckedArray[float32]](addr buf[lenA * Channels])
+      let samplesWritten = s.vorbis.getSamplesFloatInterleaved(Channels, subBuf, lenB * Channels)
+      s.vorbisSamplePos = s.loopStart + samplesWritten
+      for i in 0..<numFloats:
+        dst[i] += buf[i]
+    else:
+      # stream normally
+      let samplesWritten = s.vorbis.getSamplesFloatInterleaved(Channels, buf, numFloats)
+      let floatsWritten = samplesWritten * Channels
+      s.vorbisSamplePos += samplesWritten
+      for i in 0..<floatsWritten:
+        dst[i] += buf[i]
+      if floatsWritten < numFloats:
+        s.playing = false
+  
   of Mod:
-    let buf = addr m.xmpBuf
+    let buf = cast[ptr UncheckedArray[int16]](addr m.tempBuf)  # we put shorts in here because it's big enough and nobody else is using it.'
     let res = s.ctx.playBuffer(
       buffer = buf,
       size = sizeof(buf[]),
@@ -142,7 +171,7 @@ proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; nsamples: int; m: ptr 
     )
     if res < 0:
       s.playing = false
-    for i in 0..<nsamples:
+    for i in 0..<numSamples:
       let j = i*2
       dst[j] += buf[j] / int16.high
       dst[j+1] += buf[j+1] / int16.high
@@ -164,14 +193,19 @@ proc fillAudio(udata: pointer; stream: ptr uint8; nbytes: cint) {.cdecl, gcsafe.
     for s in m.sourcesToDestroy:
       let i = m.sources.find(s)
       assert(i != -1, "Tried to destroy source that's not in the sources list??")
-      if i != -1:
-        m.sources.del(i)
-        dealloc(s)
+      case s.kind
+      of Wav:
+        discard
+      of Ogg:
+        s.vorbis.close()
+      of Mod:
+        xmp.releaseModule(s.ctx)
+        xmp.freeContext(s.ctx)
+      m.sources.del(i)
+      dealloc(s)
     m.sourcesToDestroy.setLen(0)
 
 proc openMixer* =
-  initLock(mixer.lock)
-  initLock(mixer.commandLock)
   mixer.spec = sdl.AudioSpec(
     freq: 44100,
     # format: AudioS16,
@@ -203,8 +237,34 @@ proc createSource(path: string; loop: bool): Source =
     result[] = SourceObj(kind: Wav)
   
   of ".ogg": 
-    assert(false, "TODO")
-    result[] = SourceObj(kind: Ogg)
+    var err: cint
+    let vorbis = stb_vorbis.open(path, addr err, nil)
+    doAssert err == 0, "Failed to open vorbis file " & path & " (error code " & $err & ")"
+    let oggLen = vorbis.streamLengthInSamples().int
+    let comments = vorbis.getComment()
+    var loopStart, loopEnd, loopLen: int
+    for i in 0..<comments.commentListLength:
+      var key: string
+      var num: int
+      if scanf($comments.commentList[i], "$w=$i", key, num):
+        case key
+        of "LOOPSTART", "LOOP_START": loopStart = num
+        of "LOOPEND", "LOOP_END": loopEnd = num
+        of "LOOPLEN", "LOOP_LEN": loopLen = num
+        else: discard
+    if loopEnd == 0:
+      if loopLen > 0: loopEnd = loopStart + loopLen
+      else: loopEnd = oggLen
+    assert(loopStart >= 0)
+    assert(loopEnd >= loopStart)
+    assert(loopEnd <= oggLen)
+    result[] = SourceObj(
+      kind: Ogg,
+      vorbis: vorbis,
+      loopStart: loopStart,
+      loopEnd: loopEnd,
+      loop: loop,
+    )
   
   of ".mod", ".s3m", ".xm", ".it":
     let ctx = xmp.createContext()
@@ -235,10 +295,6 @@ proc play(m: ptr MixerState; s: Source) {.gcsafe.} =
 
 proc pause(m: ptr MixerState; s: Source) {.gcsafe.} =
   s.playing = false
-  case s.kind
-  of Wav: discard
-  of Ogg: discard # TODO
-  of Mod: discard
 
 proc cancel(m: ptr MixerState; s: Source) {.gcsafe.} =
   s.playing = false
