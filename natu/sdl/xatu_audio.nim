@@ -73,6 +73,7 @@ proc len*(smp: ptr SampleInfo): int =
 proc handleCommand(m: ptr MixerState; cmd: Command) {.gcsafe.}
 
 proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; numSamples: int; m: ptr MixerState) =
+  let vol = s.vol
   case s.kind
   of Wav:
     var data = cast[ptr UncheckedArray[float32]](addr m.sampleData[s.sample.dataStart])
@@ -88,7 +89,7 @@ proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; numSamples: int; m: pt
         # looping, mono
         for i in 0..<numSamples:
           let j = i*2
-          let v = data[pos.int]
+          let v = data[pos.int] * vol
           dst[j] += v
           dst[j+1] += v
           pos += rate
@@ -99,8 +100,8 @@ proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; numSamples: int; m: pt
         for i in 0..<numSamples:
           let j = i*2
           let k = (pos.int) * 2
-          dst[j] += data[k]
-          dst[j+1] += data[k+1]
+          dst[j] += data[k] * vol
+          dst[j+1] += data[k+1] * vol
           pos += rate
           if pos >= loopEnd:
             pos -= loopLen
@@ -118,7 +119,7 @@ proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; numSamples: int; m: pt
         # non-looping, mono
         for i in 0..<count:
           let j = i*2
-          let v = data[pos.int]
+          let v = data[pos.int] * vol
           dst[j] += v
           dst[j+1] += v
           pos += rate
@@ -127,8 +128,8 @@ proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; numSamples: int; m: pt
         for i in 0..<count:
           let j = i*2
           let k = (pos.int) * 2
-          dst[j] += data[k]
-          dst[j+1] += data[k+1]
+          dst[j] += data[k] * vol
+          dst[j+1] += data[k+1] * vol
           pos += rate
       else:
         echo "Bad channel count ", s.sample.channels
@@ -151,14 +152,14 @@ proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; numSamples: int; m: pt
       let samplesWritten = s.vorbis.getSamplesFloatInterleaved(Channels, subBuf, lenB * Channels)
       s.vorbisSamplePos = s.loopStart + samplesWritten
       for i in 0..<numFloats:
-        dst[i] += buf[i]
+        dst[i] += buf[i] * vol
     else:
       # stream normally
       let samplesWritten = s.vorbis.getSamplesFloatInterleaved(Channels, buf, numFloats)
       let floatsWritten = samplesWritten * Channels
       s.vorbisSamplePos += samplesWritten
       for i in 0..<floatsWritten:
-        dst[i] += buf[i]
+        dst[i] += buf[i] * vol
       if floatsWritten < numFloats:
         s.playing = false
   
@@ -173,8 +174,8 @@ proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; numSamples: int; m: pt
       s.playing = false
     for i in 0..<numSamples:
       let j = i*2
-      dst[j] += buf[j] / int16.high
-      dst[j+1] += buf[j+1] / int16.high
+      dst[j] += (buf[j] / int16.high) * vol
+      dst[j+1] += (buf[j+1] / int16.high) * vol
 
 
 proc fillAudio(udata: pointer; stream: ptr uint8; nbytes: cint) {.cdecl, gcsafe.} =
@@ -313,10 +314,6 @@ proc setRate(m: ptr MixerState; s: Source; rate: float32) {.gcsafe.} =
 
 proc setVolume(m: ptr MixerState; s: Source; vol: float32) {.gcsafe.} =
   s.vol = vol
-  case s.kind
-  of Wav: discard
-  of Ogg: discard # TODO
-  of Mod: discard # TODO
 
 proc setPanning(m: ptr MixerState; s: Source; pan: float32) {.gcsafe.} =
   s.pan = pan
