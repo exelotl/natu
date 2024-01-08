@@ -327,9 +327,16 @@ proc setPanning(m: ptr MixerState; s: Source; pan: float32) {.gcsafe.} =
 
 proc setPosition(m: ptr MixerState; s: Source; pos: float32) {.gcsafe.} =
   case s.kind
-  of Wav: discard # TODO - set to position in seconds
-  of Ogg: discard # TODO - seek to seconds
-  of Mod: discard # TODO - jump to order
+  of Wav:
+    s.samplePos = pos * m.spec.freq.float32
+  
+  of Ogg:
+    let info = s.vorbis.getInfo()
+    s.vorbisSamplePos = int(pos * info.sampleRate.float32).clamp(0, s.loopEnd)
+    discard s.vorbis.seek(s.vorbisSamplePos.cuint)
+  
+  of Mod:
+    discard s.ctx.setPosition(pos.cint)  # jump to order
 
 proc handleCommand(m: ptr MixerState; cmd: Command) {.gcsafe.} =
   case cmd.kind
