@@ -8,9 +8,14 @@ const natuPlatform* {.strdefine.} = "gba"
 
 const natuOutputDir* {.strdefine.} = ""
 const natuConfigDir* {.strdefine.} = ""
+const natuSharedDir* {.strdefine.} = ""
 
 when natuOutputDir == "": {.error: "natuOutputDir is not set.".}
 when natuConfigDir == "": {.error: "natuConfigDir is not set.".}
+when natuSharedDir == "": {.error: "natuSharedDir is not set.".}
 
 template doInclude*(path: static string) =
   include `path`
+
+template doImport*(path: static string) =
+  import `path`
