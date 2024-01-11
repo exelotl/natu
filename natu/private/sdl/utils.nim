@@ -32,7 +32,7 @@ proc memcpy16*(dst: pointer, src: pointer, hwcount: SomeInteger) =
   memcpy16_impl(dst, src, hwcount.cuint)
 proc memcpy32*(dst: pointer, src: pointer, wcount: SomeInteger) =
   memcpy32_impl(dst, src, wcount.cuint)
-proc memset32*(dst: pointer, w: uint32, wcount: SomeInteger) =
-  memset32_impl(dst, w, wcount.cuint)
+proc memset32*(dst: pointer, wd: uint32, wcount: SomeInteger) =
+  memset32_impl(dst, wd, wcount.cuint)
 proc memset16*(dst: pointer, hw: uint16, hwcount: SomeInteger) =
   memset16_impl(dst, hw, hwcount.cuint)
