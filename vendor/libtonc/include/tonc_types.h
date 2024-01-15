@@ -44,6 +44,15 @@
 //     // code 
 // }
 
+#ifdef NON_GBA_TARGET
+
+#define IWRAM_DATA
+#define EWRAM_DATA
+#define EWRAM_BSS
+#define IWRAM_CODE
+#define EWRAM_CODE
+
+#else
 
 //! Put variable in IWRAM (default).
 #define IWRAM_DATA __attribute__((section(".iwram")))
@@ -59,6 +68,8 @@
 
 //! Put function in EWRAM.
 #define EWRAM_CODE __attribute__((section(".ewram"), long_call))
+
+#endif
 
 //! Force a variable to an \a n-byte boundary
 #define ALIGN(n)	__attribute__((aligned(n)))
