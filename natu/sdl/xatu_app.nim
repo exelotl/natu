@@ -61,12 +61,14 @@ proc vidWritePalMem* =
 
 # import std/strutils
 
-proc vidDraw* =
+proc vidDraw*(fn: proc () {.nimcall.}) =
   vidWritePalMem()
   
   let dispstat = cast[ptr GBARegisterDISPSTAT](addr mem.regs[GBA_REG_DISPSTAT shr 1])
   
   dispstat[].inVblank = true
+  
+  fn() # do draw
   
   for i in 0 ..< natuVideoVerticalPixels.int:
     swr.oamDirty = true
@@ -135,6 +137,7 @@ const
 type
   App* = ref AppObj
   AppObj = object
+    onUpdate, onDraw: proc(){.nimcall.}
     window*: sdl.Window # Window pointer
     renderer*: sdl.Renderer # Rendering state pointer
     texture*: sdl.Texture
@@ -150,9 +153,12 @@ template check(res: pointer) =
   doAssert res != nil, "Err = " & $sdl.getError()
 
 
-proc start*(app: App; lcdW, lcdH: int) =
+proc start*(app: App; lcdW, lcdH: int; onUpdate, onDraw: proc(){.nimcall.}) =
   
   assert(not app.running)
+  
+  app.onUpdate = onUpdate
+  app.onDraw = onDraw
   
   check sdl.init(sdl.InitVideo or sdl.InitAudio)
   
@@ -197,9 +203,12 @@ proc start*(app: App; lcdW, lcdH: int) =
   check sdl.lockTexture(app.texture, nil, addr buffer, addr pitch)
   vidStart(pitch, buffer)
 
+proc update*(app: App) =
+  app.onUpdate()
+  updateMixer()  # increment frame counter
 
 proc draw*(app: App) =
-  vidDraw()
+  vidDraw(app.onDraw)
   sdl.unlockTexture(app.texture)
   # for i in 0..<10:
   check sdl.renderCopy(app.renderer, app.texture, nil, nil)

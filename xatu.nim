@@ -35,11 +35,11 @@ loadNatuGame(sharedlib)
 
 let (w, h) = natuAppGetLcdSize()
 let app = App()
-app.start(w, h)
+app.start(w, h, natuAppUpdate, natuAppDraw)  # TODO: remove natuAppDraw and just have it fire a vblank irq instead
 assert(app.running)
 
 proc xatuPanic(msg1, msg2: cstring) {.exportc.} =
-  raise newException(Exception, "Panic!\n" & $msg1 & "\n" & $msg2)
+  raise newException(Exception, "\e[1;31mPanic!\n" & $msg1 & "\n" & $msg2 & "\e[0m")
 
 mem.panic = xatuPanic
 mem.setSampleData = xatuSetSampleData
@@ -52,6 +52,7 @@ mem.pauseSource = xatuPauseSource
 mem.cancelSource = xatuCancelSource
 mem.setSourceRate = xatuSetSourceRate
 mem.setSourceVolume = xatuSetSourceVolume
+mem.setSourcePanning = xatuSetSourcePanning
 mem.setSourcePosition = xatuSetSourcePosition
 
 natuAppInit(addr mem)
@@ -62,8 +63,7 @@ while app.running:
   if app.renderer.renderClear() != 0:
     sdl.logWarn(sdl.LogCategoryVideo, "Can't clear screen: %s", sdl.getError())
   
-  natuAppUpdate()
-  natuAppDraw()
+  app.update()
   app.draw()
   app.handleEvents()
 
