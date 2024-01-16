@@ -26,7 +26,7 @@ type
     done: Atomic[bool]      # end of playback has been reached - may be checked at any time
     rateMul: float32 = 1.0f
     vol: float32 = 1.0f
-    pan: float32 = 0.0f
+    pan: float32 = 0.5f     # may wanna change this to -1..1 internally?
     case kind: SourceKind
     of Wav:
       samplePos: float32
@@ -82,7 +82,13 @@ proc len*(smp: ptr SampleInfo): int =
 proc handleCommand(m: ptr MixerState; cmd: Command) {.gcsafe, raises: [].}
 
 proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; numSamples: int; m: ptr MixerState) =
+  
+  # maxmod-style (6db panning law, kinda oof but works for us I guess)
+  # note: if we want better panning, 10 ^ (x_db / 20) calculates gain
   let vol = s.vol
+  var volL = vol * (1f - s.pan)
+  var volR = vol * (s.pan)
+  
   case s.kind
   of Wav:
     var data = cast[ptr UncheckedArray[float32]](addr m.sampleData[s.sample.dataStart])
@@ -98,9 +104,8 @@ proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; numSamples: int; m: pt
         # looping, mono
         for i in 0..<numSamples:
           let j = i*2
-          let v = data[pos.int] * vol
-          dst[j] += v
-          dst[j+1] += v
+          dst[j] += data[pos.int] * volL
+          dst[j+1] += data[pos.int] * volR
           pos += rate
           if pos >= loopEnd:
             pos -= loopLen
@@ -109,8 +114,8 @@ proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; numSamples: int; m: pt
         for i in 0..<numSamples:
           let j = i*2
           let k = (pos.int) * 2
-          dst[j] += data[k] * vol
-          dst[j+1] += data[k+1] * vol
+          dst[j] += data[k] * volL
+          dst[j+1] += data[k+1] * volR
           pos += rate
           if pos >= loopEnd:
             pos -= loopLen
@@ -128,17 +133,16 @@ proc mixInto(s: Source; dst: ptr UncheckedArray[float32]; numSamples: int; m: pt
         # non-looping, mono
         for i in 0..<count:
           let j = i*2
-          let v = data[pos.int] * vol
-          dst[j] += v
-          dst[j+1] += v
+          dst[j] += data[pos.int] * volL
+          dst[j+1] += data[pos.int] * volR
           pos += rate
       of 2:
         # non-looping, stereo
         for i in 0..<count:
           let j = i*2
           let k = (pos.int) * 2
-          dst[j] += data[k] * vol
-          dst[j+1] += data[k+1] * vol
+          dst[j] += data[k] * volL
+          dst[j+1] += data[k+1] * volR
           pos += rate
       else:
         echo "Bad channel count ", s.sample.channels
