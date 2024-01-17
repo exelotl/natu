@@ -71,7 +71,7 @@ void chr4r_drawg_b1cts(uint gid)
 			}
 			dstL++;
 
-			if( ((u32)dstL)%32 == 0 )
+			if( ((uintptr_t)dstL)%32 == 0 )
 				dstL += dstP;
 		}
 	}

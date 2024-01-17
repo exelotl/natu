@@ -28,8 +28,8 @@ void bm8_hline(u8 *dst, int width, u8 clrid)
 {
 	// TODO: add normalization
 
-	u16 *phw= (u16*)((u32)dst&~1);
-	if( (u32)dst&1 )
+	u16 *phw= (u16*)((uintptr_t)dst&~1);
+	if( (uintptr_t)dst&1 )
 	{
 		*phw= (*phw & 0xFF) + (clrid<<8);
 		width--;	phw++;
@@ -50,9 +50,9 @@ void bm8_hline(u8 *dst, int width, u8 clrid)
 */
 void bm8_vline(u8 *dst, int height, u8 clrid, int pitch)
 {
-	u16 *phw= (u16*)((u32)dst&~1);
+	u16 *phw= (u16*)((uintptr_t)dst&~1);
 	pitch >>= 1;
-	if( (u32)dst&1 )
+	if( (uintptr_t)dst&1 )
 	{
 		while(height--)
 		{	*phw= (*phw& 0xFF) + (clrid<<8);	phw += pitch;	}
@@ -77,9 +77,9 @@ void bm8_rect(u8 *dst, int width, int height, u8 clrid, int pitch)
 	int h;
 	u16 *dst16, pxl;
 	pitch >>= 1;
-	if( (u32)dst&1 )	// crap, unaligned pixel on left
+	if( (uintptr_t)dst&1 )	// crap, unaligned pixel on left
 	{
-		dst16= (u16*)((u32)dst&~1);
+		dst16= (u16*)((uintptr_t)dst&~1);
 		h= height;
 		while(h--)
 		{	*dst16= (*dst16&0xFF)|(clrid<<8);	dst16 += pitch;	}
@@ -126,7 +126,7 @@ void bm8_frame(u8 *dst, int width, int height, u8 clrid, int pitch)
 	bm8_vline(dst, height, clrid, pitch);
 	bm8_vline(&dst[width-1], height, clrid, pitch);
 
-	if((u32)dst&1)
+	if((uintptr_t)dst&1)
 	{	dst++;	width--;	}
 	width >>= 1;
 	if(width==0)

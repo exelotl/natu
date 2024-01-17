@@ -171,7 +171,7 @@ void sbmp8_line(const TSurface *dst, int x1, int y1, int x2, int y2, u32 clr)
 
 	int ii, dx, dy, xstep, ystep, dd;
 	uint dstP= dst->pitch;
-	u32 addr= (u32)(dst->data + y1*dstP + x1), mask= 255;
+	uintptr_t addr= (uintptr_t)(dst->data + y1*dstP + x1), mask= 255;
 	u16 *dstL;
 
 	clr &= mask;

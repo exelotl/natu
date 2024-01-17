@@ -70,7 +70,7 @@ void *tonccpy(void *dst, const void *src, uint size)
 	u8  *src8;		// byte source
 
 	// Ideal case: copy by 4x words. Leaves tail for later.
-	if( ((u32)src|(u32)dst)%4==0 && size>=4)
+	if( ((uintptr_t)src|(uintptr_t)dst)%4==0 && size>=4)
 	{
 		u32 *src32= (u32*)src, *dst32= (u32*)dst;
 
@@ -97,7 +97,7 @@ void *tonccpy(void *dst, const void *src, uint size)
 	}
 	else		// Unaligned.
 	{
-		uint dstOfs= (u32)dst&1;
+		uint dstOfs= (uintptr_t)dst&1;
 		src8= (u8*)src;
 		dst16= (u16*)(dst-dstOfs);
 
@@ -143,7 +143,7 @@ void *__toncset(void *dst, u32 fill, uint size)
 	if(dst==NULL || size==0)
 		return dst;
 
-	uint left= (u32)dst&3;
+	uint left= (uintptr_t)dst&3;
 	u32 *dst32= (u32*)(dst-left);
 	u32 count, mask;
 
