@@ -27,12 +27,11 @@ proc mixConvert*(script, sfxdir, moddir, outdir: string, files: seq[string]) =
   var sfxFilePaths, modFilePaths, sfxList, modList: seq[string]
   var sfxInfo: seq[SampleInfo]
   
-  let outputBinPath = outdir / "sdl_soundbank.bin"
   let outputNimPath = outdir / "sdl_soundbank.nim"
   let outputCPath = outdir / "sdl_soundbank.c"
   
   var newestModifiedIn = getLastModificationTime(script)
-  var oldestModifiedOut = oldest(outputBinPath, outputNimPath, outputCPath)
+  var oldestModifiedOut = oldest(outputNimPath, outputCPath)
   
   # collate and check modification dates of input files
   
