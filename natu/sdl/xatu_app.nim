@@ -62,13 +62,14 @@ proc vidWritePalMem* =
 # import std/strutils
 
 proc vidDraw*(fn: proc () {.nimcall.}) =
-  vidWritePalMem()
   
   let dispstat = cast[ptr GBARegisterDISPSTAT](addr mem.regs[GBA_REG_DISPSTAT shr 1])
   
   dispstat[].inVblank = true
   
   fn() # do draw
+  
+  vidWritePalMem()
   
   for i in 0 ..< natuVideoVerticalPixels.int:
     swr.oamDirty = true
