@@ -51,7 +51,7 @@ export
   `[]=`,
   toArray
 
-export ObjAttr, ObjAffine, ObjAttrPtr, ObjAffinePtr
+export ObjAttr, ObjAffine, ObjAttrPtr, ObjAffinePtr, OamInt, OamUint
 
 # Constants
 # ---------

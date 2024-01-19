@@ -156,8 +156,8 @@ allowUnboundedAccess(UnboundedCharblock8, 256, Tile8)
 when natuPlatform == "gba":
   
   type
-    OAMuint* = uint16
-    OAMint* = int16
+    OamUint* = uint16
+    OamInt* = int16
     
     ObjAttr* {.importc: "OBJ_ATTR", header: "tonc_types.h", bycopy, completeStruct.} = object
       ## Object attributes. i.e. a sprite.
