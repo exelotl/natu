@@ -37,7 +37,11 @@ void chr4r_drawg_b1cts(uint gid)
 	u32 lsl= 4*x, lsr= 32-4*x, right= x+charW;
 
 	// Inner loop vars
+#ifdef NON_GBA_TARGET
+	u64 px, pxmask, raw;  // workaround for >>32 (UB) producing bad results on x86
+#else
 	u32 px, pxmask, raw;
+#endif
 	u32 ink= tc->cattr[TTE_INK];
 	const u32 mask= 0x01010101;
 
