@@ -4,6 +4,7 @@ import ./natu/private/sdl/appcommon
 import ./natu/sdl/xatu_app
 import ./natu/sdl/xatu_audio
 import ./natu/sdl/xatu_loader
+import ./natu/sdl/xatu_input
 
 const helpMsg = """
 Runner for natu PC games.
@@ -57,14 +58,22 @@ mem.setSourcePosition = xatuSetSourcePosition
 
 natuAppInit(addr mem)
 
+var paused = false
+
 while app.running:
   
-  # Clear screen with draw color
-  if app.renderer.renderClear() != 0:
-    sdl.logWarn(sdl.LogCategoryVideo, "Can't clear screen: %s", sdl.getError())
+  if keyJustPressed(K_P):
+    paused = not paused
   
-  app.update()
-  app.draw()
+  if (not paused) or keyJustPressed(K_N):
+    # Clear screen with draw color
+    if app.renderer.renderClear() != 0:
+      sdl.logWarn(sdl.LogCategoryVideo, "Can't clear screen: %s", sdl.getError())
+    
+    app.update()
+    app.draw()
+  else:
+    sdl.delay(50)
   app.handleEvents()
 
 app.exit()

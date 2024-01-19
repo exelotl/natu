@@ -52,4 +52,7 @@ proc updateKeys*() =
 proc keyIsDown*(sym: sdl.Keycode): bool =
   ord(sym) in currKeys
 
+proc keyJustPressed*(sym: sdl.Keycode): bool =
+  ord(sym) in currKeys and ord(sym) notin prevKeys
+
 export sdl.Keycode

@@ -228,6 +228,8 @@ proc exit*(app: App) =
 proc handleEvents*(app: App) =
   var e: sdl.Event
   
+  updateKeys()
+  
   while sdl.pollEvent(addr(e)) != 0:
     
     # Quit requested
@@ -249,4 +251,3 @@ proc handleEvents*(app: App) =
       releaseKey(e.key)
   
   mem.regs[GBA_REG_KEYINPUT shr 1] = not cast[uint16](gbaKeys)
-  updateKeys()
