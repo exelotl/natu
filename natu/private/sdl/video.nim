@@ -8,7 +8,7 @@ template dispstat*: DispStat = cast[ptr DispStat](addr natuMem.regs[0x04 shr 1])
 template vcount*: uint16     = cast[ptr uint16](addr natuMem.regs[0x06 shr 1])[]
 template bgcnt*: array[4, BgCnt] = cast[ptr array[4, BgCnt]](addr natuMem.regs[0x08 shr 1])[]
 template bgofs*: array[4, BgOfs] = cast[ptr array[4, BgOfs]](addr natuMem.regs[0x10 shr 1])[]
-template bgaff*: array[4, BgAffine] = cast[ptr array[2..3, BgAffine]](addr natuMem.regs[0x20 shr 1])[]
+template bgaff*: array[2..3, BgAffine] = cast[ptr array[2..3, BgAffine]](addr natuMem.regs[0x20 shr 1])[]
 
 template winh*: array[2, WinH] = cast[ptr array[2, WinH]](addr natuMem.regs[0x040 shr 1])[]
 template winv*: array[2, WinV] = cast[ptr array[2, WinV]](addr natuMem.regs[0x048 shr 1])[]
