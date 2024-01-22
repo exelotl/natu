@@ -312,8 +312,7 @@ void * natuGetBgPalMem(void);
 #else
 
 #ifndef __ASM__
-#include <assert.h>
-static_assert(sizeof(uintptr_t) == 4, "Wrong pointer size for GBA target.");
+_Static_assert(sizeof(uintptr_t) == 4, "Wrong pointer size for GBA target.");
 #endif
 
 /*!	\defgroup grpReg	IO Registers	*/
