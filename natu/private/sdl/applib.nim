@@ -25,3 +25,8 @@ proc natuAppUpdate*() {.exportc, dynlib.} =
   
 proc natuAppDraw*() {.exportc, dynlib.} =
   natuDraw()
+
+proc natuGetSeMem*: pointer {.exportc.} = addr natuMem.vram
+proc natuGetTileMem*: pointer {.exportc.} = addr natuMem.vram
+proc natuGetRegBase*: uint {.exportc.} = cast[uint](addr natuMem.regs)
+proc natuGetBgPalMem*: pointer {.exportc.} = addr natuMem.palram

@@ -120,9 +120,8 @@ proc gbaCfg* =
 
 proc sdlCfg*(w, h: int) =
   echo "Building for PC."
-  switch "cincludes", natuDir/"vendor/libtonc/include"
-  switch "passC", "-fPIC"
-  put "gcc.options.always", "-DNON_GBA_TARGET -O0 -g -Wno-unused-variable -Wno-unused-but-set-variable -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-stringop-overflow"
+  switch "passC", "-fPIC -DNON_GBA_TARGET"
+  # put "gcc.options.always", " -O0 -g -Wno-unused-variable -Wno-unused-but-set-variable -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-stringop-overflow"
   switch "define", "natuLcdWidth:" & $w
   switch "define", "natuLcdHeight:" & $h
   switch "passL", "-lm"

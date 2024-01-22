@@ -49,7 +49,9 @@ when natuPlatform == "gba":
     ## Note: `size` is the number of bytes
 
 elif natuPlatform == "sdl":
-  discard
+  
+  proc dmaCpy*(dst: pointer; src: pointer; count: SomeInteger; ch: uint; mode: uint32) {.deprecated.} =
+    discard
 
 else:
   {.error: "Unknown platform " & natuPlatform.}

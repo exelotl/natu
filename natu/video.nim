@@ -1133,5 +1133,10 @@ proc setWindow*(winId: range[0..1]; bounds: Rect) {.inline.} =
   winv[winId] = WinV(bottom: bounds.bottom.clamp(0, ScreenHeight).uint8, top: bounds.top.clamp(0, ScreenHeight).uint8)
 
 proc busyWaitForVBlank* {.inline.} =
-  while vcount >= 160: discard
-  while vcount < 160: discard
+  when natuPlatform == "gba":
+    while vcount >= 160: discard
+    while vcount < 160: discard
+  elif natuPlatform == "sdl":
+    echo "busyWaitForVBlank()"
+  else:
+    {.error: "busyWaitForVBlank not implemented".}
