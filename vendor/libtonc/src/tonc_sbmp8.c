@@ -28,7 +28,11 @@ void sbmp8_floodfill_internal(const TSurface *dst, int x, int y,
 EWRAM_DATA TSurface m4_surface= 
 {
 	(u8*)m4_mem, M4_WIDTH, M4_WIDTH, M4_HEIGHT, SRF_BMP8, 8, 
+#ifdef NON_GBA_TARGET
+	256, NULL // set upon natuAppInit
+#else
 	256, pal_bg_mem
+#endif
 };
 
 const TSurfaceProcTab bmp8_tab= 
