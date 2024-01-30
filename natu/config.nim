@@ -137,6 +137,8 @@ proc sdlCfg*(w, h: int) =
   switch "stackTrace", "off"
   switch "excessiveStackTrace", "off"
   patchFile("stdlib", "fatal", natuDir/"natu/private/fatal")
+  when defined(windows):
+    patchFile("stdlib", "dynlib", natuDir/"natu/private/win/dynlib")
 
 proc gbaStrip*(elfFile, gbaFile: string) =
   ## Invoke objcopy to create a raw binary file (all debug symbols removed)
