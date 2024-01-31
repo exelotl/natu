@@ -121,21 +121,21 @@ template `shl`*[F: FixedT, I: SomeInteger](a: F, b: I): F = F(raw(a) shl b)
 
 {.push inline.}
 
-func flr*(n: FixedT): int =
+func flr*(n: FixedT): cint =
   ## Convert a fixed-point number to an integer, always rounding down.
-  n.int shr getShift(typeof(n))
+  n.cint shr getShift(typeof(n))
 
-func ceil*(n: FixedT): int =
+func ceil*(n: FixedT): cint =
   ## Convert a fixed-point number to an integer, always rounding up.
-  (n.int + (getScale(typeof(n)) - 1)) shr getShift(typeof(n))
+  (n.cint + (getScale(typeof(n)) - 1)) shr getShift(typeof(n))
 
-func sgn*(x: FixedT): int =
+func sgn*(x: FixedT): cint =
   ## Get the sign of a fixed-point number.
   ## 
   ## Returns `-1` when `x` is negative, `1` when `x` is positive, or `0` when `x` is `0`.
   sgn(x.raw)
 
-func sgn2*(x: SomeNumber|FixedT): int =
+func sgn2*(x: SomeNumber|FixedT): cint =
   ## Returns `1` or `-1` depending on the sign of `x`.
   ##
   ## Note: This never returns `0`. Use `sgn` if you want something that does.
@@ -226,7 +226,7 @@ func luLerp*[A: SomeInteger|FixedT, F: FixedT](lut: openArray[A]; x: F): A {.inl
 type
   Vec2i* {.bycopy.} = object
     ## Integer 2D vector/point type
-    x*, y*: int
+    x*, y*: cint
     
   Vec2f* {.bycopy.} = object
     ## Fixed-point `24:8` 2D vector/point type
