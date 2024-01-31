@@ -278,7 +278,7 @@ proc rand*[T:Ordinal](a, b: T): T =
   ## 
   ## .. note::
   ##    `a - b` must be less than `2^16`, to avoid overflow.
-  T(rand(uint32(b) - uint32(a)) + uint32(a))
+  T(int32(rand(uint32(b) - uint32(a)) + uint32(a)))
 
 proc rand*[T:Ordinal](s: Slice[T]): T =
   ## Get a random value from a slice.
