@@ -27,8 +27,7 @@ template bldy*: BlendBrightness = cast[ptr BlendBrightness](addr natuMem.regs[0x
 # Memory mapped arrays
 # --------------------
 
-const CbSize = 0x4000
-const PageSize = 0x0A000
+const PageSize = 0x0A000  # muffin (for mode 4)
 
 template bgColorMem*: array[256, Color]             = cast[ptr array[256, Color]](addr natuMem.palram)[]
 template bgPalMem*: array[16, Palette]              = cast[ptr array[16, Palette]](addr natuMem.palram)[]
@@ -36,9 +35,9 @@ template objColorMem*: array[256, Color]            = cast[ptr array[256, Color]
 template objPalMem*: array[16, Palette]             = cast[ptr array[16, Palette]](addr natuMem.palram[256])[]
 template bgTileMem*: array[4, UnboundedCharblock]   = cast[ptr array[4, UnboundedCharblock]](addr natuMem.vram)[]
 template bgTileMem8*: array[4, UnboundedCharblock8] = cast[ptr array[4, UnboundedCharblock8]](addr natuMem.vram)[]
-template objTileMem*: array[1024, Tile]             = cast[ptr array[1024, Tile]](addr natuMem.vram[CbSize*4 div 2])[]
-template objTileMem8*: array[512, Tile8]            = cast[ptr array[512, Tile8]](addr natuMem.vram[CbSize*4 div 2])[]
-template seMem*: array[32, Screenblock]             = cast[ptr array[32, Screenblock]](addr natuMem.vram)[]
+template objTileMem*: array[1024, Tile]             = cast[ptr array[1024, Tile]](addr natuMem.vram[NatuCbLen*4])[]
+template objTileMem8*: array[512, Tile8]            = cast[ptr array[512, Tile8]](addr natuMem.vram[NatuCbLen*4])[]
+template seMem*: array[32, Screenblock]             = cast[ptr array[32, Screenblock]](addr natuMem.vram[NatuSbStart])[]
 template vidMem*: array[240*160, Color]             = cast[ptr array[240*160, Color]](addr natuMem.vram)[]
 template m3Mem*: array[160, M3Line]                 = cast[ptr array[160, M3Line]](addr natuMem.vram)[]
 template m4Mem*: array[160, M4Line]                 = cast[ptr array[160, M4Line]](addr natuMem.vram)[]

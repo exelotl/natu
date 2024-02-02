@@ -51,15 +51,15 @@ void * natuGetBgPalMem(void);
 #define EWRAM_SIZE	0x40000
 #define IWRAM_SIZE	0x08000
 #define PAL_SIZE	0x00400
-#define VRAM_SIZE	0x18000
+#define VRAM_SIZE	(NATU_VRAM_LEN*sizeof(u16))
 #define OAM_SIZE	0x00400
 #define SRAM_SIZE	0x10000
 
 #define PAL_BG_SIZE		0x00200		//!< BG palette size
 #define PAL_OBJ_SIZE	0x00200		//!< Object palette size
-#define CBB_SIZE		0x04000		//!< Charblock size
+#define CBB_SIZE		(NATU_CB_LEN*sizeof(u16))
 #define SBB_SIZE		0x00800		//!< Screenblock size
-#define VRAM_BG_SIZE	0x10000		//!< BG VRAM size
+#define VRAM_BG_SIZE	(NATU_CB_LEN*sizeof(u16)*4)
 #define VRAM_OBJ_SIZE	0x08000		//!< Object VRAM size
 #define M3_SIZE			0x12C00		//!< Mode 3 buffer size
 #define M4_SIZE			0x09600		//!< Mode 4 buffer size

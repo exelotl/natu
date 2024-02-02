@@ -1,4 +1,5 @@
 import ./common
+import ./sdl/appcommon
 
 # static:
 #   # Make sure we're actually compiling for a 32-bit system.
@@ -132,9 +133,21 @@ proc `[]`*(a: var Screenblock; x, y: int): var ScrEntry {.inline.} =
 proc `[]=`*(a: var Screenblock; x, y: int; v: ScrEntry) {.inline.} =
   cast[ptr array[1024, ScrEntry]](addr a)[x + y*32] = v
 
-type
-  UnboundedCharblock* {.borrow:`.`.} = distinct array[512, Tile]
-  UnboundedCharblock8* {.borrow:`.`.} = distinct array[256, Tile8]
+when natuPlatform == "gba":
+  type
+    UnboundedCharblock* {.borrow:`.`.} = distinct array[512, Tile]
+    UnboundedCharblock8* {.borrow:`.`.} = distinct array[256, Tile8]
+
+elif natuPlatform == "sdl":
+  type
+    UnboundedCharblock* {.borrow:`.`.} = distinct array[1024, Tile]
+    UnboundedCharblock8* {.borrow:`.`.} = distinct array[512, Tile8]
+  
+  static:
+    doAssert(sizeof(UnboundedCharblock) == NatuCbLen*sizeof(uint16))
+
+else:
+  {.error: "Unknown platform " & natuPlatform.}
 
 template allowUnboundedAccess(A: typedesc, Len:static[int], T: typedesc) =
   {.push inline.}

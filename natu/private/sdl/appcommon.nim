@@ -1,11 +1,33 @@
-# import ./mgbavid
-
 type
   NatuSource* {.borrow.} = distinct pointer
     ## A thing that emits audio
 
 proc `==`*(a, b: NatuSource): bool {.borrow.}
 proc isNil*(a: NatuSource): bool {.borrow.}
+
+
+#[
+  On GBA:
+                 ---------------BG-VRAM-------------- ---OBJ-VRAM----
+  Charblocks:   | 0 (16K) |   1    |   2    |   3    |   4   |   5   |
+  Screenblocks: |  0..7   |  8..15 | 16..23 | 24..31 |       |       |
+  
+  On PC:
+                 -----------------BG-TILE-VRAM------------------ -------OBJ-VRAM-------- ----------BG-MAP-VRAM-----------
+  Charblocks:   |  0 (32K)  |     1     |     2     |     3     |     4     |     5     | unused ...   ..    ..    ..    |
+  Screenblocks: | unused...   ..    ..    ..     ..      ..     |  ..    ..    ..       | 0..7 | 8..15 | 16..23 | 24..31 | 
+  
+]#
+
+const NatuCbLen* = 8192*2  # twice as big as normal
+const NatuSbLen* = 1024
+const NatuSbStart* = NatuCbLen*6
+const NatuVramLen* = NatuCbLen*6 + NatuSbLen*32
+
+{.passC: "-DNATU_CB_LEN=" & $NatuCbLen.}
+{.passC: "-DNATU_SB_LEN=" & $NatuSbLen.}
+{.passC: "-DNATU_SB_START=" & $NatuSbStart.}
+{.passC: "-DNATU_VRAM_LEN=" & $NatuVramLen.}
 
 type
   LoopKind* = enum
@@ -25,7 +47,7 @@ type
   NatuAppMem* = object
     regs*: array[0x200, uint16]
     palram*: array[512, uint16]
-    vram*: array[0xC000, uint16]
+    vram*: array[NatuVramLen, uint16]
     oam*: array[512, uint32]
     
     # api:

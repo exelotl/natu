@@ -5,6 +5,13 @@ import types
 
 {.pragma: tonc, header: "tonc_memmap.h".}
 
+
+import ./common
+
+when natuPlatform == "sdl":
+  import ./sdl/appcommon
+
+
 # Main sections
 const
   MEM_EWRAM*:uint32 = 0x02000000  ## External work RAM
@@ -21,7 +28,8 @@ const
   EWRAM_SIZE*:uint32 = 0x40000
   IWRAM_SIZE*:uint32 = 0x08000
   PAL_SIZE*:uint32   = 0x00400
-  VRAM_SIZE*:uint32  = 0x18000
+  VRAM_SIZE*:uint32  = when defined(gba): 0x18000'u32
+                       else: (NatuVramLen*sizeof(uint16)).uint32
   OAM_SIZE*:uint32   = 0x00400
   SRAM_SIZE*:uint32  = 0x10000
 
@@ -29,9 +37,11 @@ const
 const
   PAL_BG_SIZE*:uint32    = 0x00200  ## BG palette size
   PAL_OBJ_SIZE*:uint32   = 0x00200  ## Object palette size
-  CBB_SIZE*:uint32       = 0x04000  ## Charblock size (single)
+  CBB_SIZE*:uint32       = when defined(gba): 0x04000'u32
+                           else: (NatuCbLen*sizeof(uint16)).uint32  # Charblock size (single)
   SBB_SIZE*:uint32       = 0x00800  ## Screenblock size (single)
-  VRAM_BG_SIZE*:uint32   = 0x10000  ## BG VRAM size
+  VRAM_BG_SIZE*:uint32   = when defined(gba): 0x10000'u32
+                           else: (NatuCbLen*sizeof(uint16)*4).uint32  # BG VRAM size  (tiles only)
   VRAM_OBJ_SIZE*:uint32  = 0x08000  ## Object VRAM size
   M3_SIZE*:uint32        = 0x12C00  ## Mode 3 buffer size
   M4_SIZE*:uint32        = 0x09600  ## Mode 4 buffer size
