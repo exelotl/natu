@@ -2,7 +2,9 @@
 ## 
 
 import ./private/[memmap, privutils, common]
+import ./bits
 import std/volatile
+
 
 when (NimMajor, NimMinor) >= (1, 6):
   {.experimental: "overloadableEnums".}
@@ -76,16 +78,6 @@ type
     prefetch* {.bitsize:1.}: bool ## Prefetch buffer enabled.
     gb {.bitsize:1.}: bool
 
-
-# Platform specific code
-# ----------------------
-
-when natuPlatform == "gba": include ./private/gba/memory 
-elif natuPlatform == "sdl": include ./private/sdl/memory
-else: {.error: "Unknown platform " & natuPlatform.}
-
-
-
 template init*(r: WaitCnt, args: varargs[untyped]) =
   var tmp: WaitCnt
   writeFields(tmp, args)
@@ -95,6 +87,62 @@ template edit*(r: WaitCnt, args: varargs[untyped]) =
   var tmp = r
   writeFields(tmp, args)
   r = tmp
+
+
+# Direct Memory Access
+# --------------------
+
+type
+  DmaDstMode* = enum
+    Inc
+    Dec
+    Fix
+    Reload  ## Like Inc but resets to its initial value after all transfers have been completed.
+  DmaSrcMode* = enum
+    Inc
+    Dec
+    Fix
+  DmaSize* = enum
+    Halfwords
+    Words
+  DmaTime* = enum
+    AtNow
+    AtVBlank
+    AtHBlank
+    AtSpecial  ## Ch 0/1: start on FIFO empty;  Ch 2: start on VCount=2
+  
+  DmaCnt* = distinct uint16
+  
+  DmaChannel* {.bycopy, exportc.} = object
+    ## A group of Direct Memory Access registers.
+    src*: pointer
+    dst*: pointer
+    count*: uint16
+    cnt*: DmaCnt
+
+bitdef DmaCnt, 5..6, dstMode, DmaDstMode, {WriteOnly}
+bitdef DmaCnt, 7..8, srcMode, DmaSrcMode, {WriteOnly}
+bitdef DmaCnt, 9, repeat, bool, {WriteOnly}
+bitdef DmaCnt, 10, size, DmaSize, {WriteOnly}
+bitdef DmaCnt, 12..13, time, DmaTime, {WriteOnly}
+bitdef DmaCnt, 14, irq, bool, {WriteOnly}
+bitdef DmaCnt, 15, enable, bool, {WriteOnly}
+
+template `dstMode=`*(d: DmaChannel; val: DmaDstMode) = d.cnt.dstMode = val
+template `srcMode=`*(d: DmaChannel; val: DmaSrcMode) = d.cnt.srcMode = val
+template `repeat=`*(d: DmaChannel; val: bool) = d.cnt.repeat = val
+template `size=`*(d: DmaChannel; val: DmaSize) = d.cnt.size = val
+template `time=`*(d: DmaChannel; val: DmaTime) = d.cnt.time = val
+template `irq=`*(d: DmaChannel; val: bool) = d.cnt.irq = val
+template `enable=`*(d: DmaChannel; val: bool) = d.cnt.enable = val
+
+
+# Platform specific code
+# ----------------------
+
+when natuPlatform == "gba": include ./private/gba/memory 
+elif natuPlatform == "sdl": include ./private/sdl/memory
+else: {.error: "Unknown platform " & natuPlatform.}
 
 
 let data = [305419896'u32, 270441'u32, 3735928559'u32]  # Some arbitrary data in ROM.

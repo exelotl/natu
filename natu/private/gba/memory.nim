@@ -40,3 +40,27 @@ var waitcnt* {.importc:"(*(volatile WaitCnt*)(0x04000204))", nodecl.}: WaitCnt
   ## The mirrors may be useful for carts containing multiple ROM chips. For example
   ## on some carts the upper 128KiB of ROM is mapped to flash storage which would
   ## require different access timings.
+
+
+var dmach* {.importc:"((volatile DmaChannel*)(0x040000B0))", nodecl.}: array[4, DmaChannel]
+  ## Direct memory access channels.
+
+
+template stop*(d: DmaChannel) =
+  ## Cancels any transfer that may be happening on the given DMA channel.
+  d.cnt = DmaCnt(0)
+
+template dmaStartAux(d: DmaChannel; a, b: pointer; c: uint16) =
+  d.src = a
+  d.dst = b
+  d.count = c
+
+template start*(d: DmaChannel; dst, src: pointer; count: uint16; args: varargs[untyped]) =
+  ## Activate DMA on the given channel.
+  d.cnt = DmaCnt(0)
+  dmaStartAux(d, src, dst, count)
+  var cnt: DmaCnt
+  cnt.enable = true
+  writeFields(cnt, args)
+  d.cnt = cnt
+  

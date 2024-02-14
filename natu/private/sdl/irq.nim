@@ -52,9 +52,8 @@ template doDisable(i: IrqIndex) =
 
 proc masterIsr =
   assert(false, "master isr not implemented")
-  discard
 
-proc startInterruptManager() =
+proc startInterruptManager() {.exportc.} =
   ## Initialize the interrupt manager. This is called automatically if the module is imported.
   ## You don't usually need to call it yourself.
   ## 
@@ -63,7 +62,7 @@ proc startInterruptManager() =
   # Clear IE and IF
   ie = {}
   `if` = {IrqIndex.low .. IrqIndex.high}
-
+  
   # Clear interrupt table
   memset32(addr irqVectorTable, 0, irqVectorTable.len)
   
@@ -112,3 +111,13 @@ proc disableIrq*(irqId: IrqIndex) =
   ime = false
   doDisable(irqId)
   ime = tmp
+
+proc natuAppHandleIrq*(index: int32) {.exportc, dynlib.} =
+  # echo "IRQ: ", (ime, ie)
+  let i = index.IrqIndex
+  if ime and i in ie:
+    let fn = irqVectorTable[i]
+    if fn != nil:
+      fn()
+
+startInterruptManager()         # auto-init the module on import.
