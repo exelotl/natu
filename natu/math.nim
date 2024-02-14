@@ -16,6 +16,13 @@ export FixedT, FixedN, Fixed
 {.pragma: tonc, header: "tonc_math.h".}
 {.pragma: toncinl, header: "tonc_math.h".}  # indicates that the definition is in the header.
 
+
+when defined(gba):
+  converter to_cint*(x: int): cint {.inline.} = x.cint
+  converter to_cuint*(x: uint): cuint {.inline.} = x.cuint
+  converter to_int*(x: cint): int {.inline.} = x.int
+  converter to_uint*(x: cuint): uint {.inline.} = x.uint
+
 const
   fpShift* = 8
   fpScale* = (1 shl fpShift)
