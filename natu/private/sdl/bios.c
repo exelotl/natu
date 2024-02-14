@@ -2,10 +2,11 @@
 #include "tonc_bios.h"
 #include <limits.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 
 void natuPanic(char *a, char *b);
-
+uintptr_t natuGetRegBase(void);
 
 void SoftReset(void) {
   // swiSoftReset();
@@ -20,10 +21,15 @@ void Stop(void) {
   natuPanic("Stop()", "");
 }
 void IntrWait(u32 flagClear, u32 irq) {
-  // nothing
+  uintptr_t base = natuGetRegBase();
+  u16 *ime = (u16*)(base + 0x208);
+  *ime = 1;
 }
 void VBlankIntrWait(void) {
-  // nothing
+  uintptr_t base = natuGetRegBase();
+  u16 *ime = (u16*)(base + 0x208);
+  *ime = 1;
+  // TODO: actually jump back to app here?
 }
 s32 Div(s32 num, s32 den) {
   return num / den;
