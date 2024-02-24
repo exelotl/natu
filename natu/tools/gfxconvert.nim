@@ -7,6 +7,15 @@ when (NimMajor, NimMinor) >= (1, 6):
   {.push warning[HoleEnumConv]:off.}   # https://github.com/nim-lang/Nim/issues/19238
 
 type
+  ObjSize = enum
+    s8x8, s16x16, s32x32, s64x64,
+    s16x8, s32x8, s32x16, s64x32,
+    s8x16, s8x32, s16x32, s32x64
+  
+  GraphicFlag* = enum
+    StrictPal
+    PalOnly
+  
   GraphicRow = object
     ## Just the stuff parsed from the tsv
     pngPath: string
@@ -29,15 +38,6 @@ type
     palHalfwords: int
     frames: int
     frameWords: int
-  
-  ObjSize = enum
-    s8x8, s16x16, s32x32, s64x64,
-    s16x8, s32x8, s32x16, s64x32,
-    s8x16, s8x32, s16x32, s32x64
-  
-  GraphicFlag* = enum
-    StrictPal
-    PalOnly
 
 
 proc writeGraphicsC(f: File; imgData, palData: string) =
