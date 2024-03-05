@@ -44,6 +44,54 @@ type
     loopStart*: uint32  # measured in samples (mono or stereo)
     loopEnd*: uint32    # ..
   
+  GamepadAxis* = enum
+    axisNone
+    axisLeftStickX
+    axisLeftStickY
+    axisRightStickX
+    axisRightStickY
+    axisLeftTrigger
+    axisRightTrigger
+  
+  GamepadButton* = enum
+    btnNone
+    
+    # Buttons matching the SDL constants
+    btnA  # B on Nintendo Switch
+    btnB  # A on Nintendo Switch
+    btnX  # Y on Nintendo Switch
+    btnY  # X on Nintendo Switch
+    btnBack
+    btnGuide
+    btnStart
+    btnLeftStick
+    btnRightStick
+    btnLeftShoulder
+    btnRightShoulder
+    btnUp
+    btnDown
+    btnLeft
+    btnRight
+    btnMisc1
+    
+    # Fake buttons that are actually joystick / trigger axes
+    btnLeftStickUp
+    btnLeftStickDown
+    btnLeftStickLeft
+    btnLeftStickRight
+    btnRightStickUp
+    btnRightStickDown
+    btnRightStickLeft
+    btnRightStickRight
+    btnLeftTrigger
+    btnRightTrigger
+  
+  Gamepad* = object
+    currAxisStates*: array[GamepadAxis, float32]
+    prevAxisStates*: array[GamepadAxis, float32]
+    currBtnStates*: set[GamepadButton]
+    prevBtnStates*: set[GamepadButton]
+  
   NatuAppMem* = object
     regs*: array[0x200, uint16]
     palram*: array[512, uint16]
@@ -66,3 +114,6 @@ type
     setSourcePosition*: proc (s: NatuSource, pos: float32) {.nimcall.}
     startDma*: proc(reg: pointer) {.nimcall.}
     stopDma*: proc(reg: pointer) {.nimcall.}
+    getGamepad*: proc (i: int32): ptr Gamepad {.nimcall.}
+    keyIsDown*: proc (keycode: int32): bool {.nimcall.}
+    keyWasDown*: proc (keycode: int32): bool {.nimcall.}
