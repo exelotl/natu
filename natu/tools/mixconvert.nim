@@ -98,7 +98,11 @@ proc mixConvert*(script, sfxdir, moddir, outdir: string, files: seq[string]) =
           isWaveFile = true
         of "fmt ":
           compressionCode = rr.read(uint16)  # compression code
-          doAssert(compressionCode == 1, &"got {compressionCode} for {f}")
+          doAssert(
+            compressionCode == 1 or               # PCM (general)
+            compressionCode == 3,                 # IEEE float
+            &"got {compressionCode} for {f}"
+          )
           channels = rr.read(uint16)         # number of channels
           sampleRate = rr.read(uint32)       # sample rate (Hz)
           discard rr.read(uint32)            # average bytes per second
