@@ -449,7 +449,30 @@ posprintf:
 
 elif natuPlatform == "sdl":
   
-  proc posprintf*(s: cstring; format: cstring) {.varargs, importc:"sprintf", header:"stdio.h".}
+  proc sprintf(s: cstring; format: cstring) {.varargs, importc, header:"stdio.h".}
   
+  # Wrapper template to work around compiler bug with empty varargs?
+  template printfAux(dest: cstring; src: cstring, args: varargs[untyped]) =
+    sprintf(dest, src, args)
+  
+  template posprintf*(dest: cstring; src: cstring; args: varargs[untyped]) =
+    # So it turns out the %l specifier in posprintf is non-standard, and
+    # we have to transform it into %ld to make it work on other platforms.
+    block:
+      var s = $src
+      var i = 0
+      while i < s.len:
+        if s[i] == '%':
+          inc i
+          if s[i] == '%':
+            inc i
+          else:
+            if s[i] == '-': inc i
+            while s[i] in '0'..'9': inc i
+            if s[i] == 'l': (inc i; s.insert("d", i); inc i)
+        else:
+          inc i
+      printfAux(dest, s, args)
+
 else:
   {.error: "Unknown platform " & natuPlatform.}
