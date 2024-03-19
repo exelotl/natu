@@ -455,24 +455,26 @@ elif natuPlatform == "sdl":
   template printfAux(dest: cstring; src: cstring, args: varargs[untyped]) =
     sprintf(dest, src, args)
   
-  template posprintf*(dest: cstring; src: cstring; args: varargs[untyped]) =
-    # So it turns out the %l specifier in posprintf is non-standard, and
-    # we have to transform it into %ld to make it work on other platforms.
-    block:
-      var s = $src
-      var i = 0
-      while i < s.len:
+  proc fixFmtString(s: var string) =
+    # So it turns out the %l specifier in posprintf is non-standard, but we can
+    # transform it into %d to make it work on other platforms.
+    var i = 0
+    while i < s.len:
+      if s[i] == '%':
+        inc i
         if s[i] == '%':
           inc i
-          if s[i] == '%':
-            inc i
-          else:
-            if s[i] == '-': inc i
-            while s[i] in '0'..'9': inc i
-            if s[i] == 'l': (inc i; s.insert("d", i); inc i)
         else:
-          inc i
-      printfAux(dest, s, args)
+          if s[i] == '-': inc i
+          while s[i] in '0'..'9': inc i
+          if s[i] == 'l': (s[i] = 'd'; inc i)
+      else:
+        inc i
+  
+  template posprintf*(dest: cstring; src: cstring; args: varargs[untyped]) =
+    var s = $src
+    fixFmtString(s)
+    printfAux(dest, s, args)
 
 else:
   {.error: "Unknown platform " & natuPlatform.}
