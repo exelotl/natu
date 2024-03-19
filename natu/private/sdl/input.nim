@@ -181,7 +181,7 @@ const
   kX* = key 'x'
   kY* = key 'y'
   kZ* = key 'z'
-  kDelete* = 127
+  kDelete* = Keycode(127)
   kCapsLock* = scan 57
   kF1* = scan 58
   kF2* = scan 59
