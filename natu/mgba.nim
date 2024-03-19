@@ -81,10 +81,21 @@ when natuPlatform == "gba":
 
 elif natuPlatform == "sdl":
   
-  
   when natuMgbaLogging:
     
-    proc printf*(format: cstring) {.varargs, importc:"printf", header:"stdio.h".}
+    proc c_printf(format: cstring) {.varargs, importc:"printf", header:"stdio.h".}
+    
+    # Wrapper template to work around compiler bug with empty varargs?
+    template printfAux(str: cstring, args: varargs[untyped]) =
+      c_printf(str, args)
+    
+    template printf*(level: LogLevel, str: cstring, args: varargs[untyped]) =
+      printfAux(str, args)
+      c_printf("\n")
+    
+    template printf*(str: cstring, args: varargs[untyped]) =
+      printfAux(str, args)
+      c_printf("\n")
   
   else:
     

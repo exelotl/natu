@@ -474,7 +474,7 @@ elif natuPlatform == "sdl":
   template posprintf*(dest: cstring; src: cstring; args: varargs[untyped]) =
     var s = $src
     fixFmtString(s)
-    printfAux(dest, s, args)
+    printfAux(dest, cast[cstring](addr s[0]), args)
 
 else:
   {.error: "Unknown platform " & natuPlatform.}
