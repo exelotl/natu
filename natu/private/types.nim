@@ -124,8 +124,8 @@ type
   Screenline* = array[32, ScrEntry]
   ScreenMat* = array[32, Screenline]
   Screenblock* = array[1024, ScrEntry]
-  Charblock* = array[512, Tile]
-  Charblock8* = array[256, Tile8]
+  # Charblock* = array[512, Tile]
+  # Charblock8* = array[256, Tile8]
 
 proc `[]`*(a: var Screenblock; x, y: int): var ScrEntry {.inline.} =
   cast[ptr array[1024, ScrEntry]](addr a)[x + y*32]
@@ -134,18 +134,9 @@ proc `[]=`*(a: var Screenblock; x, y: int; v: ScrEntry) {.inline.} =
   cast[ptr array[1024, ScrEntry]](addr a)[x + y*32] = v
 
 when natuPlatform == "gba":
-  type
-    UnboundedCharblock* {.borrow:`.`.} = distinct array[512, Tile]
-    UnboundedCharblock8* {.borrow:`.`.} = distinct array[256, Tile8]
-
+  const CbbTiles = 512
 elif natuPlatform == "sdl":
-  type
-    UnboundedCharblock* {.borrow:`.`.} = distinct array[1024, Tile]
-    UnboundedCharblock8* {.borrow:`.`.} = distinct array[512, Tile8]
-  
-  static:
-    doAssert(sizeof(UnboundedCharblock) == NatuCbLen*sizeof(uint16))
-
+  const CbbTiles = 1024
 else:
   {.error: "Unknown platform " & natuPlatform.}
 
@@ -163,8 +154,17 @@ template allowUnboundedAccess(A: typedesc, Len:static[int], T: typedesc) =
   
   {.pop.}
 
-allowUnboundedAccess(UnboundedCharblock, 512, Tile)
-allowUnboundedAccess(UnboundedCharblock8, 256, Tile8)
+type
+  Charblock* = array[CbbTiles, Tile]
+  Charblock8* = array[CbbTiles div 2, Tile8]
+  UnboundedCharblock* {.borrow:`.`.} = distinct array[CbbTiles, Tile]
+  UnboundedCharblock8* {.borrow:`.`.} = distinct array[CbbTiles div 2, Tile8]
+
+static:
+  doAssert(sizeof(UnboundedCharblock) == NatuCbLen*sizeof(uint16))
+
+allowUnboundedAccess(UnboundedCharblock, CbbTiles, Tile)
+allowUnboundedAccess(UnboundedCharblock8, CbbTiles div 2, Tile8)
 
 when natuPlatform == "gba":
   
