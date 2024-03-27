@@ -160,8 +160,9 @@ type
   UnboundedCharblock* {.borrow:`.`.} = distinct array[CbbTiles, Tile]
   UnboundedCharblock8* {.borrow:`.`.} = distinct array[CbbTiles div 2, Tile8]
 
-static:
-  doAssert(sizeof(UnboundedCharblock) == NatuCbLen*sizeof(uint16))
+when natuPlatform == "sdl":
+  static:
+    doAssert(sizeof(UnboundedCharblock) == NatuCbLen*sizeof(uint16))
 
 allowUnboundedAccess(UnboundedCharblock, CbbTiles, Tile)
 allowUnboundedAccess(UnboundedCharblock8, CbbTiles div 2, Tile8)
