@@ -679,6 +679,7 @@ when natuPlatform == "gba": include ./private/gba/video
 elif natuPlatform == "sdl": include ./private/sdl/video
 else: {.error: "Unknown platform " & natuPlatform.}
 
+{.push inline.}
 
 # ID shorthands:
 

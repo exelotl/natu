@@ -434,3 +434,5 @@ func `size=`*(obj: var ObjAttr; v: ObjSize) =
   
 func `prio=`*(obj: var ObjAttr; prio: int) =
   obj.attr2 = ((prio.uint16 shl 10) and 0x0C00'u16) or (obj.attr2 and not 0x0C00'u16)
+
+{.pop.}
