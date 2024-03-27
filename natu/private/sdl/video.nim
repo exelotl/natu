@@ -31,12 +31,12 @@ const PageSize = 0x0A000  # muffin (for mode 4)
 
 template bgColorMem*: array[256, Color]             = cast[ptr array[256, Color]](addr natuMem.palram)[]
 template bgPalMem*: array[16, Palette]              = cast[ptr array[16, Palette]](addr natuMem.palram)[]
-template objColorMem*: array[256, Color]            = cast[ptr array[256, Color]](addr natuMem.palram[256])[]
-template objPalMem*: array[16, Palette]             = cast[ptr array[16, Palette]](addr natuMem.palram[256])[]
+template objColorMem*: array[512, Color]            = cast[ptr array[512, Color]](addr natuMem.palram[256])[]
+template objPalMem*: array[32, Palette]             = cast[ptr array[32, Palette]](addr natuMem.palram[256])[]
 template bgTileMem*: array[4, UnboundedCharblock]   = cast[ptr array[4, UnboundedCharblock]](addr natuMem.vram)[]
 template bgTileMem8*: array[4, UnboundedCharblock8] = cast[ptr array[4, UnboundedCharblock8]](addr natuMem.vram)[]
-template objTileMem*: array[1024, Tile]             = cast[ptr array[1024, Tile]](addr natuMem.vram[NatuCbLen*4])[]
-template objTileMem8*: array[512, Tile8]            = cast[ptr array[512, Tile8]](addr natuMem.vram[NatuCbLen*4])[]
+template objTileMem*: array[2048, Tile]             = cast[ptr array[2048, Tile]](addr natuMem.vram[NatuCbLen*4])[]
+template objTileMem8*: array[1024, Tile8]           = cast[ptr array[1024, Tile8]](addr natuMem.vram[NatuCbLen*4])[]
 template seMem*: array[32, Screenblock]             = cast[ptr array[32, Screenblock]](addr natuMem.vram[NatuSbStart])[]
 template vidMem*: array[240*160, Color]             = cast[ptr array[240*160, Color]](addr natuMem.vram)[]
 template m3Mem*: array[160, M3Line]                 = cast[ptr array[160, M3Line]](addr natuMem.vram)[]
@@ -234,9 +234,9 @@ func affId*(obj: ObjAttr): int = ((obj.attr1 and 0x3E00'u32) shr 9).int
 func size*(obj: ObjAttr): ObjSize = (((obj.attr0 and 0xC000'u32) shr 12) or ((obj.attr1 and 0xC000'u32) shr 14)).ObjSize
 func hflip*(obj: ObjAttr): bool = (obj.attr1 and 0x1000'u32) != 0
 func vflip*(obj: ObjAttr): bool = (obj.attr1 and 0x2000'u32) != 0
-func tileId*(obj: ObjAttr): int = (obj.attr2 and 0x03FF'u32).int
-func palId*(obj: ObjAttr): int = ((obj.attr2 and 0xF000'u32) shr 12).int
-func prio*(obj: ObjAttr): int = ((obj.attr2 and 0x0C00'u32) shr 10).int
+func tileId*(obj: ObjAttr): int = (obj.attr2 and 0x07FF'u32).int
+func palId*(obj: ObjAttr): int = ((obj.attr2 and 0x001F0000'u32) shr 16).int
+func prio*(obj: ObjAttr): int = ((obj.attr2 and 0x1800'u32) shr 11).int
 
 # setters
 
@@ -251,10 +251,10 @@ func `pos=`*(obj: var ObjAttr; v: Vec2i) =
   obj.y = v.y
 
 func `tileId=`*(obj: var ObjAttr; tileId: int) =
-  obj.attr2 = (tileId.uint32 and 0x03FF'u32) or (obj.attr2 and not 0x03FF'u32)
+  obj.attr2 = (tileId.uint32 and 0x07FF'u32) or (obj.attr2 and not 0x07FF'u32)
 
 func `palId=`*(obj: var ObjAttr; palId: int) =
-  obj.attr2 = ((palId.uint32 shl 12) and 0xF000'u32) or (obj.attr2 and not 0xF000'u32)
+  obj.attr2 = ((palId.uint32 shl 16) and 0x001F0000'u32) or (obj.attr2 and not 0x001F0000'u32)
 
 func `hflip=`*(obj: var ObjAttr; v: bool) =
   obj.attr1 = (v.uint32 shl 12) or (obj.attr1 and not 0x1000'u32)
@@ -284,6 +284,6 @@ func `size=`*(obj: var ObjAttr; v: ObjSize) =
   obj.attr1 = size or (obj.attr1 and not 0xC000'u32)
   
 func `prio=`*(obj: var ObjAttr; prio: int) =
-  obj.attr2 = ((prio.uint32 shl 10) and 0x0C00'u32) or (obj.attr2 and not 0x0C00'u32)
+  obj.attr2 = ((prio.uint32 shl 11) and 0x1800'u32) or (obj.attr2 and not 0x1800'u32)
 
 {.pop.}

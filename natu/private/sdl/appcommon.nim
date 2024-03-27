@@ -24,10 +24,17 @@ const NatuSbLen* = 1024
 const NatuSbStart* = NatuCbLen*6
 const NatuVramLen* = NatuCbLen*6 + NatuSbLen*32
 
+const NatuBgPalRamLen* = 256
+const NatuObjPalRamLen* = 512
+const NatuPalRamLen* = NatuBgPalRamLen + NatuObjPalRamLen
+
 {.passC: "-DNATU_CB_LEN=" & $NatuCbLen.}
 {.passC: "-DNATU_SB_LEN=" & $NatuSbLen.}
 {.passC: "-DNATU_SB_START=" & $NatuSbStart.}
 {.passC: "-DNATU_VRAM_LEN=" & $NatuVramLen.}
+{.passC: "-DNATU_BG_PAL_RAM_LEN=" & $NatuBgPalRamLen.}
+{.passC: "-DNATU_OBJ_PAL_RAM_LEN=" & $NatuObjPalRamLen.}
+{.passC: "-DNATU_PAL_RAM_LEN=" & $NatuPalRamLen.}
 
 type
   LoopKind* = enum
@@ -94,7 +101,7 @@ type
   
   NatuAppMem* = object
     regs*: array[0x200, uint16]
-    palram*: array[512, uint16]
+    palram*: array[NatuPalRamLen, uint16]
     vram*: array[NatuVramLen, uint16]
     oam*: array[512, uint32]
     

@@ -1,11 +1,17 @@
 import natu/[memory, utils, video]
+import natu/private/common
 
 type ObjTileState {.size: 1.} = enum
   otUnused
   otUsed
   otContinue
 
-const MaxObjTiles = 1024
+when natuPlatform == "gba":
+  const MaxObjTiles = 1024
+elif natuPlatform == "sdl":
+  const MaxObjTiles = 2048
+else:
+  {.error: "Unknown platform " & natuPlatform.}
 
 var objTiles {.codegenDecl:DataInEwram.}: array[MaxObjTiles+1, ObjTileState]  # length+1 for "null terminator"
 

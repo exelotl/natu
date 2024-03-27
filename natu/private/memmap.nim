@@ -27,7 +27,8 @@ const
 const
   EWRAM_SIZE*:uint32 = 0x40000
   IWRAM_SIZE*:uint32 = 0x08000
-  PAL_SIZE*:uint32   = 0x00400
+  PAL_SIZE*:uint32   = when defined(gba): 0x00400'u32
+                       else: (NatuPalRamLen*sizeof(uint16)).uint32
   VRAM_SIZE*:uint32  = when defined(gba): 0x18000'u32
                        else: (NatuVramLen*sizeof(uint16)).uint32
   OAM_SIZE*:uint32   = 0x00400
