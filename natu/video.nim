@@ -1072,8 +1072,12 @@ proc setToScaleAndRotationRaw*(bgaff: var BgAffine; sx, sy: Fixed; alpha: uint16
 
 proc setToScale*(bgaff: var BgAffine; sx: Fixed, sy = sx) {.inline.} =
   ## Set an bg affine matrix for scaling.
-  let x = ((1 shl 24) div sx.int) shr 8
-  let y = ((1 shl 24) div sy.int) shr 8
+  when natuPlatform == "sdl":
+    let x = if sx == 0: int16.high.int32 else: ((1 shl 24) div sx.int) shr 8
+    let y = if sy == 0: int16.high.int32 else: ((1 shl 24) div sy.int) shr 8
+  else:
+    let x = ((1 shl 24) div sx.int) shr 8
+    let y = ((1 shl 24) div sy.int) shr 8
   bgaff.setToScaleRaw(x.Fixed, y.Fixed)
 
 proc setToRotation*(bgaff: var BgAffine; theta: uint16) {.inline.} =
@@ -1096,8 +1100,12 @@ proc setToScaleAndRotation*(bgaff: var BgAffine; sx, sy: Fixed; theta: uint16) {
   ## :sx:    Horizontal scale (zoom). 24.8 fixed point.
   ## :sy:    Vertical scale (zoom). 24.8 fixed point.
   ## :alpha: CCW angle. full-circle is 0x10000.
-  let x = ((1 shl 24) div sx.int) shr 8
-  let y = ((1 shl 24) div sy.int) shr 8
+  when natuPlatform == "sdl":
+    let x = if sx == 0: int16.high.int32 else: ((1 shl 24) div sx.int) shr 8
+    let y = if sy == 0: int16.high.int32 else: ((1 shl 24) div sy.int) shr 8
+  else:
+    let x = ((1 shl 24) div sx.int) shr 8
+    let y = ((1 shl 24) div sy.int) shr 8
   bgaff.setToScaleAndRotationRaw(x.Fixed, y.Fixed, 0'u16 - theta)
 
 proc premul*(dst: var BgAffine; src: ptr BgAffine) {.importc: "bg_aff_premul", tonc.}

@@ -183,8 +183,8 @@ template rotscaleEx*(obj: var ObjAttr; oaff: var ObjAffine; asx: AffSrcEx) =
 
 proc setToScale*(oa: var ObjAffine; sx: Fixed, sy = sx) {.inline.} =
   ## Set an object affine matrix for scaling.
-  let x = ((1 shl 24) div sx.int) shr 8
-  let y = ((1 shl 24) div sy.int) shr 8
+  let x = if sx == 0: int16.high.int32 else: ((1 shl 24) div sx.int) shr 8
+  let y = if sy == 0: int16.high.int32 else: ((1 shl 24) div sy.int) shr 8
   oa.setToScaleRaw(x.Fixed, y.Fixed)
 
 proc setToRotation*(oa: var ObjAffine; theta: uint16) {.inline.} =
@@ -207,8 +207,8 @@ proc setToScaleAndRotation*(oa: var ObjAffine; sx, sy: Fixed; theta: uint16) {.i
   ## :sx:    Horizontal scale (zoom). .8 fixed point.
   ## :sy:    Vertical scale (zoom). .8 fixed point.
   ## :alpha: CCW angle. full-circle is `0x10000`.
-  let x = ((1 shl 24) div sx.int) shr 8
-  let y = ((1 shl 24) div sy.int) shr 8
+  let x = if sx == 0: int16.high.int32 else: ((1 shl 24) div sx.int) shr 8
+  let y = if sy == 0: int16.high.int32 else: ((1 shl 24) div sy.int) shr 8
   oa.setToScaleAndRotationRaw(x.Fixed, y.Fixed, 0'u16 - theta)
 
 
