@@ -255,12 +255,12 @@ else:
   type
     WinH* {.exportc:"WinH".} = object
       ## Defines the horizontal bounds of a window (left ..< right)
-      right*: uint16
       left*: uint16
+      right*: uint16
     WinV* {.exportc:"WinV".} = object
       ## Defines the vertical bounds of a window (top ..< bottom)
-      bottom*: uint16
       top*: uint16
+      bottom*: uint16
   
 type
   WindowLayer* {.size:1.} = enum
