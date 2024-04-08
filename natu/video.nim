@@ -243,25 +243,27 @@ converter toBgSize*(a: AffBgSize): BgSize = (a.BgSize)
 
 when natuPlatform == "gba":
   type
+    WinInt* = uint8
     WinH* {.exportc:"WinH".} = object
       ## Defines the horizontal bounds of a window (left ..< right)
-      right*: uint8
-      left*: uint8
+      right*: WinInt
+      left*: WinInt
     WinV* {.exportc:"WinV".} = object
       ## Defines the vertical bounds of a window (top ..< bottom)
-      bottom*: uint8
-      top*: uint8
+      bottom*: WinInt
+      top*: WinInt
 else:
   type
+    WinInt* = uint16
     WinH* {.exportc:"WinH".} = object
       ## Defines the horizontal bounds of a window (left ..< right)
-      left*: uint16
-      right*: uint16
+      left*: WinInt
+      right*: WinInt
     WinV* {.exportc:"WinV".} = object
       ## Defines the vertical bounds of a window (top ..< bottom)
-      top*: uint16
-      bottom*: uint16
-  
+      top*: WinInt
+      bottom*: WinInt
+
 type
   WindowLayer* {.size:1.} = enum
     wlBg0, wlBg1, wlBg2, wlBg3, wlObj, wlBlend
