@@ -1140,8 +1140,8 @@ proc setWindow*(winId: range[0..1]; bounds: Rect) {.inline.} =
   ## Apply a rectangular window to one of the window registers.
   ## 
   ## The rectangle is clamped to the bounds of the screen.
-  winh[winId] = WinH(right: bounds.right.clamp(0, ScreenWidth).uint8, left: bounds.left.clamp(0, ScreenWidth).uint8)
-  winv[winId] = WinV(bottom: bounds.bottom.clamp(0, ScreenHeight).uint8, top: bounds.top.clamp(0, ScreenHeight).uint8)
+  winh[winId] = WinH(right: bounds.right.clamp(0, ScreenWidth).WinInt, left: bounds.left.clamp(0, ScreenWidth).WinInt)
+  winv[winId] = WinV(bottom: bounds.bottom.clamp(0, ScreenHeight).WinInt, top: bounds.top.clamp(0, ScreenHeight).WinInt)
 
 proc busyWaitForVBlank* {.inline.} =
   when natuPlatform == "gba":
