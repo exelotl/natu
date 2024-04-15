@@ -124,5 +124,4 @@ type
     getGamepad*: proc (i: int32): ptr Gamepad {.nimcall.}
     keyIsDown*: proc (keycode: int32): bool {.nimcall.}
     keyWasDown*: proc (keycode: int32): bool {.nimcall.}
-    
-    deltaTime*: float32
+    getPerfTimer*: proc (): float64 {.nimcall.}

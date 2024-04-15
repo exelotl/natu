@@ -113,10 +113,10 @@ from natu/private/common import natuPlatform
 import natu/private/sdl/applib
 
 when natuPlatform == "gba":
-  proc getDeltaTime*(): float32 {.error: "getDeltaTime not implemented for GBA platform.".}
+  proc getPerfTimer*(): float64 {.error: "getPerfTimer not implemented for GBA platform.".}
   
 elif natuPlatform == "sdl":
-  proc getDeltaTime*(): float32 = natuMem.deltaTime
+  proc getPerfTimer*(): float64 = natuMem.getPerfTimer()
 
 else:
   {.error: "Unknown platform " & natuPlatform.}
