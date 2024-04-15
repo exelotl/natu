@@ -107,3 +107,16 @@ proc profileStop*(): uint {.importc: "profile_stop", toncinl.}
   ## Stop a profiling run and return the time since its start.
   ## 
   ## Returns number of CPU cycles elapsed since `profileStart` was called.
+
+
+from natu/private/common import natuPlatform
+import natu/private/sdl/applib
+
+when natuPlatform == "gba":
+  proc getDeltaTime*(): float32 {.error: "getDeltaTime not implemented for GBA platform.".}
+  
+elif natuPlatform == "sdl":
+  proc getDeltaTime*(): float32 = natuMem.deltaTime
+
+else:
+  {.error: "Unknown platform " & natuPlatform.}
