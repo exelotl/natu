@@ -110,12 +110,12 @@ proc profileStop*(): uint {.importc: "profile_stop", toncinl.}
 
 
 from natu/private/common import natuPlatform
-import natu/private/sdl/applib
 
 when natuPlatform == "gba":
   proc getPerfTimer*(): float64 {.error: "getPerfTimer not implemented for GBA platform.".}
   
 elif natuPlatform == "sdl":
+  import natu/private/sdl/applib
   proc getPerfTimer*(): float64 = natuMem.getPerfTimer()
 
 else:
