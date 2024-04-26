@@ -82,6 +82,8 @@ proc getPrevAxis*(i: int; axis: GamepadAxis): float32 =
 type
   Keycode* = distinct int32
 
+proc `==`*(a, b: Keycode): bool {.borrow.}
+
 {.push inline.}
 
 proc kbIsDown*(k: Keycode): bool =
