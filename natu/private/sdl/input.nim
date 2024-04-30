@@ -12,6 +12,12 @@ export GamepadAxis, GamepadButton, Gamepad
 
 {.push inline.}
 
+proc numGamepads*: int =
+  natuMem.numGamepads().int
+
+proc anyGamepadConnected*: bool =
+  natuMem.numGamepads() > 0
+
 proc buttonsDown*(i = 0): set[GamepadButton] =
   let g = natuMem.getGamepad(i)
   if g == nil: {}

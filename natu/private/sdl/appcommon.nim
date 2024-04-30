@@ -122,6 +122,7 @@ type
     startDma*: proc(reg: pointer) {.nimcall.}
     stopDma*: proc(reg: pointer) {.nimcall.}
     getGamepad*: proc (i: int32): ptr Gamepad {.nimcall.}
+    numGamepads*: proc (): int32 {.nimcall.}
     keyIsDown*: proc (keycode: int32): bool {.nimcall.}
     keyWasDown*: proc (keycode: int32): bool {.nimcall.}
     getPerfTimer*: proc (): float64 {.nimcall.}
