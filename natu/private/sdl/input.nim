@@ -1,5 +1,7 @@
 import ./applib
 
+export GamepadAxis, GamepadButton, GamepadKind, Gamepad
+
 template keyinput*: KeyInput = cast[ptr KeyInput](addr natuMem.regs[0x130 shr 1])[]
 template keycnt*: KeyCnt = cast[ptr KeyCnt](addr natuMem.regs[0x132 shr 1])[]
 
@@ -8,8 +10,6 @@ template keycnt*: KeyCnt = cast[ptr KeyCnt](addr natuMem.regs[0x132 shr 1])[]
 
 const allButtons* = {btnNone.succ .. GamepadButton.high}
 
-export GamepadAxis, GamepadButton, Gamepad
-
 {.push inline.}
 
 proc numGamepads*: int =
@@ -17,6 +17,16 @@ proc numGamepads*: int =
 
 proc anyGamepadConnected*: bool =
   natuMem.numGamepads() > 0
+
+proc getGamepadUid*(i = 0): string =
+  let g = natuMem.getGamepad(i)
+  if g == nil: ""
+  else: g.uid
+
+proc getGamepadKind*(i = 0): GamepadKind =
+  let g = natuMem.getGamepad(i)
+  if g == nil: GamepadUnknown
+  else: g.kind
 
 proc buttonsDown*(i = 0): set[GamepadButton] =
   let g = natuMem.getGamepad(i)

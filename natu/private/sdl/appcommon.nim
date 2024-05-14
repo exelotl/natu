@@ -93,7 +93,22 @@ type
     btnLeftTrigger
     btnRightTrigger
   
+  GamepadKind* = enum
+    GamepadUnknown
+    GamepadStandard
+    GamepadXbox360
+    GamepadXboxOne
+    GamepadPs3
+    GamepadPs4
+    GamepadPs5
+    GamepadSwitchPro
+    GamepadJoyconLeft
+    GamepadJoyconRight
+    GamepadJoyconPair
+  
   Gamepad* = object
+    uid*: string
+    kind*: GamepadKind
     currAxisStates*: array[GamepadAxis, float32]
     prevAxisStates*: array[GamepadAxis, float32]
     currBtnStates*: set[GamepadButton]
