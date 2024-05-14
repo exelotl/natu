@@ -118,7 +118,42 @@ proc kbReleased*(k: Keycode): bool =
 proc key(c: char): Keycode = ord(c).Keycode
 proc scan(n: int32): Keycode = (n or (1 shl 30)).Keycode
 
-const
+import std/[macros, tables, strutils]
+
+macro defineKeycodes(body: typed) =
+  assert body.kind == nnkStmtList
+  assert body.len == 1
+  assert body[0].kind == nnkConstSection
+  let table1 = nnkTableConstr.newTree()
+  let table2 = nnkTableConstr.newTree()
+  for n in body[0]:
+    let sym = n[0]
+    let name = sym.strVal.toLowerAscii()
+    table1.add newColonExpr(newStrLitNode(name), sym)
+    table2.add newColonExpr(sym, newStrLitNode(sym.strVal))
+  
+  result = quote do:
+    `body`
+    const keycodeByName = toTable[string, Keycode](`table1`)
+    const nameByKeycode = toTable[Keycode, string](`table2`)
+    
+    proc getKeycodeByName*(name: string): Keycode =
+      let s = name.toLowerAscii
+      if s in keycodeByName:
+        keycodeByName[s]
+      else:
+        kUnknown
+    
+    proc getNameByKeycode*(keycode: Keycode): string =
+      if keycode in nameByKeycode:
+        nameByKeycode[keycode]
+      else:
+        "kUnknown" # should never happen.
+  
+  # echo treeRepr(result)
+
+defineKeycodes:
+ const
   kUnknown* = Keycode(0)
   kBackspace* = key '\x08'
   kTab* = key '\x09'
@@ -359,3 +394,7 @@ const
   kApp2* = scan 284
   kAudioRewind* = scan 285
   kAudioFastforward* = scan 286
+
+
+proc `$`*(keycode: Keycode): string =
+  getNameByKeycode(keycode)
