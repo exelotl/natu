@@ -126,3 +126,7 @@ type
     keyIsDown*: proc (keycode: int32): bool {.nimcall.}
     keyWasDown*: proc (keycode: int32): bool {.nimcall.}
     getPerfTimer*: proc (): float64 {.nimcall.}
+    readFile*: proc (path: cstring): tuple[ok: bool, res: string] {.nimcall.}
+    writeFile*: proc (path: cstring; contents: string): tuple[ok: bool, msg: string] {.nimcall.}
+    fileExists*: proc (path: cstring): bool {.nimcall.}
+    
