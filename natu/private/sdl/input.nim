@@ -28,6 +28,16 @@ proc getGamepadKind*(i = 0): GamepadKind =
   if g == nil: GamepadUnknown
   else: g.kind
 
+proc getUiButtonsSwapped*(i = 0): bool =
+  let g = natuMem.getGamepad(i)
+  if g == nil: false
+  else: g.swapUiButtons
+
+proc setUiButtonsSwapped*(val: bool; i = 0) =
+  let g = natuMem.getGamepad(i)
+  if g != nil:
+    g.swapUiButtons = val
+
 proc buttonsDown*(i = 0): set[GamepadButton] =
   let g = natuMem.getGamepad(i)
   if g == nil: {}

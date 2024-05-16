@@ -92,6 +92,12 @@ type
     btnRightStickRight
     btnLeftTrigger
     btnRightTrigger
+    
+    # Buttons matching the labels on the controllers, as opposed to positions.
+    btnUiA
+    btnUiB
+    btnUiX
+    btnUiY
   
   GamepadKind* = enum
     GamepadUnknown
@@ -109,6 +115,7 @@ type
   Gamepad* = object
     uid*: string
     kind*: GamepadKind
+    swapUiButtons*: bool
     currAxisStates*: array[GamepadAxis, float32]
     prevAxisStates*: array[GamepadAxis, float32]
     currBtnStates*: set[GamepadButton]
