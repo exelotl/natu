@@ -86,44 +86,58 @@ const
 
 type
   DisplayLayer* {.size:4.} = enum
-    lBg0, lBg1, lBg2, lBg3, lObj
+    lBg0  ## Background 0 enabled.
+    lBg1  ## Background 1 enabled.
+    lBg2  ## Background 2 enabled.
+    lBg3  ## Background 3 enabled.
+    lObj  ## Objects (sprites) enabled.
   
   DisplayLayers* {.size:4.} = set[DisplayLayer]
   
   DispCnt* = distinct uint16
+    ## Display control type, as used by :xref:`dispcnt`.
+    ## 
+    ## ======== ====== ===== ==================================================
+    ## Field    Type   Bits  Description
+    ## ======== ====== ===== ==================================================
+    ## `mode`   uint16 0-2   Video mode, may have one of the following values:
+    ##                       
+    ##                       - `0` – Tile mode (BG0 = text, BG1 = text, BG2 = text, BG3 = text)
+    ##                       - `1` – Tile mode (BG0 = text, BG1 = text, BG2 = affine)
+    ##                       - `2` – Tile mode (BG2 = affine, BG3 = affine)
+    ##                       - `3` – Bitmap mode (BG2 = 240x160 direct color)
+    ##                       - `4` – Bitmap mode (BG2 = 240x160 8bpp indexed)
+    ##                       - `5` – Bitmap mode (BG2 = 160x128 direct color)
+    ##                       
+    ##                       Note that in bitmap modes, the first half of :xref:`objTileMem` is not usable.
+    ## `gb`     bool   3     True if cartridge is a GBC game. Read-only. 
+    ## `page`   bool   4     Page select. Modes 4 and 5 can use page flipping for smoother animation.
+    ##                       This bit selects the displayed page (and allowing the other one to be drawn on without artifacts). 
+    ## `oamHbl` bool   5     Allows access to OAM during HBlank. Supposedly OAM is locked in VDraw, but that
+    ##                       doesn't seem true in practise. Therefore this flag does nothing, except reduce
+    ##                       the maximum amount of sprite pixels that can be rendered per scanline.
+    ## `obj1d`  bool   6     Determines whether Obj-VRAM is treated like an array or a matrix when drawing sprites.
+    ##                       Usually you want to set this to `true`.
+    ## `blank`  bool   7     Forced Blank: When set, the GBA will display a white screen.
+    ##                       This allows fast access to VRAM, PAL RAM, OAM.
+    ## `bg0`    bool   8     Enables background layer 0.
+    ## `bg1`    bool   9     Enables background layer 1.
+    ## `bg2`    bool   10    Enables background layer 2.
+    ## `bg3`    bool   11    Enables background layer 3.
+    ## `obj`    bool   12    Enables sprites (a.k.a. objects).
+    ## `win0`   bool   13    Enables window 0.
+    ## `win1`   bool   14    Enables window 1.
+    ## `winObj` bool   15    Enables the object window.
+    ## `layers` bool   8-12  A convenient way to enable several layers at once.
+    ##                       e.g. `dispcnt.layers = { lBg0, lBg1, lObj }`
+    ## ======== ====== ===== ==================================================
 
-bitdef DispCnt, 0..3, mode, uint16
-  # Video mode. `0`, `1`, `2` are tiled modes; `3`, `4`, `5` are bitmap modes. 
-  # 
-  # ===== ===============================================================
-  # Mode  Description
-  # ===== ===============================================================
-  # 0     Tile mode: BG0 = text, BG1 = text, BG2 = text,   BG3 = text
-  # 1     Tile mode: BG0 = text, BG1 = text, BG2 = affine, BG3 = off
-  # 2     Tile mode: BG0 = off,  BG1 = off,  BG2 = affine, BG3 = affine
-  # 3     Bitmap mode: 240x160, BGR555 color
-  # 4     Bitmap mode: 240x160, 256 color palette
-  # 5     Bitmap mode: 160x128, BGR555 color
-  # ===== ===============================================================
-
+bitdef DispCnt, 0..2, mode, uint16
 bitdef DispCnt, 3, gb, bool, {ReadOnly}
-  # True if cartridge is a GBC game. Read-only. 
-
 bitdef DispCnt, 4, page, bool
-  # Page select. Modes 4 and 5 can use page flipping for smoother animation.
-  # This bit selects the displayed page (and allowing the other one to be drawn on without artifacts). 
-
 bitdef DispCnt, 5, oamHbl, bool
-  # Allows access to OAM during HBlank. Supposedly OAM is locked in VDraw, but that
-  # doesn't seem to be true in practise. Therefore this flag does nothing, except reduce
-  # the maximum amount of sprite pixels that can be rendered per scanline.
-
 bitdef DispCnt, 6, obj1d, bool
-  # Determines whether OBJ-VRAM is treated like an array or a matrix when drawing sprites.
-
 bitdef DispCnt, 7, blank, bool
-  # Forced Blank: When set, the GBA will display a white screen.
-  # This allows fast access to VRAM, PAL RAM, OAM.
 
 bitdef DispCnt, 8, bg0, bool
 bitdef DispCnt, 9, bg1, bool
@@ -151,32 +165,29 @@ const allDisplayLayers* = { lBg0, lBg1, lBg2, lBg3, lObj }
 # -----------------------
 
 type DispStat* = distinct uint16
+  ## Display status type, as used by :xref:`dispstat`.
+  ## 
+  ## ================= ======= ===== ==================================================
+  ## Field             Type    Bits  Description
+  ## ================= ======= ===== ==================================================
+  ## `inVBlank`        bool    0     VBlank status, read only. True during VBlank, false during VDraw.
+  ## `inHBlank`        bool    1     HBlank status, read-only. True during HBlank.
+  ## `inVCountTrigger` bool    2     VCount trigger status, read-only.
+  ## `vblankIrq`       bool    3     VBlank interrupt request. If set, an interrupt will be fired at VBlank.
+  ## `hblankIrq`       bool    4     HBlank interrupt request. If set, an interrupt will be fired at HBlank.
+  ## `vcountIrq`       bool    5     VCount interrupt request. If set, an interrupt will be fired when the current
+  ##                                 scanline matches the scanline trigger (`vcount == dispstat.vcountTrigger`)
+  ## `vcountTrigger`   uint16  8-15  VCount trigger value. If the current scanline is at this value,
+  ##                                 bit 2 is set and an interrupt is fired if requested. 
+  ## ================= ======= ===== ==================================================
 
 bitdef DispStat, 0, inVBlank, bool, {ReadOnly}
-  # VBlank status, read only.
-  # True during VBlank, false during VDraw.
-
 bitdef DispStat, 1, inHBlank, bool, {ReadOnly}
-  # HBlank status, read-only (see getter proc).
-
 bitdef DispStat, 2, inVCountTrigger, bool, {ReadOnly}
-  # VCount trigger status, read-only (see getter proc).
-
 bitdef DispStat, 3, vblankIrq, bool
-  # VBlank interrupt request.
-  # If set, an interrupt will be fired at VBlank.
-
 bitdef DispStat, 4, hblankIrq, bool
-  # HBlank interrupt request.
-  # If set, an interrupt will be fired at HBlank.
-
 bitdef DispStat, 5, vcountIrq, bool
-  # VCount interrupt request.
-  # If set, an interrupt will be fired when current scanline matches the scanline trigger (`vcount` == `dispstat.vcountTrigger`)
-
 bitdef DispStat, 8..15, vcountTrigger, uint16
-  # VCount trigger value.
-  # If the current scanline is at this value, bit 2 is set and an interrupt is fired if requested. 
 
 
 # Background Control Registers
@@ -184,10 +195,10 @@ bitdef DispStat, 8..15, vcountTrigger, uint16
 
 type
   BgSize* = distinct uint16
+    ## Implicitly convertible from either `RegBgSize` or `AffBgSize`.
   
   RegBgSize* {.size:2.} = enum
     ## Size of a regular background in tiles.
-    ## Implicitly convertible to type `BgSize`.
     reg32x32
     reg64x32
     reg32x64
@@ -195,44 +206,42 @@ type
   
   AffBgSize* {.size:2.} = enum
     ## Size of an affine background in tiles.
-    ## Implicitly convertible to type `BgSize`.
     aff16x16
     aff32x32
     aff64x64
     aff128x128
   
   BgCnt* {.exportc.} = distinct uint16
-    ## Background control register value.
+    ## Background control type, as used by :xref:`bgcnt[0..3] <bgcnt>`.
+    ## 
+    ## ========= ======= ====== ==================================================
+    ## Field     Type    Bits   Description
+    ## ========= ======= ====== ==================================================
+    ## `prio`    uint16  0-1    Priority value (0..3)
+    ##                          Lower priority BGs will be drawn on top of higher priority BGs.
+    ## `cbb`     uint16  2-3    Character Base Block (0..3)
+    ##                          Determines the base block for tile pixel data
+    ## `mos`     bool    6      Enables mosaic effect.
+    ## `is8bpp`  bool    7      Specifies the color mode of the BG: 4bpp (16 colors) or 8bpp (256 colors)
+    ##                          Has no effect on affine BGs, which are always 8bpp.
+    ## `sbb`     uint16  8-12   Screen Base Block (0..31)
+    ##                          Determines the base block for the tilemap
+    ## `wrap`    bool    13     Affine Wrapping flag.
+    ##                          If set, affine background wrap around at their edges.
+    ##                          Has no effect on regular backgrounds as they wrap around by default. 
+    ## `size`    BgSize  14-15  Value representing the size of the background in tiles.
+    ##                          Regular and affine backgrounds have different sizes available to them, hence
+    ##                          the two different types assignable to this field (`RegBgSize`, `AffBgSize`)
+    ## ========= ======= ====== ==================================================
 
 
 bitdef BgCnt, 0..1, prio, uint16
-  # Priority value (0..3)
-  # Lower priority BGs will be drawn on top of higher priority BGs.
-
 bitdef BgCnt, 2..3, cbb, uint16
-  # Character Base Block (0..3)
-  # Determines the base block for tile pixel data
-
 bitdef BgCnt, 6, mos, bool
-  # Enables mosaic effect.
-
 bitdef BgCnt, 7, is8bpp, bool
-  # Specifies the color mode of the BG: 4bpp (16 colors) or 8bpp (256 colors)
-  # Has no effect on affine BGs, which are always 8bpp.
-
 bitdef BgCnt, 8..12, sbb, uint16
-  # Screen Base Block (0..31)
-  # Determines the base block for the tilemap
-
 bitdef BgCnt, 13, wrap, bool
-  # Affine Wrapping flag.
-  # If set, affine background wrap around at their edges.
-  # Has no effect on regular backgrounds as they wrap around by default. 
-
 bitdef BgCnt, 14..15, size, BgSize
-  # Value representing the size of the background in tiles.
-  # Regular and affine backgrounds have different sizes available to them, hence
-  # the two different types assignable to this field (`RegBgSize`, `AffBgSize`)
     
 converter toBgSize*(r: RegBgSize): BgSize = (r.BgSize)
 converter toBgSize*(a: AffBgSize): BgSize = (a.BgSize)
@@ -246,23 +255,23 @@ when natuPlatform == "gba":
     WinInt* = uint8
     WinH* {.exportc:"WinH".} = object
       ## Defines the horizontal bounds of a window (left ..< right)
-      right*: WinInt
-      left*: WinInt
+      right*: uint8
+      left*: uint8
     WinV* {.exportc:"WinV".} = object
       ## Defines the vertical bounds of a window (top ..< bottom)
-      bottom*: WinInt
-      top*: WinInt
+      bottom*: uint8
+      top*: uint8
 else:
   type
     WinInt* = uint16
     WinH* {.exportc:"WinH".} = object
       ## Defines the horizontal bounds of a window (left ..< right)
-      left*: WinInt
-      right*: WinInt
+      left*: uint16
+      right*: uint16
     WinV* {.exportc:"WinV".} = object
       ## Defines the vertical bounds of a window (top ..< bottom)
-      top*: WinInt
-      bottom*: WinInt
+      top*: uint16
+      bottom*: uint16
 
 type
   WindowLayer* {.size:1.} = enum
@@ -292,13 +301,21 @@ bitdef Mosaic, 12..15, objv, uint16, {WriteOnly}
 type
   BldCnt* = distinct uint16
     ## Blend control register
+    ## 
+    ## ======== ============= ====== ==================================================
+    ## Field    Type          Bits   Description
+    ## ======== ============= ====== ==================================================
+    ## `a`      BlendLayers   0-5    The upper layers to opt-into color special effects.
+    ## `mode`   BlendMode     6-7    Color special effects mode.
+    ## `b`      BlendLayers   8-13   The lower layers to opt-into color special effects.
+    ## ======== ============= ====== ==================================================
   
   BlendMode* {.size:2.} = enum
-    ## Color special effects modes
+    ## Color special effects modes:
     bmOff    ## Blending disabled
-    bmAlpha  ## Alpha blend both A and B (using the weights from ``bldalpha``).
-    bmWhite  ## Blend A with white using the weight from ``bldy``
-    bmBlack  ## Blend A with black using the weight from ``bldy``
+    bmAlpha  ## Alpha A against B using the weights from :xref:`bldalpha`
+    bmWhite  ## Blend A with white using the weight from :xref:`bldy`
+    bmBlack  ## Blend A with black using the weight from :xref:`bldy`
   
   BlendLayer* {.size:2.} = enum
     blBg0, blBg1, blBg2, blBg3, blObj, blBd
@@ -320,29 +337,37 @@ type
   BlendAlpha* = distinct uint16
     ## Alpha blending levels.
     ## Features two coefficients: ``eva`` for layer ``a``, ``evb`` for layer ``b``.
+    ## 
+    ## ======== ======== ====== ==================================================
+    ## Field    Type     Bits   Description
+    ## ======== ======== ====== ==================================================
+    ## `eva`    uint16   0-4    Upper layer alpha blending coefficient.
+    ##                          Values from 17..31 are treated the same as 16.
+    ## `evb`    uint16   8-12   Lower layer alpha blending coefficient.
+    ##                          Values from 17..31 are treated the same as 16.
+    ## ======== ======== ====== ==================================================
   
   BlendBrightness* = distinct uint16
     ## Brightness level (fade to black or white).
     ## Has a single coefficient ``evy``.
+    ## 
+    ## ======== ======== ====== ==================================================
+    ## Field    Type     Bits   Description
+    ## ======== ======== ====== ==================================================
+    ## `evy`    uint16   0-4    Brightness coefficient (write-only!)
+    ##                          Values from 17..31 are treated the same as 16.
+    ## ======== ======== ====== ==================================================
 
 bitdef BlendAlpha, 0..7, eva, uint16
-  # Upper layer alpha blending coefficient.
-  # Values from 17..31 are treated the same as 16.
-
 bitdef BlendAlpha, 8..15, evb, uint16
-  # Lower layer alpha blending coefficient
-  # Values from 17..31 are treated the same as 16.
-
 
 proc `evy=`*(bldy: var BlendBrightness, v: uint16) =
-  ## Brightness coefficient (write-only!)
-  ## Values from 17..31 are treated the same as 16.
   bldy = v.BlendBrightness
 
 
 # TODO: improve how BG scroll registers are exposed.
 # You should be able to write to them _and_ take their address, just not read them
-type BgOfs = BgPoint
+type BgOfs* = BgPoint
 
 
 
@@ -592,6 +617,7 @@ proc clrGrayscale*(dst: ptr Color; src: ptr Color; nclrs: cint) {.importc: "clr_
 
 proc clrRgbscale*(dst: ptr Color; src: ptr Color; nclrs: cint; clr: Color) {.importc: "clr_rgbscale", tonc.}
   ## Transform colors to an rgb-scale.
+  ## 
   ## .. note::
   ##    `clr` indicates a color vector in RGB-space. Each source color is converted to a brightness value (i.e. grayscale)
   ##    and then mapped onto that color vector. A grayscale is a special case of this, using a color with R=G=B.
@@ -602,31 +628,34 @@ proc clrRgbscale*(dst: ptr Color; src: ptr Color; nclrs: cint; clr: Color) {.imp
   ## :clr: Destination color vector.
 
 proc clrAdjBrightness*(dst: ptr Color; src: ptr Color; nclrs: cint; bright: Fixed) {.importc: "clr_adj_brightness", tonc.}
-  ## Adjust brightness by `bright`
-  ## Operation: `color= color+dB`;
+  ## Adjust brightness by `bright`.
+  ## 
+  ## Operation: `color = color+dB`
   ## 
   ## :dst: Destination color array
   ## :src: Source color array.
   ## :nclrs: Number of colors.
-  ## :bright: Brightness difference, dB (in 24.8f)
+  ## :bright: Brightness difference (`dB`)
 
 proc clrAdjContrast*(dst: ptr Color; src: ptr Color; nclrs: cint; contrast: Fixed) {.importc: "clr_adj_contrast", tonc.}
-  ## Adjust contrast by `contrast`
+  ## Adjust contrast by `contrast`.
+  ## 
   ## Operation: `color = color*(1+dC) - MAX*dC/2`
   ## 
   ## :dst: Destination color array
   ## :src: Source color array.
   ## :nclrs: Number of colors.
-  ## :contrast: Contrast difference, dC (in 24.8f)
+  ## :contrast: Contrast difference (`dC`)
 
 proc clrAdjIntensity*(dst: ptr Color; src: ptr Color; nclrs: cint; intensity: Fixed) {.importc: "clr_adj_intensity", tonc.}
   ## Adjust intensity by `intensity`. 
+  ## 
   ## Operation: `color = (1+dI)*color`.
   ## 
   ## :dst: Destination color array
   ## :src: Source color array.
   ## :nclrs: Number of colors.
-  ## :intensity: Intensity difference, dI (in 24.8f)
+  ## :intensity: Intensity difference (`dI`)
 
 proc palGradient*(pal: ptr Color; first: cint; last: cint) {.importc: "pal_gradient", tonc.}
   ## Create a gradient between `pal[first]` and `pal[last]`.
@@ -1116,7 +1145,7 @@ proc premul*(dst: var BgAffine; src: ptr BgAffine) {.importc: "bg_aff_premul", t
   ## i.e. ``dst = src * dst``
   ## 
   ## .. warning::
-  ##    Don't use this on `bgaff <#bgaff>`_ registers, as they are write-only.
+  ##    Don't use this on `bgaff <#bgaff>`_ registers directly, as they are write-only.
 
 proc postmul*(dst: var BgAffine; src: ptr BgAffine) {.importc: "bg_aff_postmul", tonc.}
   ## Post-multiply the matrix `dst` by `src`
@@ -1124,7 +1153,7 @@ proc postmul*(dst: var BgAffine; src: ptr BgAffine) {.importc: "bg_aff_postmul",
   ## i.e. ``dst = dst * src``
   ## 
   ## .. warning::
-  ##    Don't use this on `bgaff`_ registers, as they are write-only.
+  ##    Don't use this on `bgaff`_ registers directly, as they are write-only.
 
 proc rotscaleEx*(bgaff: var BgAffine; asx: ptr AffSrcEx) {.importc: "bg_rotscale_ex", tonc.}
   ## Set bg affine matrix to a rot/scale around an arbitrary point.

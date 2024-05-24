@@ -1,5 +1,6 @@
 import ./common
 import ./sdl/appcommon
+import ../bits
 
 # static:
 #   # Make sure we're actually compiling for a 32-bit system.
@@ -27,7 +28,24 @@ type
     data*: array[8, uint32]
 
 type
-  ScrEntry* = distinct uint16    ## Type for screen entries           TODO: make distinct
+  ScrEntry* = distinct uint16
+    ## Type for screen entries (i.e. the values that make up a tile map)
+    ## 
+    ## Each screen entry is a bitfield with the following attributes:
+    ## 
+    ## ======== ======= ========= =====================
+    ## Field    Type    Bits      Description
+    ## ======== ======= ========= =====================
+    ## `tileId` int     0-9       Tile to display (relative to the background's `cbb` × 512)
+    ## `hflip`  bool    10        Flip horizontally
+    ## `vflip`  bool    11        Flip vertically
+    ## `palId`  int     12-15     Palette to use (ignored for 8bpp backgrounds)
+    ## `tid`    int     0-9       Alias for tileId
+    ## `pal`    int     12-15     Alias for palId
+    ## ======== ======= ========= =====================
+
+ 
+type
   ScrAffEntry* = uint8  ## Type for affine screen entries
 
 type
@@ -106,21 +124,42 @@ type
     cnt* {.importc: "cnt".}: uint16
 
 type
-  Color* = distinct uint16 
-    ## A 15bpp colour value. (``xbbbbbgggggrrrrr`` format)
-  
-  Palette* = array[16, Color]
-    ## A 16-color palette
+  Color* = distinct uint16
+    ## A 15bpp BGR color value.
+    ## 
+    ## The red, green and blue components can be accessed via the following fields:
+    ## 
+    ## ======== ======= ========= =====================
+    ## Field    Type    Bits      Description
+    ## ======== ======= ========= =====================
+    ## `r`      int     0-4       Red component
+    ## `g`      int     5-9       Green component
+    ## `b`      int     10-14     Blue component
+    ## ======== ======= ========= =====================
 
-## VRAM array types
-## These types allow VRAM access as arrays or matrices in their most natural types.
 type
-  M3Line* = array[240, Color]
-  M4Line* = array[240, uint8]  ## NOTE: u8, not u16!! (be careful not to write single bytes to VRAM)
-  M5Line* = array[160, Color]
-  M3Mem* = array[160, M3Line]
-  M4Mem* = array[160, M4Line]
-  M5Mem* = array[128, M5Line]
+  Palette* = array[16, Color]
+    ## A 16-color palette.
+    ## 
+    ## The first element in a palette is irrelevant, except
+    ## for `bgPalMem[0][0]` (i.e. `bgColorMem[0]`) which sets the
+    ## backdrop color for the entire screen.
+
+# VRAM array types
+# These types allow VRAM access as arrays or matrices in their most natural types.
+type
+  M3Line* {.deprecated.} = array[240, Color]
+  M4Line* {.deprecated.} = array[240, uint8]
+  M5Line* {.deprecated.} = array[160, Color]
+  M3Mem* = array[160, array[240, Color]]
+  M4Mem* = array[160, array[240, uint8]]
+    ## .. note::
+    ## 
+    ##    VRAM does not support 8-bit writes.
+    ##    Do not attempt to use this to write bytes directly to VRAM!
+    ##    (try one of the `plot()` procedures instead?)
+    ## 
+  M5Mem* = array[128, array[160, Color]]
   Screenline* = array[32, ScrEntry]
   ScreenMat* = array[32, Screenline]
   Screenblock* = array[1024, ScrEntry]
@@ -174,15 +213,48 @@ when natuPlatform == "gba":
     OamInt* = int16
     
     ObjAttr* {.importc: "OBJ_ATTR", header: "tonc_types.h", bycopy, completeStruct.} = object
-      ## Object attributes. i.e. a sprite.
+      ## Object attributes are the parameters of a sprite.
       ## 
-      ## .. note::
-      ##    The `fill` field exists as padding for the interlace with `ObjAffine`.
-      ##    It will not be copied when assigning one `ObjAttr` to another.
+      ## The following accessors are available to work with them:
+      ## 
+      ## ========== ================== =======================================================
+      ## Field      Type               Description
+      ## ========== ================== =======================================================
+      ## `x`        int                X coordinate of the sprite's top-left corner (0 .. 511)
+      ## `y`        int                Y coordinate of the sprite's top-left corner (0 .. 255)
+      ## `pos`      :xref:`Vec2i`      Access the X and Y coordinates as a pair.
+      ## `mode`     :xref:`ObjMode`    One of `omRegular`, `omAffine`, `omHidden`, `omAffineDouble`.
+      ## `fx`       :xref:`ObjFxMode`  One of `fxNone`, `fxBlend`, `fxWindow`.
+      ## `mos`      bool               Enables mosaic effect.
+      ## `hflip`    bool               Horizontal flip (if mode is `omRegular`)
+      ## `vflip`    bool               Vertical flip (if mode is `omRegular`)
+      ## `affId`    int                Affine matrix to use (0 .. 31), if mode is `omAffine` or `omAffineDouble`.
+      ## `is8bpp`   bool               Display 8bpp tiles if true, 4bpp otherwise.
+      ## `size`     :xref:`ObjSize`    Determines the width and height of the sprite.
+      ## `tileId`   int                The base tile of the sprite (0 .. 1023), i.e. index into :xref:`objTileMem`.
+      ## `palId`    int                Which palette to use in 4bpp mode (0 .. 15), i.e. index into :xref:`objPalMem`.
+      ## `prio`     int                Priority value (0 = front, 3 = back)
+      ## `tid`      int                Alias for `tileId`.
+      ## `pal`      int                Alias for `palId`.
+      ## ========== ================== =======================================================
+      ## 
+      ## The raw underlying fields are as follows:
+      ## 
       attr0* {.importc: "attr0".}: uint16
+        ## Attribute 0
       attr1* {.importc: "attr1".}: uint16
+        ## Attribute 1
       attr2* {.importc: "attr2".}: uint16
+        ## Attribute 2
       fill* {.importc: "fill".}: int16
+        ## .. warning::
+        ##   Messing with `fill` could screw up scaling/rotation that you applied to other sprites!
+        ## 
+        ## Padding which exists because `ObjAttr` and `ObjAffine` are overlaid in memory.
+        ## 
+        ## This field will not be copied when assigning one `ObjAttr` to another. Therefore
+        ## you may use it for any purpose if your object exists outside of OAM and you intend
+        ## to copy it over later.
     
     ObjAffine* {.importc: "OBJ_AFFINE", header: "tonc_types.h", bycopy, completeStruct.} = object
       ## Object affine parameters.

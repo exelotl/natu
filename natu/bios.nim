@@ -149,13 +149,11 @@ proc Stop*() {.swi:"0x03", tonc.}
 proc IntrWait*(clear: bool; irq: set[IrqIndex]) {.swi:"0x04", tonc.}
   ## Wait until any one of the specified interrupts occurs.
   ## 
-  ## **Parameters:**
-  ## 
-  ## clear
+  ## :clear:
   ##   If true, pre-acknowledged interrupts will be disregarded and the routine
   ##   will wait for them to be acknowledged again.
   ## 
-  ## irq
+  ## :irq:
   ##   Which interrupt(s) to wait for.
 
 proc VBlankIntrWait*() {.swi:"0x05", tonc.}
@@ -183,13 +181,8 @@ proc VBlankIntrWait*() {.swi:"0x05", tonc.}
 proc Div*(num, den: cint): cint {.swi:"0x06", tonc.}
   ## Basic integer division.
   ## 
-  ## **Parameters:**
-  ## 
-  ## num
-  ##   Numerator.
-  ## 
-  ## den
-  ##   Denominator.
+  ## :num: Numerator.
+  ## :den: Denominator.
   ## 
   ## Returns ``num / den``.
   ## 
@@ -198,13 +191,8 @@ proc Div*(num, den: cint): cint {.swi:"0x06", tonc.}
 proc DivArm*(den, num: cint): cint {.swi:"0x07", tonc.}
   ## Basic integer division, but with switched arguments.
   ## 
-  ## **Parameters:**
-  ## 
-  ## den
-  ##   Denominator.
-  ## 
-  ## num
-  ##   Numerator.
+  ## :den: Denominator.
+  ## :num: Numerator.
   ## 
   ## Returns ``num / den``.
   ## 
@@ -264,16 +252,9 @@ proc CpuSet*(src: pointer; dst: pointer; opts: CpuSetOptions) {.swi:"0x0B", tonc
   ## 
   ## When `opts.stride == csWords` it will copy or fill in 32-bit steps instead.
   ## 
-  ## **Parameters:**
-  ##
-  ## src
-  ##   Source address.
-  ## 
-  ## dst
-  ##   Destination address.
-  ## 
-  ## opts
-  ##   Number of transfers, mode and stride.
+  ## :src:  Source address.
+  ## :dst:  Destination address.
+  ## :opts: Number of transfers, mode and stride.
   ## 
   ## .. note:: This basically does a straightforward loop-copy, and is not particularly fast.
   ##    
@@ -288,16 +269,9 @@ proc CpuFastSet*(src: pointer; dst: pointer; opts: CpuFastSetOptions) {.swi:"0x0
   ## When `opts.mode == cmFill` it will keep the source address constant, effectively
   ## performing fills instead of copies.
   ## 
-  ## **Parameters:**
-  ##
-  ## src
-  ##   Source address. Must be word aligned.
-  ## 
-  ## dst
-  ##   Destination address. Must be word aligned.
-  ## 
-  ## opts
-  ##   Number of words to transfer, and mode.
+  ## :src:  Source address. Must be word aligned.
+  ## :dst:  Destination address. Must be word aligned.
+  ## :opts: Number of words to transfer, and mode.
   ## 
   ## .. note:: Both source and destination must be word aligned; the number of copies must be a multiple of 8.
   ##    
@@ -327,7 +301,7 @@ const
 
 proc ObjAffineSet*(src: ptr ObjAffineSource; dst: pointer; num: cint; offset: cint) {.swi:"0x0E", tonc.}
   ## Sets up a simple scale-then-rotate affine transformation.
-  ## Uses a single `ObjAffineSource` struct to set up an array of affine
+  ## Uses a single :xref:`ObjAffineSource` struct to set up an array of affine
   ## matrices (either BG or Object) with a certain transformation. The
   ## matrix created is::
   ## 
@@ -337,19 +311,10 @@ proc ObjAffineSet*(src: ptr ObjAffineSource; dst: pointer; num: cint; offset: ci
   ##   | sy·sin(α) | sy·cos(α)  |
   ##   └───────────┴────────────┘
   ## 
-  ## **Parameters:**
-  ##
-  ## src
-  ##   Array with scale and angle information.
-  ## 
-  ## dst
-  ##   Array of affine matrices, starting at a `pa` element.
-  ## 
-  ## num
-  ##   Number of matrices to set.
-  ## 
-  ## offset
-  ##   Offset between affine elements. Use 2 for BG and 8 for object matrices.
+  ## :src:    Array with scale and angle information.
+  ## :dst:    Array of affine matrices, starting at a `pa` element.
+  ## :num:    Number of matrices to set.
+  ## :offset: Offset between affine elements. Use 2 for BG and 8 for object matrices.
   ## 
   ## .. note::
   ##   Each element in `src` needs to be word aligned.
@@ -432,13 +397,8 @@ proc DivSafe*(num, den: cint): cint {.tonc.}
   ## The standard :ref:`Div` hangs when `den == 0`. This version will return `cint.high` or `cint.low`,
   ## depending on the sign of `num`.
   ## 
-  ## **Parameters:**
-  ## 
-  ## num
-  ##   Numerator.
-  ## 
-  ## den
-  ##   Denominator.
+  ## :num: Numerator.
+  ## :den: Denominator.
   ## 
   ## Returns `num / den`.
 
@@ -460,20 +420,13 @@ proc DivArmAbs*(den, num: cint): cuint {.tonc.}
 proc CpuFastFill*(wd: uint32; dst: pointer; words: cuint) {.tonc.}
   ## A fast word fill.
   ## 
-  ## While you can perform fills with `CpuFastSet()`, the fact that
-  ## swi 0x01 requires a source address makes it awkward to use.
+  ## While you can perform fills with :xref:`CpuFastSet`, the fact that
+  ## swi `0x01` requires a source address makes it awkward to use.
   ## This function is more like the traditional memset formulation.
   ## 
-  ## **Parameters:**
-  ## 
-  ## wd
-  ##   Fill word.
-  ## 
-  ## dst
-  ##   Destination address.
-  ## 
-  ## words
-  ##   Number of words to transfer.
+  ## :wd: Fill word.
+  ## :dst: Destination address.
+  ## :words: Number of words to transfer.
 
 
 # Platform specific code

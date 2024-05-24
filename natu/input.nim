@@ -4,16 +4,16 @@ type
   KeyIndex* = enum
     ## Bit positions for `keyinput` and `keycnt`.
     ## Used with input functions such as `keyIsDown`.
-    kiA            ## Button A
-    kiB            ## Button B
+    kiA            ## A button
+    kiB            ## B button
     kiSelect       ## Select button
     kiStart        ## Start button
     kiRight        ## Right D-pad
     kiLeft         ## Left D-pad
     kiUp           ## Up D-pad
     kiDown         ## Down D-pad
-    kiR            ## Shoulder R
-    kiL            ## Shoulder L
+    kiR            ## Right shoulder button
+    kiL            ## Left shoulder button
   
   KeyState* {.size:2.} = set[KeyIndex]
 

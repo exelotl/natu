@@ -4,7 +4,7 @@
 
 var dispcnt* {.importc:"(*(volatile NU16*)(0x04000000))", nodecl.}: DispCnt              ## Display control register
 var dispstat* {.importc:"(*(volatile NU16*)(0x04000004))", nodecl.}: DispStat           ## Display status register
-let vcount* {.importc:"(*(volatile NU16*)(0x04000006))", nodecl.}: uint16                   ## Scanline count (read only)
+let vcount* {.importc:"(*(volatile NU16*)(0x04000006))", nodecl.}: uint16                   ## Scanline count register (read only)
 var bgcnt* {.importc:"((volatile NU16*)(0x04000008))", nodecl.}: array[4, BgCnt]           ## BG control registers
 var bgofs* {.importc:"((volatile BG_POINT*)(0x04000010))", header:"tonc_types.h".}: array[4, BgOfs]        ## [Write only!] BG scroll registers
 var bgaff* {.importc:"((volatile BG_AFFINE*)(0x04000020))", header:"tonc_types.h".}: array[2..3, BgAffine] ## [Write only!] Affine parameters (matrix and scroll offset) for BG2 and BG3, depending on display mode.
@@ -67,22 +67,23 @@ var bgTileMem* {.importc:"tile_mem", header:"tonc_memmap.h".}: array[4, Unbounde
   ## .. note::
   ##    While `bgTileMem[0]` has 512 elements, it's valid to reach across
   ##    into the neighbouring charblock, for example `bgTileMem[0][1000]`.
+  ##    For this reason, bounds checking is not performed on tile memory
+  ##    even when compiling with `--checks:on`.
   ## 
-  ## For this reason, no bounds checking is performed on these charblocks even when
-  ## compiling with `--checks:on`.
+  ## **Example:**
   ## 
   ## .. code-block:: nim
   ## 
-  ##   bgTileMem[i]      # charblock i
-  ##   bgTileMem[i][j]   # charblock i, tile j
+  ##   bgTileMem[i][j]   # Get image data from tile `j` in charblock `i`.
 
 var bgTileMem8* {.importc:"tile8_mem", header:"tonc_memmap.h".}: array[4, UnboundedCharblock8]
   ## BG charblocks, 8bpp tiles.
   ## 
+  ## **Example:**
+  ## 
   ## .. code-block:: nim
   ## 
-  ##   bgTileMem8[i]      # charblock i
-  ##   bgTileMem8[i][j]   # charblock i, tile j
+  ##   bgTileMem8[i][j]   # Get image data from tile `j` in charblock `i`.
 
 var objTileMem* {.importc:"tile_mem_obj[0]", header:"tonc_memmap.h".}: array[1024, Tile]
   ## Object (sprite) image data, as 4bpp tiles.
@@ -93,13 +94,15 @@ var objTileMem* {.importc:"tile_mem_obj[0]", header:"tonc_memmap.h".}: array[102
   ## 
   ## .. code-block:: nim
   ## 
-  ##   objTileMem[n] = Tile()   # Clear the image data for a tile.
+  ##   objTileMem[n] = Tile()   # Clear the image data for a sprite tile.
 
 var objTileMem8* {.importc:"tile8_mem_obj[0]", header:"tonc_memmap.h".}: array[512, Tile8]
-  ## Object (sprite) tiles, 8bpp
+  ## Object (sprite) tiles, 8bpp.
 
 var seMem* {.importc:"se_mem", header:"tonc_memmap.h".}: array[32, Screenblock]
-  ## Screenblocks as arrays
+  ## Screenblocks as arrays.
+  ## 
+  ## **Example:**
   ## 
   ## .. code-block:: nim
   ## 
@@ -111,31 +114,42 @@ var seMem* {.importc:"se_mem", header:"tonc_memmap.h".}: array[32, Screenblock]
 var vidMem* {.importc:"vid_mem", header:"tonc_memmap.h".}: array[240*160, Color]
   ## Main mode 3/5 frame as an array
   ## 
+  ## **Example:**
+  ## 
   ## .. code-block:: nim
   ## 
-  ##   vidMem[i]    # pixel i
+  ##   vidMem[i]    # Get pixel `i` as a Color.
 
-var m3Mem* {.importc:"m3_mem", header:"tonc_memmap.h".}: array[160, M3Line]
-  ## Mode 3 frame as a matrix
+var m3Mem* {.importc:"m3_mem", header:"tonc_memmap.h".}: M3Mem
+  ## Mode 3 frame as a matrix.
+  ## 
+  ## **Example:**
   ## 
   ## .. code-block:: nim
   ## 
-  ##   m3Mem[y][x]  # pixel (x, y)
+  ##   m3Mem[y][x]  # Get pixel (x, y) as a Color.
 
-var m4Mem* {.importc:"m4_mem", header:"tonc_memmap.h".}: array[160, M4Line]
-  ## Mode 4 first page as a matrix
-  ## Note: This is a byte-buffer. Not to be used for writing.
+var m4Mem* {.importc:"m4_mem", header:"tonc_memmap.h".}: M4Mem
+  ## Mode 4 first page as a matrix.
+  ## 
+  ## .. note::
+  ##    
+  ##    This is a byte-buffer, not to be used for writing.
+  ## 
+  ## **Example:**
   ## 
   ## .. code-block:: nim
   ## 
-  ##   m4Mem[y][x]  # pixel (x, y)
+  ##   m4Mem[y][x]  # Get pixel (x, y) as a uint8.
 
-var m5Mem* {.importc:"m5_mem", header:"tonc_memmap.h".}: array[128, M5Line]
-  ## Mode 5 first page as a matrix
+var m5Mem* {.importc:"m5_mem", header:"tonc_memmap.h".}: M5Mem
+  ## Mode 5 first page as a matrix.
+  ## 
+  ## **Example:**
   ## 
   ## .. code-block:: nim
   ## 
-  ##   m5Mem[y][x]  # pixel (x, y)
+  ##   m5Mem[y][x]  # Get pixel (x, y) as a Color.
 
 var vidMemFront* {.importc:"vid_mem_front", header:"tonc_memmap.h".}: array[160*128, uint16]
   ## First page array
@@ -143,38 +157,76 @@ var vidMemFront* {.importc:"vid_mem_front", header:"tonc_memmap.h".}: array[160*
 var vidMemBack* {.importc:"vid_mem_back", header:"tonc_memmap.h".}: array[160*128, uint16]
   ## Second page array
 
-var m4MemBack* {.importc:"m4_mem_back", header:"tonc_memmap.h".}: array[160, M4Line]
-  ## Mode 4 second page as a matrix
+var m4MemBack* {.importc:"m4_mem_back", header:"tonc_memmap.h".}: M4Mem
+  ## Mode 4 second page as a matrix.
+  ## 
   ## This is a byte-buffer. Not to be used for writing.
   ## 
+  ## **Example:**
+  ## 
   ## .. code-block:: nim
   ## 
-  ##   m4MemBack[y][x]  = pixel (x, y)          ( u8 )
+  ##   m4MemBack[y][x]  # Get pixel (x, y) as a uint8.
 
-var m5MemBack* {.importc:"m5_mem_back", header:"tonc_memmap.h".}: array[128, M5Line]
-  ## Mode 5 second page as a matrix
+var m5MemBack* {.importc:"m5_mem_back", header:"tonc_memmap.h".}: M5Mem
+  ## Mode 5 second page as a matrix.
+  ## 
+  ## **Example:**
   ## 
   ## .. code-block:: nim
   ## 
-  ##   m5MemBack[y][x]  = pixel (x, y)          ( Color )
+  ##   m5MemBack[y][x]  # Get pixel (x, y) as a Color.
 
 
 # OAM
 
 var objMem* {.importc:"oam_mem", header:"tonc_memmap.h".}: array[128, ObjAttr]
-  ## Object attribute memory
+  ## Object attribute memory (where sprite properties belong).
+  ## 
+  ## **Example:**
   ## 
   ## .. code-block:: nim
   ## 
-  ##   objMem[i] = object i            (ObjAttr)
+  ##   var myObj: ObjAttr
+  ##   
+  ##   # Set up a sprite with some values:
+  ##   myObj.init(
+  ##     pos = vec2i(x, y),
+  ##     tid = tid,
+  ##     pal = pal,
+  ##     size = s16x16,
+  ##     prio = 0,
+  ##   )
+  ##   
+  ##   # Later (during vblank) copy it into a slot in OAM:
+  ##   objMem[i] = myObj
 
 var objAffMem* {.importc:"obj_aff_mem", header:"tonc_memmap.h".}: array[32, ObjAffine]
-  ## Object affine memory
+  ## Object affine matrix memory.
+  ## 
+  ## This is where the transformation matrices for sprites belong.
+  ## 
+  ## **Example:**
   ## 
   ## .. code-block:: nim
   ## 
-  ##   objAffMem[i] = object matrix i      ( OBJ_AFFINE )  
-
+  ##   var myObj: ObjAttr
+  ##   var affId = 0       # index of some matrix
+  ##   var angle = 0x2000  # 45 degrees
+  ##   
+  ##   # Set up a sprite to use an affine matrix.
+  ##   myObj.init(
+  ##     mode = omAffine,
+  ##     affId = affId,
+  ##     pos = vec2i(x, y),
+  ##     tid = tid,
+  ##     pal = pal,
+  ##     size = s16x16,
+  ##   )
+  ##   
+  ##   # Later (during vblank):
+  ##   objMem[i] = myObj                      # copy object into OAM.
+  ##   objAffMem[affId].setToRotation(angle)  # rotate by 45 degrees anticlockwise.
 
 
 {.compile(toncPath & "/src/tonc_video.c", toncCFlags).}

@@ -84,8 +84,6 @@ proc loadMap*(bg: Background; dest: pointer) {.inline.} =
   ## 
   ## Copy a background's map data to some location in memory.
   ## 
-  ## **Parameters:**
-  ## 
   ## :bg:   The background asset to use.
   ## :dest: The location to copy the map data to.
   ## 
@@ -99,8 +97,6 @@ proc loadMap*(bg: Background; dest: pointer) {.inline.} =
 proc loadMap*(bg: Background; sbb: range[0..31]) {.inline.} =
   ## 
   ## Copy a background's map data into VRAM.
-  ## 
-  ## **Parameters:**
   ## 
   ## :bg:
   ##   The background asset to use.
@@ -137,12 +133,8 @@ template load*(bgcnt: BgCnt; bg: Background) =
   ## 
   ## Load a background by copying its tiles, map, and palette into memory.
   ## 
-  ## The locations are determined by the supplied BG control register.
-  ## 
-  ## **Parameters:**
-  ## 
   ## :bgcnt: A BG control register value which determines
-  ##         where to copy the tiles and map.
+  ##         where in VRAM to copy the tiles and map.
   ## :bg:    The asset to be loaded.
   ## 
   ## **Example:**
