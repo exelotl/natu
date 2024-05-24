@@ -72,7 +72,7 @@ proc startInterruptManager() {.exportc.} =
   # Enable interrupts
   ime = true
 
-proc putIrq*(irqId: IrqIndex; handler: FnPtr) =
+proc put*(irqId: IrqIndex; handler: FnPtr) =
   ## 
   ## Enable an interrupt, and register a handler for it.
   ## 
@@ -84,7 +84,7 @@ proc putIrq*(irqId: IrqIndex; handler: FnPtr) =
   irqVectorTable[irqId] = handler
   ime = tmp
 
-proc delIrq*(irqId: IrqIndex) =
+proc delete*(irqId: IrqIndex) =
   ## 
   ## Disable an interrupt, and remove its handler.
   ## 
@@ -94,7 +94,7 @@ proc delIrq*(irqId: IrqIndex) =
   irqVectorTable[irqId] = nil
   ime = tmp
 
-proc enableIrq*(irqId: IrqIndex) =
+proc enable*(irqId: IrqIndex) =
   ## 
   ## Enable an interrupt.
   ## 
@@ -103,7 +103,7 @@ proc enableIrq*(irqId: IrqIndex) =
   doEnable(irqId)
   ime = tmp
 
-proc disableIrq*(irqId: IrqIndex) =
+proc disable*(irqId: IrqIndex) =
   ## 
   ## Disable an interrupt.
   ## 
@@ -111,6 +111,13 @@ proc disableIrq*(irqId: IrqIndex) =
   ime = false
   doDisable(irqId)
   ime = tmp
+
+
+proc putIrq*(irqId: IrqIndex; handler: FnPtr) {.inline, deprecated:"use irq.put instead".} = put(irqId, handler)
+proc delIrq*(irqId: IrqIndex) {.inline, deprecated:"use irq.delete instead".} = delete(irqId)
+proc enableIrq*(irqId: IrqIndex) {.inline, deprecated:"use irq.enable instead".} = enable(irqId)
+proc disableIrq*(irqId: IrqIndex) {.inline, deprecated:"use irq.disable instead".} = disable(irqId)
+
 
 proc natuAppHandleIrq*(index: int32) {.exportc, dynlib.} =
   # echo "IRQ: ", (ime, ie)
