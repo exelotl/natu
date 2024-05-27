@@ -67,7 +67,7 @@ const
 
 # ROM
 
-var romMem* {.importc:"rom_mem", tonc.}: array[0x1000000, uint16]
+let romMem* {.importc:"rom_mem", tonc.}: array[0x1000000, uint16]
   ## Access to ROM as an array of halfwords.
   ## 
   ## The max ROM size is ``32MiB``.
