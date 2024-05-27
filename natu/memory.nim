@@ -1,6 +1,3 @@
-## 
-## 
-
 import ./private/[memmap, privutils, common]
 import ./bits
 import std/volatile
@@ -25,9 +22,9 @@ type
     ## 
     ## Initial access to ROM takes `N` cycles, sequential access takes `S` cycles.
     ## 
-    ## 
     ## For more information on `N` cycles and `S` cycles, see the `asm chapter
-    ## <https://www.coranac.com/tonc/text/asm.htm#ssec-misc-cycles>`_ of Tonc.
+    ## <https://gbadev.net/tonc/asm.html#ssec-misc-cycles>`_ of Tonc.
+    ## 
     N4_S2
     N3_S2
     N2_S2
@@ -67,16 +64,28 @@ type
     phi8MHz   ## 8.38MHz
     phi17MHz  ## 16.78MHz
   
-  WaitCnt* {.bycopy, exportc.} = object
-    ## Waitstate control
-    sram* {.bitsize:2.}: WsSram   ## SRAM access time
-    rom0* {.bitsize:3.}: WsRom0   ## ROM access time
-    rom1* {.bitsize:3.}: WsRom1   ## ROM access time (alt. #1)
-    rom2* {.bitsize:3.}: WsRom2   ## ROM access time (alt. #2)
-    phi* {.bitsize:2.}: WsPhi
-    unused {.bitsize:1.}: bool
-    prefetch* {.bitsize:1.}: bool ## Prefetch buffer enabled.
-    gb {.bitsize:1.}: bool
+  WaitCnt* = distinct uint16
+    ## ========== ============== ====== ==================================================
+    ## Field      Type           Bits   Description
+    ## ========== ============== ====== ==================================================
+    ## `sram`     :xref:`WsSram` 0-1    SRAM access time.
+    ## `rom0`     :xref:`WsRom0` 2-4    ROM mirror 0 access time.
+    ## `rom1`     :xref:`WsRom1` 5-7    ROM mirror 1 access time.
+    ## `rom2`     :xref:`WsRom2` 8-10   ROM mirror 2 access time.
+    ## `phi`      :xref:`WsPhi`  11-12  Cart clock (don't touch!)
+    ## `prefetch` bool           14     Game Pak prefetch. If enabled, the GBA's `prefetch unit <https://mgba.io/2015/06/27/cycle-counting-prefetch/#game-pak-prefetch>`__
+    ##                                  will fetch upcoming instructions from ROM, when ROM is not being accessed by the CPU, generally leading to a performance boost.
+    ## `gb`       bool           15     True if a Game Boy (Color) cartridge is currently inserted. (Read only!)
+    ## ========== ============== ====== ==================================================
+
+bitdef WaitCnt, 0..1, sram, WsSram
+bitdef WaitCnt, 2..4, rom0, WsRom0
+bitdef WaitCnt, 5..7, rom1, WsRom1
+bitdef WaitCnt, 8..10, rom2, WsRom2
+bitdef WaitCnt, 11..12, phi, WsPhi
+bitdef WaitCnt, 14, prefetch, bool
+bitdef WaitCnt, 15, gb, bool, { ReadOnly }
+
 
 template init*(r: WaitCnt, args: varargs[untyped]) =
   var tmp: WaitCnt
@@ -93,32 +102,48 @@ template edit*(r: WaitCnt, args: varargs[untyped]) =
 # --------------------
 
 type
-  DmaDstMode* = enum
-    Inc
-    Dec
-    Fix
-    Reload  ## Like Inc but resets to its initial value after all transfers have been completed.
-  DmaSrcMode* = enum
-    Inc
-    Dec
-    Fix
-  DmaSize* = enum
-    Halfwords
-    Words
-  DmaTime* = enum
-    AtNow
-    AtVBlank
-    AtHBlank
-    AtSpecial  ## Ch 0/1: start on FIFO empty;  Ch 2: start on VCount=2
+  DmaDstMode* {.overloadable.} = enum
+    Inc     ## Increment after each copy.
+    Dec     ## Decrement after each copy.
+    Fix     ## Remain unchanged.
+    Reload  ## Like `Inc` but resets to its initial value after all transfers have been completed.
+  DmaSrcMode* {.overloadable.} = enum
+    Inc     ## Increment after each copy.
+    Dec     ## Decrement after each copy.
+    Fix     ## Remain unchanged.
+  DmaSize* {.overloadable.} = enum
+    Halfwords  ## Copy 16 bits.
+    Words      ## Copy 32 bits.
+  DmaTime* {.overloadable.} = enum
+    AtNow      ## Transfer immediately.
+    AtVBlank   ## Transfer on VBlank.
+    AtHBlank   ## Transfer on HBlank. Note: HBlank DMA does not occur during VBlank (unlike HBlank interrupts).
+    AtSpecial  ## Channels 0/1: start on FIFO empty. Channel 2: start on VCount = 2
   
   DmaCnt* = distinct uint16
+    ## DMA control register. (Write only!)
+    ## 
+    ## ========== ============== ======= ==================================================
+    ## Field      Type           Bits    Description
+    ## ========== ============== ======= ==================================================
+    ## `dstMode`  DmaDstMode     5..6    Type of increment applied to destination address.
+    ## `srcMode`  DmaSrcMode     7..8    Type of increment applied to source address.
+    ## `repeat`   bool           9       Repeat the transfer for each occurrence specified by `time`.
+    ## `size`     DmaSize        10      Whether to transfer 16 or 32 bits at a time.
+    ## `time`     DmaTime        12..13  Timing mode, determines when the transfer should occur.
+    ## `irq`      bool           14      If true, an interrupt will be raised when finished.
+    ## `enable`   bool           15      Enable DMA transfer for this channel. (Invoking `start() <#start>`__ will do this for you.)
+    ## ========== ============== ======= ==================================================
   
   DmaChannel* {.bycopy, exportc.} = object
-    ## A group of Direct Memory Access registers.
-    src*: pointer
-    dst*: pointer
-    count*: uint16
-    cnt*: DmaCnt
+    ## A group of registers for a single DMA channel.
+    ## 
+    ## Note, all :xref:`DmaCnt` fields can be set directly via the channel too, e.g. `dmach[3].`
+    ## 
+    src*: pointer    ## Source address.
+    dst*: pointer    ## Destination address.
+    count*: uint16   ## Number of transfers.
+    cnt*: DmaCnt     ## DMA control register.
 
 bitdef DmaCnt, 5..6, dstMode, DmaDstMode, {WriteOnly}
 bitdef DmaCnt, 7..8, srcMode, DmaSrcMode, {WriteOnly}

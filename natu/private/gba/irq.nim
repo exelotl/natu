@@ -20,7 +20,7 @@ var ie* {.importc:"(*(volatile NU16*)(0x4000200))", nodecl.}: IrqIndices
   ## e.g. `dispcnt.vblankIrq = true`.
   ## 
   ## .. note::
-  ##   `putIrq <#put,IrqIndex,FnPtr>`_ or `enableIrq <#enable,IrqIndex>`_ will take care of this for you.
+  ##   `irq.put <#put>`_ or `irq.enable <#enable>`_ will take care of this for you.
 
 var `if`* {.importc:"(*(volatile NU16*)(0x4000202))", nodecl.}: IrqIndices
   ## "Interrupt Flags" register.

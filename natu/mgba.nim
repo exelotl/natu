@@ -6,13 +6,15 @@ import ./private/common
 
 # TODO: replace with general logging module + `natuLogMode` string define
 const natuMgbaLogging {.booldefine.} = true
-  
-type LogLevel* {.size: sizeof(uint16).} = enum
-  logFatal = 0
-  logError = 1
-  logWarn = 2
-  logInfo = 3
-  logDebug = 4
+
+type
+  LogLevel* {.size: sizeof(uint16).} = enum
+    logFatal = 0
+    logError = 1
+    logWarn = 2   ## This will be used if you don't specify a log level, as
+                  ## it's the least-severe one that's enabled by default in mGBA.
+    logInfo = 3
+    logDebug = 4
 
 when natuPlatform == "gba":
   

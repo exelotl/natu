@@ -28,6 +28,8 @@ const NatuBgPalRamLen* = 256
 const NatuObjPalRamLen* = 512
 const NatuPalRamLen* = NatuBgPalRamLen + NatuObjPalRamLen
 
+const NatuNumObjs* = 512
+
 {.passC: "-DNATU_CB_LEN=" & $NatuCbLen.}
 {.passC: "-DNATU_SB_LEN=" & $NatuSbLen.}
 {.passC: "-DNATU_SB_START=" & $NatuSbStart.}
@@ -35,6 +37,7 @@ const NatuPalRamLen* = NatuBgPalRamLen + NatuObjPalRamLen
 {.passC: "-DNATU_BG_PAL_RAM_LEN=" & $NatuBgPalRamLen.}
 {.passC: "-DNATU_OBJ_PAL_RAM_LEN=" & $NatuObjPalRamLen.}
 {.passC: "-DNATU_PAL_RAM_LEN=" & $NatuPalRamLen.}
+{.passC: "-DNATU_NUM_OBJS=" & $NatuNumObjs.}
 
 type
   LoopKind* = enum

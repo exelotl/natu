@@ -679,10 +679,10 @@ proc palGradient*(pal: ptr Color; first, last: cint; clrFirst, clrLast: Color) {
 
 type
   ObjMode* {.size:2.} = enum
-    omRegular
-    omAffine
-    omHidden
-    omAffineDouble
+    omRegular        ## The object is displayed normally, possibly with horizontal/vertical flipping.
+    omAffine         ## The object is transformed according to the matrix specified by :xref:`affId <ObjAttr>`.
+    omHidden         ## The object is not displayed.
+    omAffineDouble   ## Like `omAffine, except `
   
   ObjFxMode* {.size:2.} = enum
     fxNone
@@ -690,7 +690,7 @@ type
     fxBlend
       ## Alpha blending enabled.
       ## The object is effectively placed into the `bldcnt.a` layer to be blended
-      ## with the `bldcnt.b` layer using the coefficients from `bldalpha`,
+      ## with the `bldcnt.b` layer using the coefficients from :xref:`bldalpha`,
       ## regardless of the current `bldcnt.mode` setting.
     fxWindow
       ## The sprite becomes part of the object window.

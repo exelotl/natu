@@ -32,7 +32,7 @@ var waitcnt* {.importc:"(*(volatile WaitCnt*)(0x04000204))", nodecl.}: WaitCnt
   ## .. warning::
   ##   The preferred access time of "3,1" works on every flashcart *except* for
   ##   the SuperCard SD and its derivatives. If you want to support the SuperCard
-  ##   without compromising performance for all, use the :ref:`slowGamePak` proc.
+  ##   without compromising performance for all, use the :xref:`slowGamePak` proc.
   ## 
   ## There are two additional ROM mirrors located at `0x0A000000` and `0x0C000000`,
   ## which have access times determined by `waitcnt.rom1` and `waitcnt.rom2`.

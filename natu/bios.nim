@@ -169,7 +169,7 @@ proc VBlankIntrWait*() {.swi:"0x05", tonc.}
   ##    
   ##    import natu/[irq, bios]
   ##    
-  ##    enableIrq(iiVBlank)
+  ##    irq.enable(iiVBlank)
   ##    
   ##    while true:
   ##      VBlankIntrWait()
@@ -186,7 +186,7 @@ proc Div*(num, den: cint): cint {.swi:"0x06", tonc.}
   ## 
   ## Returns ``num / den``.
   ## 
-  ## .. note:: Dividing by zero results in an infinite loop. Try :ref:`DivSafe` instead.
+  ## .. note:: Dividing by zero results in an infinite loop. Try :xref:`DivSafe` instead.
 
 proc DivArm*(den, num: cint): cint {.swi:"0x07", tonc.}
   ## Basic integer division, but with switched arguments.
@@ -394,7 +394,7 @@ proc VBlankIntrDelay*(count: cuint) {.tonc.}
 proc DivSafe*(num, den: cint): cint {.tonc.}
   ## Divide-by-zero safe division.
   ## 
-  ## The standard :ref:`Div` hangs when `den == 0`. This version will return `cint.high` or `cint.low`,
+  ## The standard :xref:`Div` hangs when `den == 0`. This version will return `cint.high` or `cint.low`,
   ## depending on the sign of `num`.
   ## 
   ## :num: Numerator.

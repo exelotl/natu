@@ -150,8 +150,8 @@ template acquireObjPal*(g: Graphic): int =
   ## Increase the reference count for a graphic's palette data.
   ## 
   ## If the count was zero, a slot in Obj PAL RAM will be allocated
-  ## using :ref:`allocObjPal`, and the palette data will be copied into
-  ## the corresponding slot in :ref:`objPalBuf`.
+  ## using :xref:`allocObjPal`, and the palette data will be copied into
+  ## the corresponding slot in :xref:`objPalBuf`.
   ## 
   ## Returns which slot in Obj PAL RAM was used, but you don't have
   ## to use the returned value, as you can always check it later

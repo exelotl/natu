@@ -49,7 +49,7 @@ proc memset32*(dst: pointer, wd: uint32, wcount: SomeInteger) {.importc, tonc.}
 proc memcpy32*(dst: pointer, src: pointer, wcount: SomeInteger) {.importc, tonc.}
   ## Fast-copy by words.
   ## 
-  ## Like :ref:`CpuFastFill`, only without the requirement of 32byte chunks
+  ## Like :xref:`CpuFastFill`, only without the requirement of 32byte chunks
   ## 
   ## :dst:     Destination address.
   ## :src:     Source address.

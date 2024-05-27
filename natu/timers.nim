@@ -15,16 +15,17 @@
 ##    proc myHandler() =
 ##      mgba.printf("Bonk!")
 ##    
-##    putIrq(iiTimer3, myHandler)      # Register the handler.
+##    irq.put(iiTimer3, myHandler)      # Register the handler.
 ##    
 ##    tmcnt[3].init(
 ##      freq = tf16kHz,
 ##      start = cast[uint16](-0x4000),  # 2^14 ticks at 16 kHz = 1 second
 ##      active = true,                  # Enable the timer.
+##      irq = true,                     # Fire an interrupt when the timer overflows.
 ##    )
 ## 
 ## .. note::
-##    Timer 0 is used by `maxmod <maxmod.html>`_ for audio, so don't touch it
+##    Timer 0 is used by :doc:`maxmod` for audio, so don't touch it
 ##    unless you know what you're doing.
 
 from ./private/privutils import writeFields

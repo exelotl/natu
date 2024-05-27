@@ -7,6 +7,8 @@
 ## .. warning::
 ##    This routine is unsafe, make sure the destination buffer
 ##    is big enough to hold the output string!
+##    
+##    Also, note that it functions slightly differently from `sprintf` in the C standard library. 
 ## 
 ## **Example**:
 ## 
@@ -29,7 +31,7 @@
 ##    dispcnt = initDispCnt(bg0 = true)
 ##    
 ##    # wait forever:
-##    enableIrq(iiVBlank)
+##    irq.enable(iiVBlank)
 ##    while true:
 ##      VBlankIntrWait()
 ##    
@@ -44,6 +46,7 @@ when natuPlatform == "gba":
     - ``dest`` must point to a sufficiently large block of memory to contain the result string.
     
     The following format specifiers are valid:
+    
     ======= =========================================================================
     ``%%``  print a ``%`` symbol
     ``%s``  print a string; parameter must point to a valid zero-terminated C string
@@ -55,13 +58,13 @@ when natuPlatform == "gba":
     
     The specifiers ``%d``, ``%l``, ``%x`` and ``%X`` may be modified as follows:
     
-    - Digits 1 through 9 indicate number of leading spaces to print, eg.
+    - | Digits 1 through 9 indicate number of leading spaces to print, eg.
       | ``%5d`` would print the number `123` as `"  123"`
       | ``%5d`` would print the number `123456` as `"123456"` (no leading spaces)
-    - When above digit is prefixed with 0, leading zeros are printed instead of spaces
+    - | When above digit is prefixed with 0, leading zeros are printed instead of spaces
       | ``%05d`` would print the number `123` as `"00123"`
       | ``%04d`` would print the number `12345` as `"12345"` (no leading zeros)
-    - Negative sign consumes a leading space, eg.
+    - | Negative sign consumes a leading space, eg.
       | ``%05d`` would print the number `-123` as `"-0123"`
       | (Hexadecimal numbers are considered unsigned)
     ]##

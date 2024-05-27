@@ -32,7 +32,7 @@ Happy coding! And if you need any help you can reach me (exelotl) on the [gbadev
 
 ### Thanks
 
-[tonc](https://www.coranac.com/tonc/text/) + libtonc by cearn  
+[tonc](https://gbadev.net/tonc/) + libtonc by cearn  
 [maxmod](https://maxmod.devkitpro.org/) sound system by mukunda johnson  
 [libugba](https://github.com/AntonioND/libugba)'s interrupt handler by AntonioND
 [ACSL](https://codeberg.org/pgimeno/ACSL)'s malloc/free by pgimeno
