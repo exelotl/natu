@@ -11,7 +11,7 @@ export romMem
 # SRAM
 export sramMem
 
-var waitcnt* {.importc:"(*(volatile WaitCnt*)(0x04000204))", nodecl.}: WaitCnt
+var waitcnt* {.importc:"(*(volatile NU16*)(0x04000204))", nodecl.}: WaitCnt
   ## Waitstate control register.
   ## 
   ## This controls the number of CPU cycles taken to access cart memory (ROM and SRAM).
