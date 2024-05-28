@@ -3,6 +3,7 @@
 ## Output text to the debug console in mGBA
 
 import ./private/common
+import ./posprintf
 
 # TODO: replace with general logging module + `natuLogMode` string define
 const natuMgbaLogging {.booldefine.} = true
@@ -18,7 +19,8 @@ type
 
 when natuPlatform == "gba":
   
-  proc sprintf(s: cstring; format: cstring) {.varargs, importc, header:"stdio.h".}
+  # ACSL sprintf seems unstable
+  # proc sprintf(s: cstring; format: cstring) {.varargs, importc, header:"stdio.h".}
   
   import volatile
   
@@ -34,7 +36,7 @@ when natuPlatform == "gba":
   
   # Wrapper template to work around compiler bug with empty varargs?
   template printfAux(str: cstring, args: varargs[untyped]) =
-    sprintf(REG_DEBUG_STRING, str, args)
+    posprintf(REG_DEBUG_STRING, str, args)
   
   proc open*(): bool {.discardable.} =
     poke(REG_DEBUG_ENABLE, 0xC0DE)
@@ -87,17 +89,18 @@ elif natuPlatform == "sdl":
     
     proc c_printf(format: cstring) {.varargs, importc:"printf", header:"stdio.h".}
     
+    var buf: array[1024, char]
+    
     # Wrapper template to work around compiler bug with empty varargs?
     template printfAux(str: cstring, args: varargs[untyped]) =
-      c_printf(str, args)
+      posprintf(cast[cstring](addr buf), str, args)
+      c_printf("%s\n", cast[cstring](addr buf))
     
     template printf*(level: LogLevel, str: cstring, args: varargs[untyped]) =
       printfAux(str, args)
-      c_printf("\n")
     
     template printf*(str: cstring, args: varargs[untyped]) =
       printfAux(str, args)
-      c_printf("\n")
   
   else:
     
