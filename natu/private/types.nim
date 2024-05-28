@@ -67,14 +67,14 @@ type
   
   AffSrc* {.importc: "AFF_SRC", header: "tonc_types.h", bycopy, completeStruct.} = object
     ## Simple scale-rotation source struct.
-    ## This can be used with `bios.ObjAffineSet`, and several of Tonc's affine functions.
+    ## This can be used with :xref:`ObjAffineSet() <ObjAffineSet>`, and several of Tonc's affine functions.
     sx*: FixedT[int16, 8]    ## Horizontal zoom (8.8f)
     sy*: FixedT[int16, 8]    ## Vertical zoom (8.8f)
     alpha*: uint16           ## Counter-clockwise angle (range 0..0xffff)
   
   AffSrcEx* {.importc: "AFF_SRC_EX", header: "tonc_types.h", bycopy, completeStruct.} = object
-    ## Extended scale-rotate source struct
-    ## This is used to scale/rotate around an arbitrary point. See tonc's main text for all the details.
+    ## Extended scale-rotate source struct.
+    ## This is used to scale/rotate around an arbitrary point. See `Tonc <https://gbadev.net/tonc/affobj.html#sec-combo>`__ for all the details.
     texX* {.importc: "tex_x".}: Fixed        ## Texture-space anchor, x coordinate  (.8f)
     texY* {.importc: "tex_y".}: Fixed        ## Texture-space anchor, y coordinate  (.8f)
     scrX* {.importc: "scr_x".}: int16        ## Screen-space anchor, x coordinate  (.0f)
@@ -84,18 +84,18 @@ type
     alpha* {.importc: "alpha".}: uint16      ## Counter-clockwise angle (range [0, 0xFFFF])
   
   AffDst* {.importc: "AFF_DST", header: "tonc_types.h", bycopy, completeStruct.} = object
-    ## Simple scale-rotation destination struct, BG version.
+    ## Simple scale-rotation destination struct.
     ## This is a P-matrix with contiguous elements, like the BG matrix.
-    ## It can be used with ObjAffineSet.
+    ## It can be used with :xref:`ObjAffineSet() <ObjAffineSet>`.
     pa*, pb*, pc*, pd*: FixedT[int16, 8]
   
   AffDstEx* {.importc: "AFF_DST_EX", header: "tonc_types.h", bycopy, completeStruct.} = object
-    ## Extended scale-rotate destination struct
+    ## Extended scale-rotate destination struct.
     ## 
     ## This contains the P-matrix and a fixed-point offset, the
     ## combination can be used to rotate around an arbitrary point.
     ## 
-    ## Mainly intended for BgAffineSet, but the struct can be used
+    ## Mainly intended for :xref:`BgAffineSet() <BgAffineSet>`, but can be used
     ## for object transforms too.
     pa*, pb*, pc*, pd*: FixedT[int16, 8]
     dx*, dy*: int32
