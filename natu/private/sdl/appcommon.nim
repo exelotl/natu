@@ -28,7 +28,9 @@ const NatuBgPalRamLen* = 256
 const NatuObjPalRamLen* = 512
 const NatuPalRamLen* = NatuBgPalRamLen + NatuObjPalRamLen
 
-const NatuNumObjs* = 512
+const NatuNumObjs* = 256
+const NatuNumMatrices* = NatuNumObjs div 4
+const NatuOamLen* = NatuNumObjs * 4
 
 {.passC: "-DNATU_CB_LEN=" & $NatuCbLen.}
 {.passC: "-DNATU_SB_LEN=" & $NatuSbLen.}
@@ -38,6 +40,8 @@ const NatuNumObjs* = 512
 {.passC: "-DNATU_OBJ_PAL_RAM_LEN=" & $NatuObjPalRamLen.}
 {.passC: "-DNATU_PAL_RAM_LEN=" & $NatuPalRamLen.}
 {.passC: "-DNATU_NUM_OBJS=" & $NatuNumObjs.}
+{.passC: "-DNATU_NUM_MATRICES=" & $NatuNumMatrices.}
+{.passC: "-DNATU_OAM_LEN=" & $NatuOamLen.}
 
 type
   LoopKind* = enum
@@ -128,7 +132,7 @@ type
     regs*: array[0x200, uint16]
     palram*: array[NatuPalRamLen, uint16]
     vram*: array[NatuVramLen, uint16]
-    oam*: array[512, uint32]
+    oam*: array[NatuOamLen, uint32]
     
     # api:
     panic*: proc (msg1: cstring; msg2: cstring = nil) {.nimcall.}

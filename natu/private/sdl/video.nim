@@ -46,8 +46,8 @@ template vidMemFront*: array[160*128, uint16]       = cast[ptr array[160*128, ui
 template vidMemBack*: array[160*128, uint16]        = cast[ptr array[160*128, uint16]](addr natuMem.vram[PageSize div 2])[]
 template m4MemBack*: array[160, M4Line]             = cast[ptr array[160, M4Line]](addr natuMem.vram[PageSize div 2])[]
 template m5MemBack*: array[128, M5Line]             = cast[ptr array[128, M5Line]](addr natuMem.vram[PageSize div 2])[]
-template objMem*: array[128, ObjAttr]               = cast[ptr array[128, ObjAttr]](addr natuMem.oam)[]
-template objAffMem*: array[32, ObjAffine]           = cast[ptr array[32, ObjAffine]](addr natuMem.oam)[]
+template objMem*: array[256, ObjAttr]               = cast[ptr array[256, ObjAttr]](addr natuMem.oam)[]
+template objAffMem*: array[64, ObjAffine]           = cast[ptr array[64, ObjAffine]](addr natuMem.oam)[]
 
 {.compile(toncPath & "/src/tonc_video.c", toncCFlags).}
 {.compile(toncPath & "/src/tonc_bg_affine.c", toncCFlags).}
@@ -230,7 +230,7 @@ func mode*(obj: ObjAttr): ObjMode = ((obj.attr0 and 0x0300'u32) shr 8).ObjMode
 func fx*(obj: ObjAttr): ObjFxMode = ((obj.attr0 and 0x0C00'u32) shr 10).ObjFxMode
 func mos*(obj: ObjAttr): bool = (obj.attr0 and 0x1000'u32) != 0
 func is8bpp*(obj: ObjAttr): bool = (obj.attr0 and 0x2000'u32) != 0
-func affId*(obj: ObjAttr): int = ((obj.attr1 and 0x3E00'u32) shr 9).int
+func affId*(obj: ObjAttr): int = ((obj.attr1 and 0x3F00'u32) shr 8).int
 func size*(obj: ObjAttr): ObjSize = (((obj.attr0 and 0xC000'u32) shr 12) or ((obj.attr1 and 0xC000'u32) shr 14)).ObjSize
 func hflip*(obj: ObjAttr): bool = (obj.attr1 and 0x1000'u32) != 0
 func vflip*(obj: ObjAttr): bool = (obj.attr1 and 0x2000'u32) != 0
@@ -275,7 +275,7 @@ func `is8bpp=`*(obj: var ObjAttr; v: bool) =
   obj.attr0 = (v.uint32 shl 13) or (obj.attr0 and not 0x2000'u32)
 
 func `affId=`*(obj: var ObjAttr; affId: int) =
-  obj.attr1 = ((affId.uint32 shl 9) and 0x3E00'u32) or (obj.attr1 and not 0x3E00'u32)
+  obj.attr1 = ((affId.uint32 shl 8) and 0x3F00'u32) or (obj.attr1 and not 0x3F00'u32)
 
 func `size=`*(obj: var ObjAttr; v: ObjSize) =
   let shape = (v.uint32 shl 12) and 0xC000'u32
