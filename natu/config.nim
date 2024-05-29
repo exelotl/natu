@@ -3,6 +3,22 @@ import std/compilesettings
 
 let natuDir* = currentSourcePath().parentDir.parentDir
 
+# Config gets loaded twice:
+# 1) with 'config.nims' as the project directory.
+# 2) with 'path/to/my_game.nim' as the project directory.
+# 
+# We want to use (1) as the root for , so use the environment
+# to make sure it only gets set once.
+
+if not existsEnv("natuConfigRoot"):
+  putEnv("natuConfigRoot", projectDir())
+
+let root = getEnv("natuConfigRoot")
+
+switch "define", "natuOutputDir:" & root/"output"
+switch "define", "natuConfigDir:" & root/"config"
+switch "define", "natuSharedDir:" & root/"shared"
+
 # ROM header info, should be overidden
 
 put "natu.gameTitle", "UNTITLED"
@@ -49,6 +65,8 @@ proc natuExe*: string =
       result = natuDir/"natu.out"  # unix-friendly fallback
 
 proc gbaCfg* =
+  
+  echo "Yeh"
   
   if useDkp:
     echo "Using devkitARM's GCC."
