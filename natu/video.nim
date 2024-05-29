@@ -97,40 +97,40 @@ type
   DispCnt* = distinct uint16
     ## Display control type, as used by :xref:`dispcnt`.
     ## 
-    ## ======== ====== ===== ==================================================
-    ## Field    Type   Bits  Description
-    ## ======== ====== ===== ==================================================
-    ## `mode`   uint16 0-2   Video mode, may have one of the following values:
-    ##                       
-    ##                       - `0` – Tile mode (BG0 = text, BG1 = text, BG2 = text, BG3 = text)
-    ##                       - `1` – Tile mode (BG0 = text, BG1 = text, BG2 = affine)
-    ##                       - `2` – Tile mode (BG2 = affine, BG3 = affine)
-    ##                       - `3` – Bitmap mode (BG2 = 240x160 direct color)
-    ##                       - `4` – Bitmap mode (BG2 = 240x160 8bpp indexed)
-    ##                       - `5` – Bitmap mode (BG2 = 160x128 direct color)
-    ##                       
-    ##                       Note that in bitmap modes, the first half of :xref:`objTileMem` is not usable.
-    ## `gb`     bool   3     True if cartridge is a GBC game. Read-only. 
-    ## `page`   bool   4     Page select. Modes 4 and 5 can use page flipping for smoother animation.
-    ##                       This bit selects the displayed page (and allowing the other one to be drawn on without artifacts). 
-    ## `oamHbl` bool   5     Allows access to OAM during HBlank. Supposedly OAM is locked in VDraw, but that
-    ##                       doesn't seem true in practise. Therefore this flag does nothing, except reduce
-    ##                       the maximum amount of sprite pixels that can be rendered per scanline.
-    ## `obj1d`  bool   6     Determines whether Obj-VRAM is treated like an array or a matrix when drawing sprites.
-    ##                       Usually you want to set this to `true`.
-    ## `blank`  bool   7     Forced Blank: When set, the GBA will display a white screen.
-    ##                       This allows fast access to VRAM, PAL RAM, OAM.
-    ## `bg0`    bool   8     Enables background layer 0.
-    ## `bg1`    bool   9     Enables background layer 1.
-    ## `bg2`    bool   10    Enables background layer 2.
-    ## `bg3`    bool   11    Enables background layer 3.
-    ## `obj`    bool   12    Enables sprites (a.k.a. objects).
-    ## `win0`   bool   13    Enables window 0.
-    ## `win1`   bool   14    Enables window 1.
-    ## `winObj` bool   15    Enables the object window.
-    ## `layers` bool   8-12  A convenient way to enable several layers at once.
-    ##                       e.g. `dispcnt.layers = { lBg0, lBg1, lObj }`
-    ## ======== ====== ===== ==================================================
+    ## ======== ============== ===== ==================================================
+    ## Field    Type           Bits  Description
+    ## ======== ============== ===== ==================================================
+    ## `mode`   uint16         0-2   Video mode, may have one of the following values:
+    ##                               
+    ##                               - `0` – Tile mode (BG 0,1,2,3 = text)
+    ##                               - `1` – Tile mode (BG 0,1 = text, BG 2 = affine)
+    ##                               - `2` – Tile mode (BG 2 = affine, BG 3 = affine)
+    ##                               - `3` – Bitmap mode (BG 2 = 240x160 direct color)
+    ##                               - `4` – Bitmap mode (BG 2 = 240x160 8bpp indexed)
+    ##                               - `5` – Bitmap mode (BG 2 = 160x128 direct color)
+    ##                               
+    ##                               Note that in bitmap modes, the first half of :xref:`objTileMem` is not usable.
+    ## `gb`     bool           3     True if cartridge is a GBC game. Read-only. 
+    ## `page`   bool           4     Page select. Modes 4 and 5 can use page flipping for smoother animation.
+    ##                               This bit selects the displayed page (and allowing the other one to be drawn on without artifacts). 
+    ## `oamHbl` bool           5     Allows access to OAM during HBlank. Supposedly OAM is locked in VDraw, but that
+    ##                               doesn't seem true in practise. Therefore this flag does nothing, except reduce
+    ##                               the maximum amount of sprite pixels that can be rendered per scanline.
+    ## `obj1d`  bool           6     Determines whether Obj-VRAM is treated like an array or a matrix when drawing sprites.
+    ##                               Usually you want to set this to `true`.
+    ## `blank`  bool           7     Forced Blank: When set, the GBA will display a white screen.
+    ##                               This allows fast access to VRAM, PAL RAM, OAM.
+    ## `bg0`    bool           8     Enables background layer 0.
+    ## `bg1`    bool           9     Enables background layer 1.
+    ## `bg2`    bool           10    Enables background layer 2.
+    ## `bg3`    bool           11    Enables background layer 3.
+    ## `obj`    bool           12    Enables sprites (a.k.a. objects).
+    ## `win0`   bool           13    Enables window 0.
+    ## `win1`   bool           14    Enables window 1.
+    ## `winObj` bool           15    Enables the object window.
+    ## `layers` DisplayLayers  8-12  A convenient way to enable several layers at once.
+    ##                               e.g. `dispcnt.layers = { lBg0, lBg1, lObj }`
+    ## ======== ============== ===== ==================================================
 
 bitdef DispCnt, 0..2, mode, uint16
 bitdef DispCnt, 3, gb, bool, {ReadOnly}
