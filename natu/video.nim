@@ -679,19 +679,20 @@ proc palGradient*(pal: ptr Color; first, last: cint; clrFirst, clrLast: Color) {
 
 type
   ObjMode* {.size:2.} = enum
-    omRegular        ## The object is displayed normally, possibly with horizontal/vertical flipping.
-    omAffine         ## The object is transformed according to the matrix specified by :xref:`affId <ObjAttr>`.
-    omHidden         ## The object is not displayed.
-    omAffineDouble   ## Like `omAffine, except `
+    omRegular       ## The object is displayed normally, possibly with horizontal/vertical flipping.
+    omAffine        ## The object is transformed according to the matrix specified by :xref:`affId <ObjAttr>`.
+    omHidden        ## The object is not displayed.
+    omAffineDouble  ## Like `omAffine`, but the sprite's clipping rectangle is doubled in size.
+                    ## |br| This has the side effect of moving the sprite's center down and to-the-right by half its size.
   
   ObjFxMode* {.size:2.} = enum
     fxNone
       ## Normal object, no special effects.
     fxBlend
       ## Alpha blending enabled.
-      ## The object is effectively placed into the `bldcnt.a` layer to be blended
-      ## with the `bldcnt.b` layer using the coefficients from :xref:`bldalpha`,
-      ## regardless of the current `bldcnt.mode` setting.
+      ## The object is effectively placed into the :xref:`bldcnt.a <BldCnt>` layer to be blended
+      ## with the :xref:`bldcnt.b <BldCnt>` layer using the coefficients from :xref:`bldalpha <BlendAlpha>`,
+      ## regardless of the current :xref:`bldcnt.mode <BldCnt>` setting.
     fxWindow
       ## The sprite becomes part of the object window.
   
@@ -943,7 +944,6 @@ proc line*(m: var M3Mem; x1, y1, x2, y2: cint; clr: Color) =
 proc rect*(m: var M3Mem; left, top, right, bottom: cint; clr: Color) =
   ## Draw a colored rectangle in mode 3.
   ## 
-  ## **Parameters:**
   ## :left: Left side, inclusive.
   ## :top: Top size, inclusive.
   ## :right: Right size, exclusive.
