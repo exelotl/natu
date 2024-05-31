@@ -103,19 +103,18 @@ type
     ## `mode`   uint16         0-2   Video mode, may have one of the following values:
     ##                               
     ##                               - `0` – Tile mode (BG 0,1,2,3 = text)
-    ##                               - `1` – Tile mode (BG 0,1 = text, BG 2 = affine)
-    ##                               - `2` – Tile mode (BG 2 = affine, BG 3 = affine)
+    ##                               - `1` – Tile mode (BG 0,1 = text; BG 2 = affine)
+    ##                               - `2` – Tile mode (BG 2 = affine; BG 3 = affine)
     ##                               - `3` – Bitmap mode (BG 2 = 240x160 direct color)
     ##                               - `4` – Bitmap mode (BG 2 = 240x160 8bpp indexed)
     ##                               - `5` – Bitmap mode (BG 2 = 160x128 direct color)
     ##                               
-    ##                               Note that in bitmap modes, the first half of :xref:`objTileMem` is not usable.
+    ##                               Note that in bitmap modes, the first half of :xref:`Obj-VRAM <objTileMem>` is not usable.
     ## `gb`     bool           3     True if cartridge is a GBC game. Read-only. 
     ## `page`   bool           4     Page select. Modes 4 and 5 can use page flipping for smoother animation.
-    ##                               This bit selects the displayed page (and allowing the other one to be drawn on without artifacts). 
-    ## `oamHbl` bool           5     Allows access to OAM during HBlank. Supposedly OAM is locked in VDraw, but that
-    ##                               doesn't seem true in practise. Therefore this flag does nothing, except reduce
-    ##                               the maximum amount of sprite pixels that can be rendered per scanline.
+    ##                               This bit selects the displayed page (allowing the other one to be drawn on without artifacts). 
+    ## `oamHbl` bool           5     This speeds up access to Obj-VRAM and OAM during HBlank, at the cost of reducing
+    ##                               the number of sprite pixels that can be rendered per scanline.
     ## `obj1d`  bool           6     Determines whether Obj-VRAM is treated like an array or a matrix when drawing sprites.
     ##                               Usually you want to set this to `true`.
     ## `blank`  bool           7     Forced Blank: When set, the GBA will display a white screen.
