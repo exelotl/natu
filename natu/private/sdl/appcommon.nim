@@ -158,4 +158,4 @@ type
     readFile*: proc (path: cstring): tuple[ok: bool, res: string] {.nimcall.}
     writeFile*: proc (path: cstring; contents: string): tuple[ok: bool, msg: string] {.nimcall.}
     fileExists*: proc (path: cstring): bool {.nimcall.}
-    
+    getEnv*: proc (key: cstring): string {.nimcall.}

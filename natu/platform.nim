@@ -17,6 +17,9 @@ elif natuPlatform == "sdl":
   
   proc fileExists*(path: cstring): bool =
     natuMem.fileExists(path)
+  
+  proc getEnv*(key: cstring): string =
+    natuMem.getEnv(key)
 
 else:
   {.error: "Unknown platform " & natuPlatform.}
