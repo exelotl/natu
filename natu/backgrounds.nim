@@ -124,14 +124,20 @@ proc loadPal*(bg: Background; palId: range[0..15]) {.inline.} =
   ## Copy a background's palette into buffered palette memory.
   ## 
   ## :bg:    The background asset to use.
-  ## :palId: The palette will be copied to this location in `bgPalBuf`.
+  ## :palId: The palette will be copied to this location in :xref:`bgPalBuf`.
   ## 
   memcpy16(addr bgPalBuf[palId], bg.palDataPtr, bg.data.palHalfwords)
 
 
 template load*(bgcnt: BgCnt; bg: Background) =
   ## 
-  ## Load a background by copying its tiles, map, and palette into memory.
+  ## Load a background asset by copying its tiles, map, and palette into memory.
+  ## 
+  ## .. note::
+  ##    The palette will be copied into :xref:`bgPalBuf` starting at a palette slot
+  ##    determined by the BG asset's :xref:`palOffset` parameter set in the BG config file.
+  ##    
+  ##    You must call :xref:`flushPals` to copy the colors from the buffer into actual PAL RAM.
   ## 
   ## :bgcnt: A BG control register value which determines
   ##         where in VRAM to copy the tiles and map.
@@ -144,6 +150,9 @@ template load*(bgcnt: BgCnt; bg: Background) =
   ##   bgcnt[0].init(cbb = 0, sbb = 28)    # init BG, set img/map destination
   ##   bgcnt[0].load(bgConstructionYard)   # copy img, map and pal
   ##   dispcnt.bg0 = true                  # show BG
+  ##   
+  ##   # later, during VBlank:
+  ##   flushPals()
   ## 
   bg.loadTiles(bgcnt.cbb)
   bg.loadMap(bgcnt.sbb)
