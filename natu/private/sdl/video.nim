@@ -279,7 +279,7 @@ func `affId=`*(obj: var ObjAttr; affId: int) =
 
 func `size=`*(obj: var ObjAttr; v: ObjSize) =
   let shape = (v.uint32 shl 12) and 0xC000'u32
-  let size = (v.uint32 shl 14)
+  let size = (v.uint32 shl 14) and 0xC000'u32
   obj.attr0 = shape or (obj.attr0 and not 0xC000'u32)
   obj.attr1 = size or (obj.attr1 and not 0xC000'u32)
   
