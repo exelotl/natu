@@ -6,6 +6,7 @@ when natuPlatform == "gba":
 elif natuPlatform == "sdl":
   
   import ./private/sdl/applib
+  import std/strutils
   
   # File IO (not available on GBA platform)
   
@@ -18,8 +19,17 @@ elif natuPlatform == "sdl":
   proc fileExists*(path: cstring): bool =
     natuMem.fileExists(path)
   
-  proc getEnv*(key: cstring): string =
+  proc env*(key: cstring): string =
     natuMem.getEnv(key)
+  
+  proc envi*(k: cstring): int =
+    parseInt(env(k))
+  
+  proc envf*(k: cstring): float32 =
+    parseFloat(env(k))
+  
+  proc envb*(k: cstring): bool =
+    parseBool(env(k))
 
 else:
   {.error: "Unknown platform " & natuPlatform.}
