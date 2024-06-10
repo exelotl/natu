@@ -66,21 +66,21 @@ type
     mmPlayOnce
   
   MmMixMode* {.size: 4.} = enum
-    mmMix8kHz
-    mmMix10kHz
-    mmMix13kHz
-    mmMix16kHz
-    mmMix18kHz
-    mmMix21kHz
-    mmMix27kHz
-    mmMix31kHz
+    mmMix8kHz   ## 8121 Hz
+    mmMix10kHz  ## 10512 Hz
+    mmMix13kHz  ## 13379 Hz
+    mmMix16kHz  ## 15768 Hz
+    mmMix18kHz  ## 18157 Hz
+    mmMix21kHz  ## 21024 Hz
+    mmMix27kHz  ## 26758 Hz
+    mmMix31kHz  ## 31536 Hz
   
   MmSoundEffect* {.bycopy.} = object
-    id*: uint32              ## sample ID (defined in soundbank header)
+    id*: uint32          ## sample ID (defined in soundbank header)
     rate*: uint16          
     handle*: MmSfxHandle ## sound handle
     volume*: uint8       ## volume, 0..255
-    panning*: uint8     ## panning, 0..255
+    panning*: uint8      ## panning, 0..255
   
   MmGbaSystem* {.bycopy.} = object
     mixingMode*: MmMixMode
@@ -219,20 +219,21 @@ proc stop*() {.importc:"mmStop".}
   ## Stop module playback. start again with `maxmod.start()`.
 
 proc setPosition*(position: uint) {.importc:"mmPosition".}
-  ## Set playback position.
+  ## Jumps to the pattern at the given index in the song's pattern order table,
+  ## and starts playing that pattern from the beginning.
   ## 
-  ## :position:  New position in the module sequence.
+  ## :position:  New position in the song.
 
 proc getPosition*(): uint {.importc:"mmGetPosition".}
-  ## Get playback position.
+  ## Get playback position (i.e. the index of the current pattern).
 
 proc active*(): bool {.importc:"mmActive".}
   ## Returns true if module is playing.
 
 proc jingle*(id: Module) {.importc:"mmJingle".}
-  ##  Play module as jingle. Jingles are limited to 4 channels only.
+  ## Play module as jingle. Jingles are limited to 4 channels only.
   ## 
-  ## :moduleID:  ID of module (defined in soundbank header)
+  ## :id:  ID of module (defined in ``output/soundbank.nim`` which is generated for your project)
 
 proc activeSub*(): bool {.importc:"mmActiveSub".}
   ## Returns true if a jingle is actively playing.
@@ -240,31 +241,25 @@ proc activeSub*(): bool {.importc:"mmActiveSub".}
 proc setModuleVolume*(volume: FixedN[10]) {.importc:"mmSetModuleVolume".}
   ## Set volume scaler for music.
   ## 
-  ## **Parameters**:
-  ## 
   ## :volume:
   ##   Multipler for the overall volume of the song, ranging from `0.0 .. 1.0` (silent .. normal).
 
 proc setJingleVolume*(volume: FixedN[10]) {.importc:"mmSetJingleVolume".}
   ## Set volume scaler for jingles.
   ## 
-  ## **Parameters**:
-  ## 
-  ## volume
+  ## :volume:
   ##   Multipler for the overall volume of the jingle, ranging from `0.0 .. 1.0` (silent .. normal).
 
 proc setModuleTempo*(tempo: FixedN[10]) {.importc:"mmSetModuleTempo".}
   ## Set tempo of playback.
   ## 
-  ## **Parameters**:
-  ## 
-  ## tempo
+  ## :tempo:
   ##   Multiplier for the overall tempo of the song, ranging from `0.5 .. 2.0`
 
 proc setModulePitch*(pitch: FixedN[10]) {.importc:"mmSetModulePitch".}
   ## Set pitch of playback.
   ## 
-  ## pitch
+  ## :pitch:
   ##   Multiplier for the overall pitch of the song, ranging from `0.5 .. 2.0`.
 
 # TODO: check types of mode and layer.
@@ -281,7 +276,7 @@ proc effect*(id: Sample): MmSfxHandle {.importc:"mmEffect", discardable.}
   ## 
   ## **Parameters:**
   ## 
-  ## id
+  ## :id:
   ##   Sound effect ID. (defined in ``output/soundbank.nim`` which is generated for your project)
 
 # TODO: link to page about asset conversion ^
@@ -291,7 +286,7 @@ proc effectEx*(sound: ptr MmSoundEffect): MmSfxHandle {.importc:"mmEffectEx", di
   ## 
   ## **Parameters:**
   ## 
-  ## sound
+  ## :sound:
   ##   Sound effect attributes.
 
 proc setVolume*(handle: MmSfxHandle; volume: FixedN[8]) {.importc:"mmEffectVolume".}
@@ -299,10 +294,10 @@ proc setVolume*(handle: MmSfxHandle; volume: FixedN[8]) {.importc:"mmEffectVolum
   ## 
   ## **Parameters:**
   ## 
-  ## handle
+  ## :handle:
   ##   Sound effect handle.
   ## 
-  ## volume
+  ## :volume:
   ##   Effect volume ranging from `0.0 ..< 1.0` (underlying value from `0 .. 255`)
 
 proc setPanning*(handle: MmSfxHandle; panning: FixedN[8]) {.importc:"mmEffectPanning".}
@@ -310,10 +305,10 @@ proc setPanning*(handle: MmSfxHandle; panning: FixedN[8]) {.importc:"mmEffectPan
   ## 
   ## **Parameters:**
   ## 
-  ## handle
+  ## :handle:
   ##   Sound effect handle.
   ## 
-  ## panning
+  ## :panning:
   ##   `0.0 ..< 1.0` = `left .. right`
 
 proc setRate*(handle: MmSfxHandle; rate: FixedN[10]) {.importc:"mmEffectRate".}
@@ -321,10 +316,10 @@ proc setRate*(handle: MmSfxHandle; rate: FixedN[10]) {.importc:"mmEffectRate".}
   ## 
   ## **Parameters:**
   ## 
-  ## handle
+  ## :handle:
   ##   Sound effect handle.
   ## 
-  ## rate
+  ## :rate:
   ##   Absolute playback rate, ranging from `0.0 ..< 64.0`.
 
 proc scaleRate*(handle: MmSfxHandle; factor: FixedN[10]) {.importc:"mmEffectScaleRate".}
@@ -332,10 +327,10 @@ proc scaleRate*(handle: MmSfxHandle; factor: FixedN[10]) {.importc:"mmEffectScal
   ## 
   ## **Parameters:**
   ## 
-  ## handle
+  ## :handle:
   ##   Sound effect handle.
   ## 
-  ## factor
+  ## :factor:
   ##   Amount by which to multiply the playback rate, ranging from `0.0 ..< 64.0`.
 
 proc cancel*(handle: MmSfxHandle) {.importc:"mmEffectCancel".}
@@ -343,7 +338,7 @@ proc cancel*(handle: MmSfxHandle) {.importc:"mmEffectCancel".}
   ## 
   ## **Parameters:**
   ## 
-  ## handle
+  ## :handle:
   ##   Sound effect handle.
 
 proc release*(handle: MmSfxHandle) {.importc:"mmEffectRelease".}
@@ -351,7 +346,7 @@ proc release*(handle: MmSfxHandle) {.importc:"mmEffectRelease".}
   ## 
   ## **Parameters:**
   ## 
-  ## handle
+  ## :handle:
   ##   Sound effect handle.
 
 proc active*(handle: MmSfxHandle): bool {.importc:"mmEffectActive".}
@@ -359,7 +354,7 @@ proc active*(handle: MmSfxHandle): bool {.importc:"mmEffectActive".}
   ## 
   ## **Parameters:**
   ## 
-  ## handle
+  ## :handle:
   ##   Sound effect handle.
 
 proc setEffectsVolume*(volume: FixedN[8]) {.importc:"mmSetEffectsVolume".}
@@ -367,7 +362,7 @@ proc setEffectsVolume*(volume: FixedN[8]) {.importc:"mmSetEffectsVolume".}
   ## 
   ## **Parameters:**
   ## 
-  ## volume
+  ## :volume:
   ##   `0.0 ..< 1.0` representing 0% to 100% volume.
 
 proc cancelAllEffects*() {.importc:"mmEffectCancelAll".}
