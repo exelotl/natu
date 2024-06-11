@@ -23,13 +23,19 @@ elif natuPlatform == "sdl":
     natuMem.getEnv(key)
   
   proc envi*(k: cstring): int =
-    parseInt(env(k))
+    let s = env(k)
+    if s == "": 0
+    else: parseInt(s)
   
   proc envf*(k: cstring): float32 =
-    parseFloat(env(k))
+    let s = env(k)
+    if s == "": 0f
+    else: parseFloat(s).float32
   
   proc envb*(k: cstring): bool =
-    parseBool(env(k))
+    let s = env(k)
+    if s == "": false
+    else: parseBool(s)
 
 else:
   {.error: "Unknown platform " & natuPlatform.}
