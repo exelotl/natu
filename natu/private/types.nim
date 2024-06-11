@@ -106,8 +106,9 @@ type
   Point16* {.importc: "POINT16", header: "tonc_types.h", bycopy, completeStruct.} = object
     x*, y*: int16
 
-type BgAffine* = AffDstEx
-  ## Affine parameters for backgrounds; range : 0400:0020 - 0400:003F
+type
+  BgAffine* = AffDstEx
+    ## Affine parameters for backgrounds, as used by :xref:`bgaff[2..3] <bgaff>`.
 
 type
   DmaRec* {.importc: "DMA_REC", header: "tonc_types.h", bycopy, completeStruct.} = object
