@@ -343,6 +343,27 @@ typedef TILE8		CHARBLOCK8[256];
 */
 //\{
 
+#ifdef NON_GBA_TARGET
+
+typedef struct OBJ_ATTR
+{
+	u32 attr0;
+	u32 attr1;
+	u32 attr2;
+	s32 fill;
+} ALIGN4 OBJ_ATTR;
+
+
+typedef struct OBJ_AFFINE
+{
+	u32 fill0[3];	s32 pa;
+	u32 fill1[3];	s32 pb;
+	u32 fill2[3];	s32 pc;
+	u32 fill3[3];	s32 pd;
+} ALIGN4 OBJ_AFFINE;
+
+#else
+
 //! Object attributes.
 /*!	\note attribute 3 is padding for the interlace with OBJ_AFFINE. If 
 *	not using affine objects, it can be used as a free field
@@ -368,6 +389,7 @@ typedef struct OBJ_AFFINE
 } ALIGN4 OBJ_AFFINE;
 
 //\}
+#endif
 
 
 /*!	\}	*/
