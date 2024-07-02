@@ -132,7 +132,8 @@ type
     regs*: array[0x200, uint16]
     palram*: array[NatuPalRamLen, uint16]
     vram*: array[NatuVramLen, uint16]
-    oam*: array[NatuOamLen, uint32]
+    oam*: array[NatuOamLen, uint32]    
+    softResetFlag*: bool
     
     # api:
     panic*: proc (msg1: cstring; msg2: cstring = nil) {.nimcall.}

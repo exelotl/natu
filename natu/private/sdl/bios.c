@@ -7,9 +7,10 @@
 
 void natuPanic(char *a, char *b);
 uintptr_t natuGetRegBase(void);
+void natuReqSoftReset(void);
 
 void SoftReset(void) {
-  // swiSoftReset();
+  natuReqSoftReset();
 }
 void RegisterRamReset(u32 flags) {
   // swiRegisterRamReset(flags);

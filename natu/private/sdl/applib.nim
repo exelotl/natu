@@ -19,7 +19,7 @@ proc natuGetSeMem*: pointer {.exportc.} = addr natuMem.vram[NatuSbStart]
 proc natuGetTileMem*: pointer {.exportc.} = addr natuMem.vram
 proc natuGetRegBase*: uint {.exportc.} = cast[uint](addr natuMem.regs)
 proc natuGetBgPalMem*: pointer {.exportc.} = addr natuMem.palram
-
+proc natuReqSoftReset*() {.exportc.} = natuMem.softResetFlag = true
 
 # Procs called from the runner app (xatu):
 
