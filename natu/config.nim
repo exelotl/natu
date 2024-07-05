@@ -360,6 +360,7 @@ proc bgConvert*(script: static string) =
 var
   natuSamples*: seq[string]
   natuModules*: seq[string]
+  natuModuleTags*: seq[string]
 
 proc readAudio*(script: static string) =
   
@@ -373,10 +374,11 @@ proc readAudio*(script: static string) =
     doAssert({'\t', '\n'} notin path, path & " contains invalid characters.")
     natuSamples.add path
   
-  proc module(name: string) =
+  proc module(name: string; tag="") =
     let path = name.absolutePath.relativePath(natuCurrentDir)
     doAssert({'\t', '\n'} notin path, path & " contains invalid characters.")
     natuModules.add path
+    natuModuleTags.add tag
   
   doInclude(script)
   cd natuCurrentDir
@@ -394,8 +396,13 @@ proc mmConvert*(script: static string) =
 proc mixConvert*(script: static string) =
   readAudio(script)
   mkDir("output")
+  
+  var modulesWithTags: seq[string]
+  for i, f in natuModules:
+    modulesWithTags.add f & "#" & natuModuleTags[i]
+  
   exec natuExe() & " mixconvert --script:$# --sfxdir:. --moddir:. --outdir:output $# $#" % [
     script,
     natuSamples.join(" "),
-    natuModules.join(" "),
+    modulesWithTags.join(" "),
   ]

@@ -58,6 +58,10 @@ type
     loopStart*: uint32  # measured in samples (mono or stereo)
     loopEnd*: uint32    # ..
   
+  ModuleInfo* = object
+    tags*: seq[string]
+    paths*: seq[string]
+  
   GamepadAxis* = enum
     axisNone
     axisLeftStickX

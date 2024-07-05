@@ -6,9 +6,9 @@ type
     #for i, s in sfxList:
     $s
     #end for
-  Module* {.size: 4.} = ${if modList.len > 0: "enum" else: "distinct uint32  # empty"}
-    #for i, m in modList:
-    $m = "${modFilePaths[i].replace('\\', '/')}"
+  Module* {.size: 4.} = ${if modInfo.len > 0: "enum" else: "distinct uint32  # empty"}
+    #for m in modInfo.keys:
+    $m
     #end for
 
 block:
@@ -19,5 +19,11 @@ let natuSampleData {.importc, codegenDecl:"extern const $$# $$#".}: array[${samp
 let sampleInfos: array[Sample, SampleInfo] = [
   #for i, s in sfxList:
   $s: SampleInfo${sfxInfo[i]},
+  #end for
+]
+
+let moduleInfos: array[Module, ModuleInfo] = [
+  #for m, info in modInfo:
+  $m: ModuleInfo${info},
   #end for
 ]
