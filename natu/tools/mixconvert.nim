@@ -1,5 +1,5 @@
 # parallel to `mmconvert.nim` but for the SDL-based mixer
-import std/[strutils, strformat, parseopt, options, os, osproc, times, streams, tables]
+import std/[strutils, strformat, parseopt, options, os, osproc, times, streams]
 import trick, riff
 import ./common
 
@@ -16,29 +16,16 @@ type
     loopKind: LoopKind
     loopStart: uint32  # measured in samples (mono or stereo)
     loopEnd: uint32    # ..
-  ModuleInfo* = object
-    tags: seq[string]
-    paths: seq[string]
 
-proc writeSdlSoundbankNim(
-  f: File;
-  modInfo: OrderedTable[string, ModuleInfo];
-  sfxList: seq[string];
-  sfxInfo: seq[SampleInfo];
-  sampleDataLen: int
-) =
+proc writeSdlSoundbankNim(f: File; modFilePaths, sfxList, modList: seq[string]; sfxInfo: seq[SampleInfo]; sampleDataLen: int) =
   include "templates/sdl_soundbank.nim.template"
 
 proc writeSdlSoundbankC(f: File; data: string) =
   include "templates/sdl_soundbank.c.template"
 
-iterator mutate[T](a: var T): var T =
-  yield a
-
 proc mixConvert*(script, sfxdir, moddir, outdir: string, files: seq[string]) =
-  var sfxFilePaths, sfxList: seq[string]
+  var sfxFilePaths, modFilePaths, sfxList, modList: seq[string]
   var sfxInfo: seq[SampleInfo]
-  var modInfo: OrderedTable[string, ModuleInfo]  # mapping from modFoo -> collection of tags & paths.
   
   let outputNimPath = outdir / "sdl_soundbank.nim"
   let outputCPath = outdir / "sdl_soundbank.c"
@@ -51,24 +38,19 @@ proc mixConvert*(script, sfxdir, moddir, outdir: string, files: seq[string]) =
   let modExts = [".ogg", ".mod", ".xm", ".s3m", ".it"]
   
   for f in files:
-    let parts = f.rsplit('#', maxsplit=1)
-    let (_, name, ext) = splitFile(parts[0])
-    let filepath = parts[0]
-    let tag = if parts.len > 1: parts[1] else: ""
+    
+    let (_, name, ext) = splitFile(f)
     
     var inPath: string
     
     if ext == ".wav":
-      inPath = sfxdir / filepath
+      inPath = sfxdir / f
       sfxList.add toCamelCase("sfx_" & name)
       sfxFilePaths.add inPath
     elif ext in modExts:
-      inPath = moddir / filepath
-      let name = toCamelCase("mod_" & name)
-      let info = addr modInfo.mgetOrPut(name, ModuleInfo())
-      info.tags.add(tag)
-      info.paths.add(inPath)
-      
+      inPath = moddir / f
+      modList.add toCamelCase("mod_" & name)
+      modFilePaths.add inPath
     else:
       raiseAssert(&"Unrecognised audio asset {name}{ext} only the following formats are accepted: .wav " & modExts.join(" "))
     
@@ -201,7 +183,7 @@ proc mixConvert*(script, sfxdir, moddir, outdir: string, files: seq[string]) =
       sfxInfo.add sample
     
     withFile(outputNimPath, fmWrite):
-      file.writeSdlSoundbankNim(modInfo, sfxList, sfxInfo, outStream.data.len)
+      file.writeSdlSoundbankNim(modFilePaths, sfxList, modList, sfxInfo, outStream.data.len)
     
     withFile(outputCPath, fmWrite):
       file.writeSdlSoundbankC(outStream.data)
