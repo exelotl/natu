@@ -109,7 +109,9 @@ type
     ##                               - `4` – Bitmap mode (BG 2 = 240x160 8bpp indexed)
     ##                               - `5` – Bitmap mode (BG 2 = 160x128 direct color)
     ##                               
-    ##                               Note that in bitmap modes, the first half of :xref:`Obj-VRAM <objTileMem>` is not usable.
+    ##                               In bitmap modes, the first half of :xref:`Obj-VRAM <objTileMem>` is not usable,
+    ##                               and BG2 is still subject to affine transforms.
+    ##                               
     ## `gb`     bool           3     True if cartridge is a GBC game. Read-only. 
     ## `page`   bool           4     Page select. Modes 4 and 5 can use page flipping for smoother animation.
     ##                               This bit selects the displayed page (allowing the other one to be drawn on without artifacts). 
