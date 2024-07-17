@@ -8,6 +8,8 @@ elif natuPlatform == "sdl":
   import ./private/sdl/applib
   import std/strutils
   
+  export VideoSettings
+  
   # File IO (not available on GBA platform)
   
   proc readFile*(path: cstring): tuple[ok: bool, res: string] =
@@ -36,6 +38,11 @@ elif natuPlatform == "sdl":
     let s = env(k)
     if s == "": false
     else: parseBool(s)
+  
+  proc applyVideoSettings*(s: VideoSettings) =
+    natuMem.videoSettings = s
+    if natuMem.applyVideoSettings != nil:
+      natuMem.applyVideoSettings()
 
 else:
   {.error: "Unknown platform " & natuPlatform.}

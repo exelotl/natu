@@ -128,12 +128,18 @@ type
     currBtnStates*: set[GamepadButton]
     prevBtnStates*: set[GamepadButton]
   
+  VideoSettings* = object
+    pixelScale*: int = 3
+    fullscreen*: bool = false
+  
   NatuAppMem* = object
     regs*: array[0x200, uint16]
     palram*: array[NatuPalRamLen, uint16]
     vram*: array[NatuVramLen, uint16]
     oam*: array[NatuOamLen, uint32]    
     softResetFlag*: bool
+    
+    videoSettings*: VideoSettings
     
     # api:
     panic*: proc (msg1: cstring; msg2: cstring = nil) {.nimcall.}
@@ -160,3 +166,5 @@ type
     writeFile*: proc (path: cstring; contents: string): tuple[ok: bool, msg: string] {.nimcall.}
     fileExists*: proc (path: cstring): bool {.nimcall.}
     getEnv*: proc (key: cstring): string {.nimcall.}
+    applyVideoSettings*: proc () {.nimcall.}
+
