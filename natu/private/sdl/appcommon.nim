@@ -155,6 +155,7 @@ type
     setSourceVolume*: proc (s: NatuSource, vol: float32) {.nimcall.}
     setSourcePanning*: proc (s: NatuSource, pan: float32) {.nimcall.}
     setSourcePosition*: proc (s: NatuSource, pos: float32) {.nimcall.}
+    getSourcePosition*: proc (s: NatuSource): float32 {.nimcall.}
     setSourceGroup*: proc (s: NatuSource, group: int32) {.nimcall.}
     setAudioGroupVolume*: proc (group: int32; vol: float32) {.nimcall.}
     startDma*: proc(reg: pointer) {.nimcall.}
