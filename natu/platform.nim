@@ -43,6 +43,9 @@ elif natuPlatform == "sdl":
     natuMem.videoSettings = s
     if natuMem.applyVideoSettings != nil:
       natuMem.applyVideoSettings()
+  
+  proc getVideoSettings*: VideoSettings {.inline.} =
+    natuMem.videoSettings
 
 else:
   {.error: "Unknown platform " & natuPlatform.}
