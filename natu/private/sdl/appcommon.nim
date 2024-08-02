@@ -127,6 +127,7 @@ type
     prevAxisStates*: array[GamepadAxis, float32]
     currBtnStates*: set[GamepadButton]
     prevBtnStates*: set[GamepadButton]
+    rumbleSupported*: bool
   
   VideoSettings* = object
     pixelScale*: int = 3
@@ -164,6 +165,7 @@ type
     stopDma*: proc(reg: pointer) {.nimcall.}
     getGamepad*: proc (i: int32): ptr Gamepad {.nimcall.}
     numGamepads*: proc (): int32 {.nimcall.}
+    applyRumble*: proc (i: int32; power: float32) {.nimcall.}
     keyIsDown*: proc (keycode: int32): bool {.nimcall.}
     keyWasDown*: proc (keycode: int32): bool {.nimcall.}
     getPerfTimer*: proc (): float64 {.nimcall.}

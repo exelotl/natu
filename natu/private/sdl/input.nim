@@ -18,6 +18,9 @@ proc numGamepads*: int =
 proc anyGamepadConnected*: bool =
   natuMem.numGamepads() > 0
 
+proc applyRumble*(val: float32; i = 0) =
+  natuMem.applyRumble(i, val)
+
 proc getGamepadUid*(i = 0): string =
   let g = natuMem.getGamepad(i)
   if g == nil: ""
