@@ -130,6 +130,7 @@ type
     rumbleSupported*: bool
   
   VideoSettings* = object
+    title*: cstring = "Natu Game"
     pixelScale*: int = 3
     fullscreen*: bool = false
   
