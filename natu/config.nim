@@ -34,7 +34,7 @@ put "natu.cflags.stdlib", "-nostdinc -isystem " & natuDir / "vendor/acsl/include
 
 # silence some warnings that may occur in the generated C code,
 # but are out of your control.
-put "natu.cflags.noWarn", "-Wno-unused-variable -Wno-unused-but-set-variable -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-stringop-overflow -Wno-implicit-function-declaration"
+put "natu.cflags.noWarn", "-Wno-unused-variable -Wno-unused-but-set-variable -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-stringop-overflow"
 
 proc devkitPro*: string =
   result = getEnv("DEVKITPRO")
@@ -139,7 +139,7 @@ proc gbaCfg* =
 proc sdlCfg*(w, h: int) =
   echo "Building for PC."
   switch "passC", "-fPIC -DNON_GBA_TARGET"
-  put "gcc.options.always", "-Wno-unused-variable -Wno-unused-but-set-variable -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-stringop-overflow -Wno-implicit-function-declaration"
+  put "gcc.options.always", "-Wno-unused-variable -Wno-unused-but-set-variable -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-stringop-overflow"
   switch "define", "natuLcdWidth:" & $w
   switch "define", "natuLcdHeight:" & $h
   switch "passL", "-lm"
