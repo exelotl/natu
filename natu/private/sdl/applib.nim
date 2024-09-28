@@ -1,8 +1,7 @@
 import ./appcommon
 export appcommon
 
-# pointer to 
-var natuMem*: ptr NatuAppMem
+var natuMem* {.exportc.}: ptr NatuAppMem
 
 import ../../bios  # must be linked.
 import ../../surfaces

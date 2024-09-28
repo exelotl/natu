@@ -2,6 +2,13 @@
 {.pragma: tonc, header: "tonc_core.h".}
 {.pragma: toncinl, header: "tonc_core.h".}  # indicates that the definition is in the header.
 
+import ./appcommon
+var natuMem {.importc.}: ptr NatuAppMem
+
+template natuLogImpl*(s: cstring, args: varargs[untyped]) =
+  natuMem.log(s, args)
+
+
 # Tonc memory functions
 # ---------------------
 

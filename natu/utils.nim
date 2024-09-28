@@ -1,4 +1,4 @@
-import std/volatile
+import std/[volatile, macros]
 import ./private/[common, types]
 
 export FnPtr
@@ -15,6 +15,16 @@ else: {.error: "Unknown platform " & natuPlatform.}
 
 
 proc panic(msg1: cstring; msg2: cstring = nil) {.importc: "natuPanic", noreturn.}
+
+# Basic echo equivalent, to be replaced by something more GBA-friendly later.
+macro log*(args: varargs[string, `$`]) =
+  var formatStr = ""
+  result = newCall("natuLogImpl", nil)
+  for a in args:
+    result.add(a)
+    formatStr &= "%s"
+  result[1] = newStrLitNode(formatStr)
+  echo repr(result)
 
 
 {.push inline.}

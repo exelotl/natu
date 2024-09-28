@@ -4,6 +4,24 @@
 {.pragma: tonc, header: "tonc_core.h".}
 {.pragma: toncinl, header: "tonc_core.h".}  # indicates that the definition is in the header.
 
+const natuMgbaLogging {.booldefine.} = true
+const natuLogMode {.strdefine.} = (if natuMgbaLogging: "mgba" else: "none")
+
+when natuLogMode == "mgba":
+  
+  import ../../mgba
+  template natuLogImpl*(s: cstring; args: varargs[untyped]) =
+    printf(s, args)
+
+elif natuLogMode == "none":
+  
+  template natuLogImpl*(s: cstring; args: varargs[untyped]) =
+    discard
+
+else:
+  {.error: "Unknown log mode " & natuLogMode.}
+
+
 # Tonc memory functions
 # ---------------------
 

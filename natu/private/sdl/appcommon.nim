@@ -145,6 +145,7 @@ type
     
     # api:
     panic*: proc (msg1: cstring; msg2: cstring = nil) {.nimcall.}
+    log*: proc (msg: cstring) {.cdecl, varargs.}
     setSampleData*: proc (data: pointer) {.nimcall.}
     createSourceFromSample*: proc (smp: ptr SampleInfo): NatuSource {.nimcall.}
     createSourceFromFile*: proc (f: cstring; loop: bool): NatuSource {.nimcall.}
