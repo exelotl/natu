@@ -1,5 +1,5 @@
 import std/[volatile, macros]
-import ./private/[common, types]
+import ./private/[common, types, printify]
 
 export FnPtr
 
@@ -24,7 +24,12 @@ macro log*(args: varargs[string, `$`]) =
     result.add(a)
     formatStr &= "%s"
   result[1] = newStrLitNode(formatStr)
-  echo repr(result)
+
+# Efficient & concise formatted logging, but needs more work:
+# - currently doesn't make posprintf-friendly output, but ditching posprintf & fixing ACSL would be better.
+# - doesn't support advanced format specifiers (hex, padding, etc.)
+template logf*(s: static string) =
+  printify(natuLogImpl(), s)
 
 
 {.push inline.}

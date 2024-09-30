@@ -87,6 +87,7 @@ elif natuPlatform == "sdl":
   
   when natuMgbaLogging:
     
+    #[
     proc c_printf(format: cstring) {.varargs, importc:"printf", header:"stdio.h".}
     
     var buf: array[1024, char]
@@ -95,13 +96,23 @@ elif natuPlatform == "sdl":
     template printfAux(str: cstring, args: varargs[untyped]) =
       posprintf(cast[cstring](addr buf), str, args)
       c_printf("%s\n", cast[cstring](addr buf))
+    ]#
+    
+    import ./private/sdl/appcommon
+    var natuMem {.importc.}: ptr NatuAppMem
+    
+    var buf: array[1024, char]
+    
+    template printfAux(str: cstring, args: varargs[untyped]) =
+      posprintf(cast[cstring](addr buf), str, args)
+      natuMem.printf(cast[cstring](addr buf))
     
     template printf*(level: LogLevel, str: cstring, args: varargs[untyped]) =
       printfAux(str, args)
     
     template printf*(str: cstring, args: varargs[untyped]) =
       printfAux(str, args)
-  
+    
   else:
     
     template printf*(level: LogLevel, str: cstring, args: varargs[untyped]) =

@@ -10,12 +10,12 @@ const natuLogMode {.strdefine.} = (if natuMgbaLogging: "mgba" else: "none")
 when natuLogMode == "mgba":
   
   import ../../mgba
-  template natuLogImpl*(s: cstring; args: varargs[untyped]) =
+  template natuLogImpl*(s: cstring; args: varargs[typed]) =
     printf(s, args)
 
 elif natuLogMode == "none":
   
-  template natuLogImpl*(s: cstring; args: varargs[untyped]) =
+  template natuLogImpl*(s: cstring; args: varargs[typed]) =
     discard
 
 else:
