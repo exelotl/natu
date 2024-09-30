@@ -47,8 +47,6 @@ macro printifyImpl(call: typed; data: static[PrintifyData]) =
     src = src[firstArg][1]
     firstArg = 0
     lastArg = src.len - 1
-    echo "HUH"
-    echo treeRepr(src)
   
   result = nnkCall.newTree()
   for i in 0..data.start:

@@ -5,7 +5,7 @@
 import ./appcommon
 var natuMem {.importc.}: ptr NatuAppMem
 
-template natuLogImpl*(s: cstring, args: varargs[typed]) =
+template natuLogImpl*(s: cstring, args: varargs[untyped]) =
   natuMem.printf(s, args)
 
 
