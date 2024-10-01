@@ -46,6 +46,15 @@ elif natuPlatform == "sdl":
   
   proc getVideoSettings*: VideoSettings {.inline.} =
     natuMem.videoSettings
+  
+  proc setAchievement*(name: cstring) {.inline.} =
+    natuMem.setAchievement(name)
+  
+  proc setIntStat*(name: cstring; val: int) {.inline.} =
+    natuMem.setIntStat(name, val)
+  
+  proc setFloatStat*(name: cstring; val: float32) {.inline.} =
+    natuMem.setFloatStat(name, val)
 
 else:
   {.error: "Unknown platform " & natuPlatform.}

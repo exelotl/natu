@@ -176,4 +176,7 @@ type
     fileExists*: proc (path: cstring): bool {.nimcall.}
     getEnv*: proc (key: cstring): string {.nimcall.}
     applyVideoSettings*: proc () {.nimcall.}
-
+    setAchievement*: proc (name: cstring) {.nimcall.}
+    setIntStat*: proc (name: cstring; val: int) {.nimcall.}
+    setFloatStat*: proc (name: cstring; val: float32) {.nimcall.}
+    setAvgStat*: proc (name: cstring; num, den: float32) {.nimcall.}
