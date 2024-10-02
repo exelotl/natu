@@ -1178,6 +1178,7 @@ proc busyWaitForVBlank* {.inline.} =
     while vcount >= 160: discard
     while vcount < 160: discard
   elif natuPlatform == "sdl":
-    echo "busyWaitForVBlank()"
+    # echo "busyWaitForVBlank()"
+    discard
   else:
     {.error: "busyWaitForVBlank not implemented".}
