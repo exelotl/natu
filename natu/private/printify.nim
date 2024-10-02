@@ -25,16 +25,14 @@ type
     start: int  # index at which format string begins.
 
 template doFormat(a: typed): untyped =
-  when a is SomeInteger:
-    ("%ld", a)
-  elif a is string or a is cstring:
-    ("%s", a)
-  else:
-    ("%s", $a)
+  when a is SomeInteger: ("%ld", a)
+  elif a is string:      ("%s", a.cstring)
+  elif a is cstring:     ("%s", a)
+  else:                  ("%s", ($a).cstring)
 
 macro printifyImpl(call: typed; data: static[PrintifyData]) =
-  echo repr(call)
-  echo treeRepr(call)
+  # echo repr(call)
+  # echo treeRepr(call)
   # let call = call.copy()
   var formatString = ""
   
@@ -67,7 +65,7 @@ macro printifyImpl(call: typed; data: static[PrintifyData]) =
       error("Bad format node", src[i])
   
   result[data.start].strVal = formatString
-  echo repr(result)
+  # echo repr(result)
 
 
 macro printify*(call: untyped; str: static[string]) =
