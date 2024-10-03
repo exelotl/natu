@@ -30,10 +30,11 @@ template doFormat(a: typed): untyped =
   elif a is cstring:     ("%s", a)
   else:                  ("%s", ($a).cstring)
 
+proc cstr(s: string): NimNode =
+  nnkStaticExpr.newTree(newCall(ident("cstring"), newStrLitNode(s)))
+
 macro printifyImpl(call: typed; data: static[PrintifyData]) =
-  # echo repr(call)
-  # echo treeRepr(call)
-  # let call = call.copy()
+  
   var formatString = ""
   
   var src = call  # the node in which we're replacing tuples with bare args - usually this is the call itself ...
@@ -64,7 +65,8 @@ macro printifyImpl(call: typed; data: static[PrintifyData]) =
     else:
       error("Bad format node", src[i])
   
-  result[data.start].strVal = formatString
+  # result[data.start].strVal = formatString   # note: this clobbers unrelated string literals during compilation. Must replace the whole node.
+  result[data.start] = cstr(formatString)
   # echo repr(result)
 
 
@@ -72,9 +74,6 @@ macro printify*(call: untyped; str: static[string]) =
   
   if call.kind != nnkCall:
     error("printify expects a function call as it's first param, got: " & repr(call), call)
-  
-  proc cstr(s: string): NimNode =
-    nnkStaticExpr.newTree(newCall(ident("cstring"), newStrLitNode(s)))
   
   var data = PrintifyData(start: call.len)
   
