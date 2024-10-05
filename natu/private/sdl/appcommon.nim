@@ -180,3 +180,5 @@ type
     setIntStat*: proc (name: cstring; val: int) {.nimcall.}
     setFloatStat*: proc (name: cstring; val: float32) {.nimcall.}
     setAvgStat*: proc (name: cstring; num, den: float32) {.nimcall.}
+    storeStats*: proc () {.nimcall.}
+

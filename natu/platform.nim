@@ -55,6 +55,10 @@ elif natuPlatform == "sdl":
   
   proc setFloatStat*(name: cstring; val: float32) {.inline.} =
     natuMem.setFloatStat(name, val)
+  
+  proc storeStats*() {.inline.} =
+    natuMem.storeStats()
 
 else:
   {.error: "Unknown platform " & natuPlatform.}
+
