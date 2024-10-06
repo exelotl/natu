@@ -53,8 +53,6 @@ let gcc = findExe("arm-none-eabi-gcc")
 if gcc == "":
   if getEnv("DEVKITPRO") != "" and getEnv("DEVKITARM") != "":
     useDkp = true
-  else:
-    doAssert(false, "Missing arm-none-eabi-gcc, please install it and make sure it's in your system PATH!")
 
 
 proc natuExe*: string =
@@ -66,10 +64,10 @@ proc natuExe*: string =
 
 proc gbaCfg* =
   
-  echo "Yeh"
-  
   if useDkp:
     echo "Using devkitARM's GCC."
+  elif gcc == "":
+    doAssert(false, "Missing arm-none-eabi-gcc, please install it and make sure it's in your system PATH!")
   
   # set linker flags
   
