@@ -128,6 +128,8 @@ type
     currBtnStates*: set[GamepadButton]
     prevBtnStates*: set[GamepadButton]
     rumbleSupported*: bool
+    isLocked*: bool    # This gamepad is locked in place and can't be reassigned to another slot.
+    lastActivity*: uint64
   
   VideoSettings* = object
     title*: cstring = "Natu Game"
