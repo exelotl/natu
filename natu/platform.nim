@@ -58,6 +58,9 @@ elif natuPlatform == "sdl":
   
   proc storeStats*() {.inline.} =
     natuMem.storeStats()
+  
+  proc getSaveDir*(): string {.inline.} =
+    natuMem.getSaveDir()
 
 else:
   {.error: "Unknown platform " & natuPlatform.}
