@@ -95,7 +95,6 @@ proc anyButtonHit*(s: set[GamepadButton]; i = 0): bool =
   (g != nil) and s * (g.currBtnStates - g.prevBtnStates) != {}
 
 proc setGamepadPinned*(val: bool; i = 0) =
-  echo "Pinning " & $i
   let g = natuMem.getGamepad(i)
   if g != nil:
     g.pinned = val
