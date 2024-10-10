@@ -13,9 +13,14 @@ const allButtons* = {btnNone.succ .. GamepadButton.high}
 {.push inline.}
 
 proc numGamepads*: int =
+  ## Returns the number of accessible gamepad indexes. This may be
+  ## more than the actual number of gamepads if:
+  ## A) P2's gamepad is pinned and P1's gamepad got disconnected.
+  ## B) Either P2 or P1 are set to "keyboard only".
   natuMem.numGamepads().int
 
 proc anyGamepadConnected*: bool =
+  # Note: maybe this should change to be useful to know if any gamepad is _actually_ connected?
   natuMem.numGamepads() > 0
 
 proc applyRumble*(val: float32; i = 0) =
@@ -88,6 +93,33 @@ proc buttonReleased*(btn: GamepadButton; i = 0): bool =
 proc anyButtonHit*(s: set[GamepadButton]; i = 0): bool =
   let g = natuMem.getGamepad(i)
   (g != nil) and s * (g.currBtnStates - g.prevBtnStates) != {}
+
+proc setGamepadPinned*(val: bool; i = 0) =
+  echo "Pinning " & $i
+  let g = natuMem.getGamepad(i)
+  if g != nil:
+    g.pinned = val
+
+proc isGamepadPinned*(i = 0): bool =
+  let g = natuMem.getGamepad(i)
+  (g != nil) and g.pinned
+
+proc setKeyboardOnly*(val: bool; i = 0) =
+  natuMem.setKeyboardOnly(i.int32, val)
+
+proc isKeyboardOnly*(i = 0): bool =
+  natuMem.isKeyboardOnly(i)
+
+proc getGamepadLastActivity*(i = 0): uint64 =
+  let g = natuMem.getGamepad(i)
+  if g != nil: g.lastActivity
+  else: 0
+
+proc getActivityTimer*(): uint64 =
+  natuMem.activityTimer
+
+proc isGamepadConnected*(i: int): bool =
+  natuMem.getGamepad(i.int32) != nil
 
 
 # Stick / Trigger axes:

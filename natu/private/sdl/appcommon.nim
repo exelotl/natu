@@ -128,7 +128,7 @@ type
     currBtnStates*: set[GamepadButton]
     prevBtnStates*: set[GamepadButton]
     rumbleSupported*: bool
-    isLocked*: bool    # This gamepad is locked in place and can't be reassigned to another slot.
+    pinned*: bool    # This gamepad is locked in place and can't be reassigned to another slot.
     lastActivity*: uint64
   
   VideoSettings* = object
@@ -144,6 +144,7 @@ type
     softResetFlag*: bool
     
     videoSettings*: VideoSettings
+    activityTimer*: uint64   # Ticks up each frame, can be compared to `gamepad.lastActivity`
     
     # api:
     panic*: proc (msg1: cstring; msg2: cstring = nil) {.nimcall.}
@@ -169,6 +170,8 @@ type
     stopDma*: proc(reg: pointer) {.nimcall.}
     getGamepad*: proc (i: int32): ptr Gamepad {.nimcall.}
     numGamepads*: proc (): int32 {.nimcall.}
+    setKeyboardOnly*: proc (i: int32; val: bool) {.nimcall.}
+    isKeyboardOnly*: proc (i: int32): bool {.nimcall.}
     applyRumble*: proc (i: int32; power: float32) {.nimcall.}
     keyIsDown*: proc (keycode: int32): bool {.nimcall.}
     keyWasDown*: proc (keycode: int32): bool {.nimcall.}
