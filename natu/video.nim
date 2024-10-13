@@ -314,7 +314,7 @@ type
   BlendMode* {.size:2.} = enum
     ## Color special effects modes:
     bmOff    ## Blending disabled
-    bmAlpha  ## Alpha A against B using the weights from :xref:`bldalpha`
+    bmAlpha  ## Blend A against B using the weights from :xref:`bldalpha`
     bmWhite  ## Blend A with white using the weight from :xref:`bldy`
     bmBlack  ## Blend A with black using the weight from :xref:`bldy`
   
