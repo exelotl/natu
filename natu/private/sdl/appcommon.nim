@@ -147,6 +147,7 @@ type
     activityTimer*: uint64   # Ticks up each frame, can be compared to `gamepad.lastActivity`
     
     # api:
+    quit*: proc () {.nimcall.}
     panic*: proc (msg1: cstring; msg2: cstring = nil) {.nimcall.}
     printf*: proc (format: cstring) {.cdecl, varargs.}
     setSampleData*: proc (data: pointer) {.nimcall.}
