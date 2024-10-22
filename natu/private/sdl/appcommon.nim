@@ -171,6 +171,7 @@ type
     stopDma*: proc(reg: pointer) {.nimcall.}
     getGamepad*: proc (i: int32): ptr Gamepad {.nimcall.}
     numGamepads*: proc (): int32 {.nimcall.}
+    swapGamepads*: proc (i, j: int32) {.nimcall.}
     setKeyboardOnly*: proc (i: int32; val: bool) {.nimcall.}
     isKeyboardOnly*: proc (i: int32): bool {.nimcall.}
     applyRumble*: proc (i: int32; power: float32) {.nimcall.}

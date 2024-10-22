@@ -120,6 +120,17 @@ proc getActivityTimer*(): uint64 =
 proc isGamepadConnected*(i: int): bool =
   natuMem.getGamepad(i.int32) != nil
 
+proc clearGamepadState*(i: int) =
+  # Useful for preventing stuck keys.
+  let g = natuMem.getGamepad(i)
+  if g != nil:
+    g.currAxisStates.reset()
+    g.currBtnStates.reset()
+
+proc swapGamepads*(i, j: int) =
+  clearGamepadState(i)
+  clearGamepadState(j)
+  natuMem.swapGamepads(i.int32, j.int32)
 
 # Stick / Trigger axes:
 
