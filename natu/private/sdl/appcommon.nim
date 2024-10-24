@@ -189,3 +189,4 @@ type
     setAvgStat*: proc (name: cstring; num, den: float32) {.nimcall.}
     storeStats*: proc () {.nimcall.}
     getSaveDir*: proc (): string {.nimcall.}
+    getSteamLanguage*: proc (): string {.nimcall.}

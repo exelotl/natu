@@ -64,6 +64,9 @@ elif natuPlatform == "sdl":
   
   proc quitApp*() {.inline.} =
     natuMem.quit()
+  
+  proc getSteamLanguage*(): string {.inline.} =
+    natuMem.getSteamLanguage()
 
 else:
   {.error: "Unknown platform " & natuPlatform.}
