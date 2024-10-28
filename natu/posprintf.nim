@@ -473,6 +473,8 @@ elif natuPlatform == "sdl":
           if s[i] == 'l': (s[i] = 'd'; inc i)
       else:
         inc i
+    if s.len == 0:
+      s.add '\0'  # avoid trying to get address of a 0-length string below
   
   template posprintf*(dest: cstring; src: cstring; args: varargs[untyped]) =
     var s = $src
