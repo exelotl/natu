@@ -190,3 +190,4 @@ type
     storeStats*: proc () {.nimcall.}
     getSaveDir*: proc (): string {.nimcall.}
     getSteamLanguage*: proc (): string {.nimcall.}
+    usePlayerIndexes*: proc (a, b: int32) {.nimcall.}

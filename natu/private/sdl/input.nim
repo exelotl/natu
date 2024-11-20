@@ -132,6 +132,9 @@ proc swapGamepads*(i, j: int) =
   clearGamepadState(j)
   natuMem.swapGamepads(i.int32, j.int32)
 
+proc usePlayerIndexes*(indexes: Slice[int]) =
+  natuMem.usePlayerIndexes(indexes.a.int32, indexes.b.int32)
+
 # Stick / Trigger axes:
 
 proc getAxis*(i: int; axis: GamepadAxis): float32 =
