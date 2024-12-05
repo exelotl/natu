@@ -107,7 +107,7 @@ type
     btnUiY
   
   GamepadKind* = enum
-    GamepadUnknown
+    GamepadUnknown        # note: Unknown gamepads may have `swapUiButtons` set or not, depending on what platform xatu is compiled for.
     GamepadStandard
     GamepadXbox360
     GamepadXboxOne
