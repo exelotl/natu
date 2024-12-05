@@ -132,8 +132,29 @@ proc swapGamepads*(i, j: int) =
   clearGamepadState(j)
   natuMem.swapGamepads(i.int32, j.int32)
 
-proc usePlayerIndexes*(indexes: Slice[int]) =
-  natuMem.usePlayerIndexes(indexes.a.int32, indexes.b.int32)
+var strictPlayerCount = 1..0
+
+proc getStrictPlayerCount*(): Slice[int] =
+  strictPlayerCount
+
+proc disableStrictPlayerCount*() =
+  strictPlayerCount = 1..0
+  if natuMem.usePlayerIndexes != nil:
+    natuMem.usePlayerIndexes(0, -1)
+
+proc enableStrictPlayerCount*(indexes: Slice[int]) =
+  # Force the game to use a number of players somewhere between `indexes.a` and `indexes.b`.
+  # If enabled the numbers on the controller LEDs are actually used.
+  # In addition, any system popups (e.g. on Switch) will only accept a number of players in this range.
+  # For example:
+  #   if `indexes == 1 .. 0` then strict player numbers are disabled. Any number of players could be
+  #                          supported by the game, but system popups will assume 1 player.
+  #   if `indexes == 1 .. 1` then the game supports 1 player only.
+  #   if `indexes == 1 .. 2` then the game supports 1 player or 2 players.
+  #   if `indexes == 2 .. 2` then the game supports 2 player only.
+  strictPlayerCount = indexes
+  if natuMem.usePlayerIndexes != nil:
+    natuMem.usePlayerIndexes(indexes.a.int32 - 1, indexes.b.int32 - 1)
 
 # Stick / Trigger axes:
 
