@@ -67,6 +67,9 @@ elif natuPlatform == "sdl":
   
   proc getSteamLanguage*(): string {.inline.} =
     natuMem.getSteamLanguage()
+  
+  proc getAvailableScreenFilters*(): int =
+    natuMem.availableScreenFilters.int
 
 else:
   {.error: "Unknown platform " & natuPlatform.}

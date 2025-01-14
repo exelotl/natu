@@ -135,14 +135,17 @@ type
     title*: cstring = "Natu Game"
     pixelScale*: int = 3
     fullscreen*: bool = false
+    screenFilter*: uint8 = 0
+    unused: uint16
   
   NatuAppMem* = object
     regs*: array[0x200, uint16]
     palram*: array[NatuPalRamLen, uint16]
     vram*: array[NatuVramLen, uint16]
-    oam*: array[NatuOamLen, uint32]    
+    oam*: array[NatuOamLen, uint32]
     softResetFlag*: bool
-    
+    availableScreenFilters*: uint8
+    apiVersion*: uint16
     videoSettings*: VideoSettings
     activityTimer*: uint64   # Ticks up each frame, can be compared to `gamepad.lastActivity`
     
