@@ -137,13 +137,10 @@ type
   
   DmaChannel* {.bycopy, exportc.} = object
     ## A group of registers for a single DMA channel.
-    ## 
-    ## Note, all :xref:`DmaCnt` fields can be set directly via the channel too, e.g. `dmach[3].`
-    ## 
     src*: pointer    ## Source address.
     dst*: pointer    ## Destination address.
     count*: uint16   ## Number of transfers.
-    cnt*: DmaCnt     ## DMA control register.
+    cnt*: DmaCnt     ## DMA control register. (Write only!)
 
 bitdef DmaCnt, 5..6, dstMode, DmaDstMode, {WriteOnly}
 bitdef DmaCnt, 7..8, srcMode, DmaSrcMode, {WriteOnly}
