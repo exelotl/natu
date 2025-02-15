@@ -9,3 +9,5 @@ wip/
 *.out
 *.exe
 mmutil
+xatu
+nim.cfg

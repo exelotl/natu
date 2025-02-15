@@ -3,6 +3,22 @@ import std/compilesettings
 
 let natuDir* = currentSourcePath().parentDir.parentDir
 
+# Config gets loaded twice:
+# 1) with 'config.nims' as the project directory.
+# 2) with 'path/to/my_game.nim' as the project directory.
+# 
+# We want to use (1) as the root for , so use the environment
+# to make sure it only gets set once.
+
+if not existsEnv("natuConfigRoot"):
+  putEnv("natuConfigRoot", projectDir())
+
+let root = getEnv("natuConfigRoot")
+
+switch "define", "natuOutputDir:" & root/"output"
+switch "define", "natuConfigDir:" & root/"config"
+switch "define", "natuSharedDir:" & root/"shared"
+
 # ROM header info, should be overidden
 
 put "natu.gameTitle", "UNTITLED"
@@ -37,8 +53,6 @@ let gcc = findExe("arm-none-eabi-gcc")
 if gcc == "":
   if getEnv("DEVKITPRO") != "" and getEnv("DEVKITARM") != "":
     useDkp = true
-  else:
-    doAssert(false, "Missing arm-none-eabi-gcc, please install it and make sure it's in your system PATH!")
 
 
 proc natuExe*: string =
@@ -52,11 +66,13 @@ proc gbaCfg* =
   
   if useDkp:
     echo "Using devkitARM's GCC."
+  elif gcc == "":
+    doAssert(false, "Missing arm-none-eabi-gcc, please install it and make sure it's in your system PATH!")
   
   # set linker flags
   
   if not exists("natu.ldflags.script"):
-    put "natu.ldflags.script", "-T " & natuDir & "/natu/private/gba_cart.ld"
+    put "natu.ldflags.script", "-T " & natuDir & "/natu/private/gba/gba_cart.ld"
   
   if not exists("natu.ldflags.specs"):
     put "natu.ldflags.specs", "-nostdlib -lgcc -Wl,--gc-sections"  # you could potentially pass a specs file here instead
@@ -101,7 +117,6 @@ proc gbaCfg* =
   
   # Only set switches that the developer will never need to override.
   switch "define", "gba"
-  switch "define", "natuOutputDir:" & absolutePath("output")
   switch "cpu", "arm"
   switch "cc", "gcc"
   switch "lineTrace", "off"
@@ -112,13 +127,34 @@ proc gbaCfg* =
   switch "cincludes", natuDir/"vendor/maxmod/include"
   
   # Natu panic handler
-  switch "import", natuDir/"natu/private/essentials"
+  switch "import", natuDir/"natu/private/gba/essentials"
   patchFile("stdlib", "fatal", natuDir/"natu/private/fatal")
   
   if useDkp:
     # Ensure subprocesses can see the DLLs in tools/bin
     putEnv "PATH", devkitPro()/"tools"/"bin" & PathSep & getEnv("PATH")
 
+proc sdlCfg*(w, h: int) =
+  echo "Building for PC."
+  switch "passC", "-fPIC -DNON_GBA_TARGET"
+  put "gcc.options.always", "-Wno-unused-variable -Wno-unused-but-set-variable -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-stringop-overflow"
+  switch "define", "natuLcdWidth:" & $w
+  switch "define", "natuLcdHeight:" & $h
+  switch "passL", "-lm"
+  switch "cpu", "amd64"
+  switch "threads", "off"
+  # switch "import", natuDir/"natu/private/sdl/applib"
+  switch "app", "lib"
+  switch "nimMainPrefix", "natu"
+  switch "noMain"
+  switch "cincludes", natuDir/"vendor/libtonc/include"
+  switch "cincludes", natuDir/"vendor/maxmod/include"
+  switch "lineTrace", "off"
+  switch "stackTrace", "off"
+  switch "excessiveStackTrace", "off"
+  patchFile("stdlib", "fatal", natuDir/"natu/private/fatal")
+  when defined(windows):
+    patchFile("stdlib", "dynlib", natuDir/"natu/private/win/dynlib")
 
 proc gbaStrip*(elfFile, gbaFile: string) =
   ## Invoke objcopy to create a raw binary file (all debug symbols removed)
@@ -348,6 +384,15 @@ proc mmConvert*(script: static string) =
   readAudio(script)
   mkDir("output")
   exec natuExe() & " mmconvert --script:$# --sfxdir:. --moddir:. --outdir:output $# $#" % [
+    script,
+    natuSamples.join(" "),
+    natuModules.join(" "),
+  ]
+
+proc mixConvert*(script: static string) =
+  readAudio(script)
+  mkDir("output")
+  exec natuExe() & " mixconvert --script:$# --sfxdir:. --moddir:. --outdir:output $# $#" % [
     script,
     natuSamples.join(" "),
     natuModules.join(" "),

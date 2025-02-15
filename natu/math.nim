@@ -10,11 +10,18 @@ export std_math.sgn
 export FixedT, FixedN, Fixed
 
 {.compile(toncPath & "/src/tonc_math.c", toncCFlags).}
-{.compile(toncPath & "/asm/div_lut.s", toncAsmFlags).}
-{.compile(toncPath & "/asm/sin_lut.s", toncAsmFlags).}
+{.compile(toncPath & "/asm/div_lut.c", toncCFlags).}
+{.compile(toncPath & "/asm/sin_lut.c", toncCFlags).}
 
 {.pragma: tonc, header: "tonc_math.h".}
 {.pragma: toncinl, header: "tonc_math.h".}  # indicates that the definition is in the header.
+
+
+when defined(gba):
+  converter to_cint*(x: int): cint {.inline.} = x.cint
+  converter to_cuint*(x: uint): cuint {.inline.} = x.cuint
+  converter to_int*(x: cint): int {.inline.} = x.int
+  converter to_uint*(x: cuint): uint {.inline.} = x.uint
 
 const
   fpShift* = 8
@@ -64,11 +71,6 @@ template toFloat32*(n: FixedT): float32 = n.float32 / getScale(typeof(n)).float3
   ## Convert a fixed-point value to floating point.
 
 func `$`*[F: FixedT](a: F): string = $(a.toFloat32())  # TODO: better implementation?
-
-when (NimMajor, NimMinor) >= (1, 6):
-  # Enable fixed-point numeric literals, e.g: 22.5'fp
-  # (Relegated to external file to keep the parser happy)
-  include private/fp_literals
 
 # implicit converters for the most common cases?
 # converter toFixedN8*(a: SomeNumber): FixedN[8] {.inline.} = toFixed(a, 8)
@@ -126,21 +128,21 @@ template `shl`*[F: FixedT, I: SomeInteger](a: F, b: I): F = F(raw(a) shl b)
 
 {.push inline.}
 
-func flr*(n: FixedT): int =
+func flr*(n: FixedT): cint =
   ## Convert a fixed-point number to an integer, always rounding down.
-  n.int shr getShift(typeof(n))
+  n.cint shr getShift(typeof(n))
 
-func ceil*(n: FixedT): int =
+func ceil*(n: FixedT): cint =
   ## Convert a fixed-point number to an integer, always rounding up.
-  (n.int + (getScale(typeof(n)) - 1)) shr getShift(typeof(n))
+  (n.cint + (getScale(typeof(n)) - 1)) shr getShift(typeof(n))
 
-func sgn*(x: FixedT): int =
+func sgn*(x: FixedT): cint =
   ## Get the sign of a fixed-point number.
   ## 
   ## Returns `-1` when `x` is negative, `1` when `x` is positive, or `0` when `x` is `0`.
   sgn(x.raw)
 
-func sgn2*(x: SomeNumber|FixedT): int =
+func sgn2*(x: SomeNumber|FixedT): cint =
   ## Returns `1` or `-1` depending on the sign of `x`.
   ##
   ## Note: This never returns `0`. Use `sgn` if you want something that does.
@@ -231,7 +233,7 @@ func luLerp*[A: SomeInteger|FixedT, F: FixedT](lut: openArray[A]; x: F): A {.inl
 type
   Vec2i* {.bycopy.} = object
     ## Integer 2D vector/point type
-    x*, y*: int
+    x*, y*: cint
     
   Vec2f* {.bycopy.} = object
     ## Fixed-point `24:8` 2D vector/point type

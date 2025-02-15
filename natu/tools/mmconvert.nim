@@ -1,13 +1,12 @@
-import strutils, strformat, parseopt
-import options, os, osproc, times
-import trick
+import std/[strutils, strformat, parseopt, options, os, osproc, times, streams]
+import trick, riff
 import ./common
 
 proc writeSoundbankNim(f: File; sfxList, modList: seq[string]) =
   include "templates/soundbank.nim.template"
 
 proc mmConvert*(script, sfxdir, moddir, outdir: string, files: seq[string]) =
-  var filePaths, sfxList, modList: seq[string]
+  var sfxFilePaths, modFilePaths, sfxList, modList: seq[string]
   
   let outputBinPath = outdir / "soundbank.bin"
   let outputNimPath = outdir / "soundbank.nim"
@@ -16,6 +15,8 @@ proc mmConvert*(script, sfxdir, moddir, outdir: string, files: seq[string]) =
   var oldestModifiedOut = oldest(outputBinPath, outputNimPath)
   
   # collate and check modification dates of input files
+  
+  let modExts = [".mod", ".xm", ".s3m", ".it"]
   
   for f in files:
     
@@ -26,15 +27,16 @@ proc mmConvert*(script, sfxdir, moddir, outdir: string, files: seq[string]) =
     if ext == ".wav":
       inPath = sfxdir / f
       sfxList.add toCamelCase("sfx_" & name)
-    elif ext in [".mod", ".xm", ".s3m", ".it"]:
+      sfxFilePaths.add inPath
+    elif ext in modExts:
       inPath = moddir / f
       modList.add toCamelCase("mod_" & name)
+      modFilePaths.add inPath
     else:
-      raiseAssert("Unrecognised audio asset " & name & ext & ", only the following formats are accepted: .wav .mod .xm .s3m .it")
+      raiseAssert(&"Unrecognised audio asset {name}{ext} only the following formats are accepted: .wav " & modExts.join(" "))
     
     doAssert(fileExists(inPath), "No such file " & inPath)
     newestModifiedIn = newest(newestModifiedIn, inPath, inPath.parentDir)
-    filePaths.add inPath
   
   
   # regenerate the output files if any input files have changed
@@ -63,7 +65,7 @@ proc mmConvert*(script, sfxdir, moddir, outdir: string, files: seq[string]) =
       if res != 0:
         raiseAssert("mmutil failed with code " & $res)
     
-    mmutil "-o" & outputBinPath & " " & filePaths.join(" ")
+    mmutil "-o" & outputBinPath & " " & sfxFilePaths.join(" ") & " " & modFilePaths.join(" ")
     
     withFile(outputNimPath, fmWrite):
       file.writeSoundbankNim(sfxList, modList)
@@ -75,7 +77,7 @@ proc mmConvert*(script, sfxdir, moddir, outdir: string, files: seq[string]) =
 # Command Line Interface
 # ----------------------
 
-proc mmConvert*(p: var OptParser, progName: static[string] = "gfxconvert") =
+proc mmConvert*(p: var OptParser, progName: static[string] = "mmconvert") =
   
   const helpMsg = """
 
@@ -115,4 +117,3 @@ Invokes the maxmod utility program to generate a soundbank, and produces Nim-fri
   if outdir == "": quit("Please specify --outdir\n" & helpMsg, 0)
   
   mmConvert(script, sfxdir, moddir, outdir, files)
-

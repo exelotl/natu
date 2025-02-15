@@ -70,7 +70,7 @@ void *tonccpy(void *dst, const void *src, uint size)
 	u8  *src8;		// byte source
 
 	// Ideal case: copy by 4x words. Leaves tail for later.
-	if( ((u32)src|(u32)dst)%4==0 && size>=4)
+	if( ((uintptr_t)src|(uintptr_t)dst)%4==0 && size>=4)
 	{
 		u32 *src32= (u32*)src, *dst32= (u32*)dst;
 
@@ -97,7 +97,7 @@ void *tonccpy(void *dst, const void *src, uint size)
 	}
 	else		// Unaligned.
 	{
-		uint dstOfs= (u32)dst&1;
+		uint dstOfs= (uintptr_t)dst&1;
 		src8= (u8*)src;
 		dst16= (u16*)(dst-dstOfs);
 
@@ -143,7 +143,7 @@ void *__toncset(void *dst, u32 fill, uint size)
 	if(dst==NULL || size==0)
 		return dst;
 
-	uint left= (u32)dst&3;
+	uint left= (uintptr_t)dst&3;
 	u32 *dst32= (u32*)(dst-left);
 	u32 count, mask;
 
@@ -217,7 +217,7 @@ u32 octant(int x, int y)
 
 //! Get the rotated octant that (\a x, \a y) is in.
 /*!	Like \c octant() but with a twist. The 0-octant starts 
-	22.5° earlier so that 3 o'clock falls in the middle of 
+	22.5ï¿½ earlier so that 3 o'clock falls in the middle of 
 	octant 0, instead of at its start. This can be useful for 
 	8 directional pointing.
 */

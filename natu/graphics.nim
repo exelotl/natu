@@ -1,5 +1,6 @@
 import natu/[video, math, utils]
 import natu/kit/[pal_manager, obj_tile_manager]
+from natu/private/common import doInclude, natuOutputDir
 
 export pal_manager
 export obj_tile_manager
@@ -21,14 +22,6 @@ type
     w, h: uint8
     size*: ObjSize
     flags*: set[GraphicFlag]
-
-const natuOutputDir {.strdefine.} = ""
-
-when natuOutputDir == "":
-  {.error: "natuOutputDir is not set. Did you forget to call gbaCfg() in your config.nims?".}
-
-template doInclude(path: static string) =
-  include `path`
 
 doInclude natuOutputDir & "/graphics.nim"
 
@@ -129,8 +122,8 @@ func onscreen*(r: Rect): bool {.inline.} =
 
 type
   PalUsage {.size: sizeof(uint16).} = object
-    index {.bitsize: 4.}: uint    ## Which slot in Obj PAL RAM is this palNum assigned to?
-    count {.bitsize: 12.}: uint   ## How many times is it used?
+    index {.bitsize: 5.}: uint    ## Which slot in Obj PAL RAM is this palNum assigned to? (can refer to 32 obj palettes, for PC support.)
+    count {.bitsize: 11.}: uint   ## How many times is it used?
 
 proc acquireObjPal(u: var PalUsage, palData: pointer, palHalfwords: int): int {.discardable.} =
   if u.count == 0:
@@ -157,8 +150,8 @@ template acquireObjPal*(g: Graphic): int =
   ## Increase the reference count for a graphic's palette data.
   ## 
   ## If the count was zero, a slot in Obj PAL RAM will be allocated
-  ## using :ref:`allocObjPal`, and the palette data will be copied into
-  ## the corresponding slot in :ref:`objPalBuf`.
+  ## using :xref:`allocObjPal`, and the palette data will be copied into
+  ## the corresponding slot in :xref:`objPalBuf`.
   ## 
   ## Returns which slot in Obj PAL RAM was used, but you don't have
   ## to use the returned value, as you can always check it later

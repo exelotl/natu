@@ -5,6 +5,13 @@ import types
 
 {.pragma: tonc, header: "tonc_memmap.h".}
 
+
+import ./common
+
+when natuPlatform == "sdl":
+  import ./sdl/appcommon
+
+
 # Main sections
 const
   MEM_EWRAM*:uint32 = 0x02000000  ## External work RAM
@@ -20,8 +27,10 @@ const
 const
   EWRAM_SIZE*:uint32 = 0x40000
   IWRAM_SIZE*:uint32 = 0x08000
-  PAL_SIZE*:uint32   = 0x00400
-  VRAM_SIZE*:uint32  = 0x18000
+  PAL_SIZE*:uint32   = when defined(gba): 0x00400'u32
+                       else: (NatuPalRamLen*sizeof(uint16)).uint32
+  VRAM_SIZE*:uint32  = when defined(gba): 0x18000'u32
+                       else: (NatuVramLen*sizeof(uint16)).uint32
   OAM_SIZE*:uint32   = 0x00400
   SRAM_SIZE*:uint32  = 0x10000
 
@@ -29,9 +38,11 @@ const
 const
   PAL_BG_SIZE*:uint32    = 0x00200  ## BG palette size
   PAL_OBJ_SIZE*:uint32   = 0x00200  ## Object palette size
-  CBB_SIZE*:uint32       = 0x04000  ## Charblock size (single)
+  CBB_SIZE*:uint32       = when defined(gba): 0x04000'u32
+                           else: (NatuCbLen*sizeof(uint16)).uint32  # Charblock size (single)
   SBB_SIZE*:uint32       = 0x00800  ## Screenblock size (single)
-  VRAM_BG_SIZE*:uint32   = 0x10000  ## BG VRAM size
+  VRAM_BG_SIZE*:uint32   = when defined(gba): 0x10000'u32
+                           else: (NatuCbLen*sizeof(uint16)*4).uint32  # BG VRAM size  (tiles only)
   VRAM_OBJ_SIZE*:uint32  = 0x08000  ## Object VRAM size
   M3_SIZE*:uint32        = 0x12C00  ## Mode 3 buffer size
   M4_SIZE*:uint32        = 0x09600  ## Mode 4 buffer size
@@ -53,192 +64,10 @@ const
 #  memory sections. They're all arrays or matrices, using the
 #  types that would be the most natural for the concept.
 
-# Palette
-
-
-var bgColorMem* {.importc:"pal_bg_mem", tonc.}: array[256, Color]
-  ## Access to BG PAL RAM as a single array of colors.
-  ## 
-  ## This is useful when working with 8bpp backgrounds, or display mode 4.
-
-var bgPalMem* {.importc:"pal_bg_bank", tonc.}: array[16, Palette]
-  ## Access to BG PAL RAM as a table of 16-color palettes.
-  ## 
-  ## This is useful when working when 4bpp backgrounds.
-  ## 
-  ## **Example:**
-  ## 
-  ## .. code-block:: nim
-  ##   
-  ##   # set all colors of the first palette in memory to white.
-  ##   for color in bgPalMem[0].mitems:
-  ##     color = clrWhite
-
-
-var objColorMem* {.importc:"pal_obj_mem", tonc.}: array[256, Color]
-  ## Access to OBJ PAL RAM as a single array of colors.
-  ## 
-  ## This is useful when working with 8bpp sprites.
-
-var objPalMem* {.importc:"pal_obj_bank", tonc.}: array[16, Palette]
-  ## Access to OBJ PAL RAM as a table of 16-color palettes.
-  ## 
-  ## This is useful when working when 4bpp sprites.
-
-var palBgMem* {.deprecated:"Use bgColorMem instead", importc:"pal_bg_mem", tonc.}: array[256, Color]
-  ## Background palette.
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   palBgMem[i] = color i
-
-var palObjMem* {.deprecated:"Use objColorMem instead", importc:"pal_obj_mem", tonc.}: array[256, Color]
-  ## Object palette.
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   palObjMem[i] = color i
-
-{.push warning[Deprecated]: off.}
-
-var palBgBank* {.deprecated:"Use bgPalMem instead", importc:"pal_bg_bank", tonc.}: array[16, Palette]
-  ## Background palette matrix.
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   palBgBank[i] = bank i
-  ##   palBgBank[i][j] = color i*16+j
-
-var palObjBank* {.deprecated:"Use objPalMem instead", importc:"pal_obj_bank", tonc.}: array[16, Palette]
-  ## Object palette matrix.
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   palObjBank[i] = bank i
-  ##   palObjBank[i][j] = color i*16+j
-
-{.pop.}
-
-# VRAM
-
-var bgTileMem* {.importc:"tile_mem", tonc.}: array[4, UnboundedCharblock]
-  ## BG charblocks, 4bpp tiles.
-  ## 
-  ## .. note::
-  ##    While `bgTileMem[0]` has 512 elements, it's valid to reach across
-  ##    into the neighbouring charblock, for example `bgTileMem[0][1000]`.
-  ## 
-  ## For this reason, no bounds checking is performed on these charblocks even when
-  ## compiling with `--checks:on`.
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   bgTileMem[i]      # charblock i
-  ##   bgTileMem[i][j]   # charblock i, tile j
-
-var bgTileMem8* {.importc:"tile8_mem", tonc.}: array[4, UnboundedCharblock8]
-  ## BG charblocks, 8bpp tiles.
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   bgTileMem8[i]      # charblock i
-  ##   bgTileMem8[i][j]   # charblock i, tile j
-
-var objTileMem* {.importc:"tile_mem_obj[0]", tonc.}: array[1024, Tile]
-  ## Object (sprite) image data, as 4bpp tiles.
-  ## 
-  ## This is 2 charblocks in size, and is separate from BG tile memory.
-  ## 
-  ## **Example:**
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   objTileMem[n] = Tile()   # Clear the image data for a tile.
-
-var objTileMem8* {.importc:"tile8_mem_obj[0]", tonc.}: array[512, Tile8]
-  ## Object (sprite) tiles, 8bpp
-
-var seMem* {.importc:"se_mem", tonc.}: array[32, Screenblock]
-  ## Screenblocks as arrays
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   seMem[i]       # screenblock i
-  ##   seMem[i][j]    # screenblock i, entry j
-  ##   seMem[i][x,y]  # screenblock i, entry x + y*32
-
-
-var vidMem* {.importc:"vid_mem", tonc.}: array[240*160, Color]
-  ## Main mode 3/5 frame as an array
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   vidMem[i]    # pixel i
-
-var m3Mem* {.importc:"m3_mem", tonc.}: array[160, M3Line]
-  ## Mode 3 frame as a matrix
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   m3Mem[y][x]  # pixel (x, y)
-
-var m4Mem* {.importc:"m4_mem", tonc.}: array[160, M4Line]
-  ## Mode 4 first page as a matrix
-  ## Note: This is a byte-buffer. Not to be used for writing.
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   m4Mem[y][x]  # pixel (x, y)
-
-var m5Mem* {.importc:"m5_mem", tonc.}: array[128, M5Line]
-  ## Mode 5 first page as a matrix
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   m5Mem[y][x]  # pixel (x, y)
-
-var vidMemFront* {.importc:"vid_mem_front", tonc.}: array[160*128, uint16]
-  ## First page array
-
-var vidMemBack* {.importc:"vid_mem_back", tonc.}: array[160*128, uint16]
-  ## Second page array
-
-var m4MemBack* {.importc:"m4_mem_back", tonc.}: array[160, M4Line]
-  ## Mode 4 second page as a matrix
-  ## This is a byte-buffer. Not to be used for writing.
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   m4MemBack[y][x]  = pixel (x, y)          ( u8 )
-
-var m5MemBack* {.importc:"m5_mem_back", tonc.}: array[128, M5Line]
-  ## Mode 5 second page as a matrix
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   m5MemBack[y][x]  = pixel (x, y)          ( Color )
-
-
-# OAM
-
-var objMem* {.importc:"oam_mem", tonc.}: array[128, ObjAttr]
-  ## Object attribute memory
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   objMem[i] = object i            (ObjAttr)
-
-var objAffMem* {.importc:"obj_aff_mem", tonc.}: array[32, ObjAffine]
-  ## Object affine memory
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   objAffMem[i] = object matrix i      ( OBJ_AFFINE )  
-
 
 # ROM
 
-var romMem* {.importc:"rom_mem", tonc.}: array[0x1000000, uint16]
+let romMem* {.importc:"rom_mem", tonc.}: array[0x1000000, uint16]
   ## Access to ROM as an array of halfwords.
   ## 
   ## The max ROM size is ``32MiB``.
@@ -249,14 +78,6 @@ var sramMem* {.importc:"sram_mem", tonc.}: array[0x10000, uint8]
   ## Access to SRAM as an array of bytes.
   ## 
   ## This has a maximum size of ``64KiB``, though many carts don't actually have that much available.
-
-# deprecated
-var tileMem* {.deprecated:"Use bgTileMem", importc:"tile_mem", tonc.}: array[6, Charblock]
-var tile8Mem* {.deprecated:"Use bgTileMem8", importc:"tile8_mem", tonc.}: array[6, Charblock8]
-var tileMemObj* {.deprecated:"Use objTileMem[i] instead of tileMemObj[0][i]", importc:"tile_mem_obj", tonc.}: array[2, Charblock]
-var tile8MemObj* {.deprecated:"Use objTileMem8[i] instead of tile8MemObj[0][i]", importc:"tile8_mem_obj", tonc.}: array[2, Charblock8]
-var seMat* {.deprecated:"Use seMem[s][x,y] instead", importc:"se_mat", tonc.}: array[32, ScreenMat]
-var oamMem* {.deprecated:"Use `objMem` instead", importc:"oam_mem", tonc.}: array[128, ObjAttr]
 
 
 # REGISTER LIST

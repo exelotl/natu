@@ -1,29 +1,6 @@
-## 
-## 
-
-import ./private/[memmap, privutils]
+import ./private/[memmap, privutils, common]
+import ./bits
 import std/volatile
-
-# To be used with codegenDecl pragma:
-const
-  IWRAM_DATA* = "__attribute__((section(\".iwram.data\"))) $# $#"    ## Put variable in IWRAM (default).
-  EWRAM_DATA* = "__attribute__((section(\".ewram.data\"))) $# $#"    ## Put variable in EWRAM.
-  EWRAM_BSS* = "__attribute__((section(\".sbss\"))) $# $#"      ## Put non-initialized variable in EWRAM.
-  IWRAM_CODE* = "__attribute__((section(\".iwram.text\"), target(\"arm\"), long_call)) $# $#$#"  ## Put procedure in IWRAM.
-  EWRAM_CODE* = "__attribute__((section(\".ewram.text\"), long_call)) $# $#$#"  ## Put procedure in EWRAM.
-
-# Newer alternatives:
-const
-  DataInIwram* = "__attribute__((section(\".iwram.data\"))) $# $#"    ## Put variable in IWRAM (default).
-  DataInEwram* = "__attribute__((section(\".ewram.data\"))) $# $#"    ## Put variable in EWRAM
-  ArmCodeInIwram* = "__attribute__((section(\".iwram.text\"), target(\"arm\"), long_call)) $# $#$#"      ## Put procedure in IWRAM.
-  ThumbCodeInEwram* = "__attribute__((section(\".ewram.text\"), target(\"thumb\"), long_call)) $# $#$#"  ## Put procedure in EWRAM.
-
-# ROM
-export romMem
-
-# SRAM
-export sramMem
 
 
 when (NimMajor, NimMinor) >= (1, 6):
@@ -45,9 +22,9 @@ type
     ## 
     ## Initial access to ROM takes `N` cycles, sequential access takes `S` cycles.
     ## 
-    ## 
     ## For more information on `N` cycles and `S` cycles, see the `asm chapter
-    ## <https://www.coranac.com/tonc/text/asm.htm#ssec-misc-cycles>`_ of Tonc.
+    ## <https://gbadev.net/tonc/asm.html#ssec-misc-cycles>`_ of Tonc.
+    ## 
     N4_S2
     N3_S2
     N2_S2
@@ -87,47 +64,28 @@ type
     phi8MHz   ## 8.38MHz
     phi17MHz  ## 16.78MHz
   
-  WaitCnt* {.bycopy, exportc.} = object
-    ## Waitstate control
-    sram* {.bitsize:2.}: WsSram   ## SRAM access time
-    rom0* {.bitsize:3.}: WsRom0   ## ROM access time
-    rom1* {.bitsize:3.}: WsRom1   ## ROM access time (alt. #1)
-    rom2* {.bitsize:3.}: WsRom2   ## ROM access time (alt. #2)
-    phi* {.bitsize:2.}: WsPhi
-    unused {.bitsize:1.}: bool
-    prefetch* {.bitsize:1.}: bool ## Prefetch buffer enabled.
-    gb {.bitsize:1.}: bool
+  WaitCnt* = distinct uint16
+    ## ========== ============== ====== ==================================================
+    ## Field      Type           Bits   Description
+    ## ========== ============== ====== ==================================================
+    ## `sram`     :xref:`WsSram` 0-1    SRAM access time.
+    ## `rom0`     :xref:`WsRom0` 2-4    ROM mirror 0 access time.
+    ## `rom1`     :xref:`WsRom1` 5-7    ROM mirror 1 access time.
+    ## `rom2`     :xref:`WsRom2` 8-10   ROM mirror 2 access time.
+    ## `phi`      :xref:`WsPhi`  11-12  Cart clock (don't touch!)
+    ## `prefetch` bool           14     Game Pak prefetch. If enabled, the GBA's `prefetch unit <https://mgba.io/2015/06/27/cycle-counting-prefetch/#game-pak-prefetch>`__
+    ##                                  will fetch upcoming instructions from ROM, when ROM is not being accessed by the CPU, generally leading to a performance boost.
+    ## `gb`       bool           15     True if a Game Boy (Color) cartridge is currently inserted. (Read only!)
+    ## ========== ============== ====== ==================================================
 
+bitdef WaitCnt, 0..1, sram, WsSram
+bitdef WaitCnt, 2..4, rom0, WsRom0
+bitdef WaitCnt, 5..7, rom1, WsRom1
+bitdef WaitCnt, 8..10, rom2, WsRom2
+bitdef WaitCnt, 11..12, phi, WsPhi
+bitdef WaitCnt, 14, prefetch, bool
+bitdef WaitCnt, 15, gb, bool, { ReadOnly }
 
-var waitcnt* {.importc:"(*(volatile WaitCnt*)(0x04000204))", nodecl.}: WaitCnt
-  ## Waitstate control register.
-  ## 
-  ## This controls the number of CPU cycles taken to access cart memory (ROM and SRAM).
-  ## 
-  ## The "standard" setting (used by most commercial games) is as follows:
-  ## 
-  ## .. code-block:: nim
-  ## 
-  ##   waitcnt.init(
-  ##     sram = WsSram.N8_S8,   # 8 cycles to access SRAM.
-  ##     rom0 = WsRom0.N3_S1,   # 3 cycles to access ROM, or 1 cycle for sequential access.
-  ##     rom2 = WsRom2.N8_S8,   # 8 cycles to access ROM (mirror #2) which may be used for flash storage.
-  ##     prefetch = true        # prefetch buffer enabled.
-  ##   )
-  ## 
-  ## In this example, `waitcnt.rom0` determines the access time for the default view into ROM.
-  ## 
-  ## .. warning::
-  ##   The preferred access time of "3,1" works on every flashcart *except* for
-  ##   the SuperCard SD and its derivatives. If you want to support the SuperCard
-  ##   without compromising performance for all, use the :ref:`slowGamePak` proc.
-  ## 
-  ## There are two additional ROM mirrors located at `0x0A000000` and `0x0C000000`,
-  ## which have access times determined by `waitcnt.rom1` and `waitcnt.rom2`.
-  ## 
-  ## The mirrors may be useful for carts containing multiple ROM chips. For example
-  ## on some carts the upper 128KiB of ROM is mapped to flash storage which would
-  ## require different access timings.
 
 template init*(r: WaitCnt, args: varargs[untyped]) =
   var tmp: WaitCnt
@@ -138,6 +96,75 @@ template edit*(r: WaitCnt, args: varargs[untyped]) =
   var tmp = r
   writeFields(tmp, args)
   r = tmp
+
+
+# Direct Memory Access
+# --------------------
+
+type
+  DmaDstMode* {.overloadable.} = enum
+    Inc     ## Increment after each copy.
+    Dec     ## Decrement after each copy.
+    Fix     ## Remain unchanged.
+    Reload  ## Like `Inc` but resets to its initial value after all transfers have been completed.
+  DmaSrcMode* {.overloadable.} = enum
+    Inc     ## Increment after each copy.
+    Dec     ## Decrement after each copy.
+    Fix     ## Remain unchanged.
+  DmaSize* {.overloadable.} = enum
+    Halfwords  ## Copy 16 bits.
+    Words      ## Copy 32 bits.
+  DmaTime* {.overloadable.} = enum
+    AtNow      ## Transfer immediately.
+    AtVBlank   ## Transfer on VBlank.
+    AtHBlank   ## Transfer on HBlank. Note: HBlank DMA does not occur during VBlank (unlike HBlank interrupts).
+    AtSpecial  ## Channels 0/1: start on FIFO empty. Channel 2: start on VCount = 2
+  
+  DmaCnt* = distinct uint16
+    ## DMA control register. (Write only!)
+    ## 
+    ## ========== ============== ======= ==================================================
+    ## Field      Type           Bits    Description
+    ## ========== ============== ======= ==================================================
+    ## `dstMode`  DmaDstMode     5..6    Type of increment applied to destination address.
+    ## `srcMode`  DmaSrcMode     7..8    Type of increment applied to source address.
+    ## `repeat`   bool           9       Repeat the transfer for each occurrence specified by `time`.
+    ## `size`     DmaSize        10      Whether to transfer 16 or 32 bits at a time.
+    ## `time`     DmaTime        12..13  Timing mode, determines when the transfer should occur.
+    ## `irq`      bool           14      If true, an interrupt will be raised when finished.
+    ## `enable`   bool           15      Enable DMA transfer for this channel. (Invoking `start() <#start>`__ will do this for you.)
+    ## ========== ============== ======= ==================================================
+  
+  DmaChannel* {.bycopy, exportc.} = object
+    ## A group of registers for a single DMA channel.
+    src*: pointer    ## Source address.
+    dst*: pointer    ## Destination address.
+    count*: uint16   ## Number of transfers.
+    cnt*: DmaCnt     ## DMA control register. (Write only!)
+
+bitdef DmaCnt, 5..6, dstMode, DmaDstMode, {WriteOnly}
+bitdef DmaCnt, 7..8, srcMode, DmaSrcMode, {WriteOnly}
+bitdef DmaCnt, 9, repeat, bool, {WriteOnly}
+bitdef DmaCnt, 10, size, DmaSize, {WriteOnly}
+bitdef DmaCnt, 12..13, time, DmaTime, {WriteOnly}
+bitdef DmaCnt, 14, irq, bool, {WriteOnly}
+bitdef DmaCnt, 15, enable, bool, {WriteOnly}
+
+template `dstMode=`*(d: DmaChannel; val: DmaDstMode) = d.cnt.dstMode = val
+template `srcMode=`*(d: DmaChannel; val: DmaSrcMode) = d.cnt.srcMode = val
+template `repeat=`*(d: DmaChannel; val: bool) = d.cnt.repeat = val
+template `size=`*(d: DmaChannel; val: DmaSize) = d.cnt.size = val
+template `time=`*(d: DmaChannel; val: DmaTime) = d.cnt.time = val
+template `irq=`*(d: DmaChannel; val: bool) = d.cnt.irq = val
+template `enable=`*(d: DmaChannel; val: bool) = d.cnt.enable = val
+
+
+# Platform specific code
+# ----------------------
+
+when natuPlatform == "gba": include ./private/gba/memory 
+elif natuPlatform == "sdl": include ./private/sdl/memory
+else: {.error: "Unknown platform " & natuPlatform.}
 
 
 let data = [305419896'u32, 270441'u32, 3735928559'u32]  # Some arbitrary data in ROM.

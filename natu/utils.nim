@@ -1,16 +1,36 @@
-import std/volatile
-import ./private/[common, types]
+import std/[volatile, macros]
+import ./private/[common, types, printify]
 
 export FnPtr
 
 {.compile(toncPath & "/src/tonc_core.c", toncCFlags).}
-{.compile(toncPath & "/asm/tonc_memcpy.s", toncAsmFlags).}
-{.compile(toncPath & "/asm/tonc_memset.s", toncAsmFlags).}
 
-{.pragma: tonc, header: "tonc_core.h".}
-{.pragma: toncinl, header: "tonc_core.h".}  # indicates that the definition is in the header.
+
+# Platform specific code
+# ----------------------
+
+when natuPlatform == "gba": include ./private/gba/utils 
+elif natuPlatform == "sdl": include ./private/sdl/utils
+else: {.error: "Unknown platform " & natuPlatform.}
+
 
 proc panic(msg1: cstring; msg2: cstring = nil) {.importc: "natuPanic", noreturn.}
+
+# Basic echo equivalent, to be replaced by something more GBA-friendly later.
+macro log*(args: varargs[string, `$`]) =
+  var formatStr = ""
+  result = newCall(bindSym"natuLogImpl", nil)
+  for a in args:
+    result.add(a)
+    formatStr &= "%s"
+  result[1] = newStrLitNode(formatStr)
+
+# Efficient & concise formatted logging, but needs more work:
+# - currently doesn't make posprintf-friendly output, but ditching posprintf & fixing ACSL would be better.
+# - doesn't support advanced format specifiers (hex, padding, etc.)
+template logf*(s: static string) =
+  printify(natuLogImpl(), s)
+
 
 {.push inline.}
 
@@ -193,60 +213,6 @@ func logPowerOfTwo*(n: uint): uint =
     ((n and 0xFFFF0000'u) != 0).uint shl 4
 
 
-# Tonc memory functions
-# ---------------------
-
-proc memset16*(dst: pointer, hw: uint16, hwcount: SomeInteger) {.importc: "memset16", tonc.}
-  ## Fastfill for halfwords, analogous to memset()
-  ## 
-  ## Uses `memset32()` if `hwcount > 5`
-  ## 
-  ## :dst:     Destination address.
-  ## :hw:      Source halfword (not address).
-  ## :hwcount: Number of halfwords to fill.
-  ## 
-  ## .. note::
-  ##    | `dst` *must* be halfword aligned.
-  ##    | `r0` returns as `dst + hwcount*2`.
-
-proc memcpy16*(dst: pointer, src: pointer, hwcount: SomeInteger) {.importc: "memcpy16", tonc.}
-  ## Copy for halfwords.
-  ## 
-  ## Uses `memcpy32()` if `hwcount > 6` and `src` and `dst` are aligned equally.
-  ## 
-  ## :dst:     Destination address.
-  ## :src:     Source address.
-  ## :hwcount: Number of halfwords to fill.
-  ## 
-  ## .. note::
-  ##    | `dst` and `src` *must* be halfword aligned.
-  ##    | `r0` and `r1` return as `dst + hwcount*2` and `src + hwcount*2`.
-
-proc memset32*(dst: pointer, wd: uint32, wcount: SomeInteger) {.importc: "memset32", tonc.}
-  ## Fast-fill by words, analogous to memset()
-  ## 
-  ## Like CpuFastSet(), only without the requirement of 32byte chunks and no awkward store-value-in-memory-first issue.
-  ## 
-  ## :dst:     Destination address.
-  ## :wd:      Fill word (not address).
-  ## :wcount:  Number of words to fill.
-  ## 
-  ## .. note::
-  ##    | `dst` *must* be word aligned.
-  ##    | `r0` returns as `dst + wcount*4`.
-
-proc memcpy32*(dst: pointer, src: pointer, wcount: SomeInteger) {.importc: "memcpy32", tonc.}
-  ## Fast-copy by words.
-  ## 
-  ## Like :ref:`CpuFastFill`, only without the requirement of 32byte chunks
-  ## 
-  ## :dst:     Destination address.
-  ## :src:     Source address.
-  ## :wcount:  Number of words.
-  ## 
-  ## .. note ::
-  ##    | `src` and `dst` *must* be word aligned.
-  ##    | `r0` and `r1` return as `dst + wcount*4` and `src + wcount*4`.
 
 
 # Repeated-value creators
@@ -327,7 +293,7 @@ proc rand*[T:Ordinal](a, b: T): T =
   ## 
   ## .. note::
   ##    `a - b` must be less than `2^16`, to avoid overflow.
-  T(rand(uint32(b) - uint32(a)) + uint32(a))
+  T(int32(rand(uint32(b) - uint32(a)) + uint32(a)))
 
 proc rand*[T:Ordinal](s: Slice[T]): T =
   ## Get a random value from a slice.
@@ -368,13 +334,13 @@ proc pickRandom*[N,T](arr: List[N,T]): T =
 # Sector checking
 # ---------------
 
-proc octant*(x, y: int): uint {.importc: "octant", tonc.}
+proc octant*(x, y: cint): cuint {.importc: "octant", tonc.}
   ## Get the octant that (`x`, `y`) is in.
   ## 
   ## This function divides the circle in 8 parts. The angle starts at the `y=0` line and then moves in the direction
   ## of the `x=0` line. On the screen, this would be like starting at the 3 o'clock position and moving clockwise.
 
-proc octantRot*(x0, y0: int): uint {.importc: "octant_rot", tonc.}
+proc octantRot*(x0, y0: cint): cuint {.importc: "octant_rot", tonc.}
   ## Get the rotated octant that (`x`, `y`) is in.
   ## 
   ## Like `octant()` but with a twist. The 0-octant starts 22.5° earlier so that 3 o'clock falls in the middle of 

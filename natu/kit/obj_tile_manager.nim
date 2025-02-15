@@ -1,13 +1,19 @@
 import natu/[memory, utils, video]
+import natu/private/common
 
 type ObjTileState {.size: 1.} = enum
   otUnused
   otUsed
   otContinue
 
-const MaxObjTiles = 1024
+when natuPlatform == "gba":
+  const MaxObjTiles = 1024
+elif natuPlatform == "sdl":
+  const MaxObjTiles = 2048
+else:
+  {.error: "Unknown platform " & natuPlatform.}
 
-var objTiles {.codegenDecl:EWRAM_DATA.}: array[MaxObjTiles+1, ObjTileState]  # length+1 for "null terminator"
+var objTiles {.codegenDecl:DataInEwram.}: array[MaxObjTiles+1, ObjTileState]  # length+1 for "null terminator"
 
 # Potential optimisation - keep track of the lowest guaranteed 'free' tile and only begin searching from there.
 # If some memory is freed that is lower than that tile, set it to be equal to that

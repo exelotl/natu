@@ -35,7 +35,7 @@ bmp8+sys8: 2251. Huh.
 #include <string.h>
 #include <ctype.h>
 
-#include <tonc.h>
+#include "tonc.h"
 
 #include "tonc_tte.h"
 

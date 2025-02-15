@@ -1,5 +1,6 @@
 import natu/[utils, video, bios]
 import natu/kit/pal_manager
+from natu/private/common import doInclude, natuOutputDir
 
 type
   BgKind* = enum
@@ -37,17 +38,7 @@ type
   
   BgRegion* = tuple[layout: BgRegionLayout; x1, y1, x2, y2: int]
 
-
-const natuOutputDir {.strdefine.} = ""
-
-when natuOutputDir == "":
-  {.error: "natuOutputDir is not set. Did you forget to call gbaCfg() in your config.nims?".}
-
-template doInclude(path: static string) =
-  include `path`
-
 doInclude natuOutputDir & "/backgrounds.nim"
-
 
 template kind*(bg: Background): BgKind = bg.data.kind
 template flags*(bg: Background): set[BgFlag] = bg.data.flags
@@ -93,8 +84,6 @@ proc loadMap*(bg: Background; dest: pointer) {.inline.} =
   ## 
   ## Copy a background's map data to some location in memory.
   ## 
-  ## **Parameters:**
-  ## 
   ## :bg:   The background asset to use.
   ## :dest: The location to copy the map data to.
   ## 
@@ -108,8 +97,6 @@ proc loadMap*(bg: Background; dest: pointer) {.inline.} =
 proc loadMap*(bg: Background; sbb: range[0..31]) {.inline.} =
   ## 
   ## Copy a background's map data into VRAM.
-  ## 
-  ## **Parameters:**
   ## 
   ## :bg:
   ##   The background asset to use.
@@ -137,21 +124,23 @@ proc loadPal*(bg: Background; palId: range[0..15]) {.inline.} =
   ## Copy a background's palette into buffered palette memory.
   ## 
   ## :bg:    The background asset to use.
-  ## :palId: The palette will be copied to this location in `bgPalBuf`.
+  ## :palId: The palette will be copied to this location in :xref:`bgPalBuf`.
   ## 
   memcpy16(addr bgPalBuf[palId], bg.palDataPtr, bg.data.palHalfwords)
 
 
 template load*(bgcnt: BgCnt; bg: Background) =
   ## 
-  ## Load a background by copying its tiles, map, and palette into memory.
+  ## Load a background asset by copying its tiles, map, and palette into memory.
   ## 
-  ## The locations are determined by the supplied BG control register.
-  ## 
-  ## **Parameters:**
+  ## .. note::
+  ##    The palette will be copied into :xref:`bgPalBuf` starting at a palette slot
+  ##    determined by the BG asset's :xref:`palOffset` parameter set in the BG config file.
+  ##    
+  ##    You must call :xref:`flushPals` to copy the colors from the buffer into actual PAL RAM.
   ## 
   ## :bgcnt: A BG control register value which determines
-  ##         where to copy the tiles and map.
+  ##         where in VRAM to copy the tiles and map.
   ## :bg:    The asset to be loaded.
   ## 
   ## **Example:**
@@ -161,6 +150,9 @@ template load*(bgcnt: BgCnt; bg: Background) =
   ##   bgcnt[0].init(cbb = 0, sbb = 28)    # init BG, set img/map destination
   ##   bgcnt[0].load(bgConstructionYard)   # copy img, map and pal
   ##   dispcnt.bg0 = true                  # show BG
+  ##   
+  ##   # later, during VBlank:
+  ##   flushPals()
   ## 
   bg.loadTiles(bgcnt.cbb)
   bg.loadMap(bgcnt.sbb)

@@ -7,6 +7,8 @@
 ## .. warning::
 ##    This routine is unsafe, make sure the destination buffer
 ##    is big enough to hold the output string!
+##    
+##    Also, note that it functions slightly differently from `sprintf` in the C standard library. 
 ## 
 ## **Example**:
 ## 
@@ -34,36 +36,41 @@
 ##      VBlankIntrWait()
 ##    
 
-proc posprintf*(dest: cstring, src: cstring) {.importc, varargs.}
-  ##[
-  - ``src`` must be a valid zero-terminated C string.
-  - ``dest`` must point to a sufficiently large block of memory to contain the result string.
-  
-  The following format specifiers are valid:
-  ======= =========================================================================
-  ``%%``  print a ``%`` symbol
-  ``%s``  print a string; parameter must point to a valid zero-terminated C string
-  ``%d``  print a 16-bit (short) integer; must be within `-65,535 .. 65,535`
-  ``%l``  print a 29-bit integer; approximate range `-500,000,000 .. 500,000,000`
-  ``%x``  print a hexadecimal number (lowercase digits)
-  ``%X``  print a hexadecimal number (uppercase digits)
-  ======= =========================================================================
-  
-  The specifiers ``%d``, ``%l``, ``%x`` and ``%X`` may be modified as follows:
-  
-  - Digits 1 through 9 indicate number of leading spaces to print, eg.
-    | ``%5d`` would print the number `123` as `"  123"`
-    | ``%5d`` would print the number `123456` as `"123456"` (no leading spaces)
-  - When above digit is prefixed with 0, leading zeros are printed instead of spaces
-    | ``%05d`` would print the number `123` as `"00123"`
-    | ``%04d`` would print the number `12345` as `"12345"` (no leading zeros)
-  - Negative sign consumes a leading space, eg.
-    | ``%05d`` would print the number `-123` as `"-0123"`
-    | (Hexadecimal numbers are considered unsigned)
-  ]##
+import ./private/common
 
-# Implementation:
-asm """
+when natuPlatform == "gba":
+  
+  proc posprintf*(dest: cstring, src: cstring) {.importc, varargs.}
+    ##[
+    - ``src`` must be a valid zero-terminated C string.
+    - ``dest`` must point to a sufficiently large block of memory to contain the result string.
+    
+    The following format specifiers are valid:
+    
+    ======= =========================================================================
+    ``%%``  print a ``%`` symbol
+    ``%s``  print a string; parameter must point to a valid zero-terminated C string
+    ``%d``  print a 16-bit (short) integer; must be within `-65,535 .. 65,535`
+    ``%l``  print a 29-bit integer; approximate range `-500,000,000 .. 500,000,000`
+    ``%x``  print a hexadecimal number (lowercase digits)
+    ``%X``  print a hexadecimal number (uppercase digits)
+    ======= =========================================================================
+    
+    The specifiers ``%d``, ``%l``, ``%x`` and ``%X`` may be modified as follows:
+    
+    - | Digits 1 through 9 indicate number of leading spaces to print, eg.
+      | ``%5d`` would print the number `123` as `"  123"`
+      | ``%5d`` would print the number `123456` as `"123456"` (no leading spaces)
+    - | When above digit is prefixed with 0, leading zeros are printed instead of spaces
+      | ``%05d`` would print the number `123` as `"00123"`
+      | ``%04d`` would print the number `12345` as `"12345"` (no leading zeros)
+    - | Negative sign consumes a leading space, eg.
+      | ``%05d`` would print the number `-123` as `"-0123"`
+      | (Hexadecimal numbers are considered unsigned)
+    ]##
+  
+  # Implementation:
+  asm """
   .thumb 
   .thumb_func
   .align
@@ -442,3 +449,37 @@ posprintf:
   bgt    .L_IN_D1         @    then loop
   b      .L_DONE_D1
 """
+
+elif natuPlatform == "sdl":
+  
+  proc sprintf(s: cstring; format: cstring) {.varargs, importc, header:"stdio.h".}
+  
+  # Wrapper template to work around compiler bug with empty varargs?
+  template printfAux(dest: cstring; src: cstring, args: varargs[untyped]) =
+    sprintf(dest, src, args)
+  
+  proc fixFmtString(s: var string) =
+    # So it turns out the %l specifier in posprintf is non-standard, but we can
+    # transform it into %d to make it work on other platforms.
+    var i = 0
+    while i < s.len:
+      if s[i] == '%':
+        inc i
+        if s[i] == '%':
+          inc i
+        else:
+          if s[i] == '-': inc i
+          while s[i] in '0'..'9': inc i
+          if s[i] == 'l': (s[i] = 'd'; inc i)
+      else:
+        inc i
+    if s.len == 0:
+      s.add '\0'  # avoid trying to get address of a 0-length string below
+  
+  template posprintf*(dest: cstring; src: cstring; args: varargs[untyped]) =
+    var s = $src
+    fixFmtString(s)
+    printfAux(dest, cast[cstring](addr s[0]), args)
+
+else:
+  {.error: "Unknown platform " & natuPlatform.}

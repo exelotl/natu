@@ -24,7 +24,7 @@
 */
 COLOR *vid_flip(void)
 {
-	vid_page= (COLOR*)((u32)vid_page ^ VRAM_PAGE_SIZE);
+	vid_page= (COLOR*)((uintptr_t)vid_page ^ VRAM_PAGE_SIZE);
 	REG_DISPCNT ^= DCNT_PAGE;	// update control register	
 
 	return vid_page;

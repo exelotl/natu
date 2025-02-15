@@ -150,7 +150,7 @@ void bmp8_line(int x1, int y1, int x2, int y2, u32 clr,
 	// --- Slogging through the diagonal ---
 
 	int ii, dx, dy, xstep, ystep, dd;
-	u32 addr= (u32)(dstBase + y1*dstP + x1), mask= 255;
+	uintptr_t addr= (uintptr_t)(dstBase + y1*dstP + x1), mask= 255;
 	u16 *dstL;
 
 	clr &= mask;

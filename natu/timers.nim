@@ -1,32 +1,3 @@
-## This module exposes the GBA's 4 hardware timers.
-## 
-## Each timer holds a 16-bit value which ticks up by 1 after a certain number
-## of CPU cycles (determined by the the timer's frequency setting).
-## 
-## When this value overflows, it will reset to the timer's `start` value and
-## an interrupt will be raised if one has been requested.
-## 
-## **Example:**
-## 
-## .. code-block:: nim
-## 
-##    import natu/[irq, timers, mgba]
-##    
-##    proc myHandler() =
-##      mgba.printf("Bonk!")
-##    
-##    irq.put(iiTimer3, myHandler)      # Register the handler.
-##    
-##    tmcnt[3].init(
-##      freq = tf16kHz,
-##      start = cast[uint16](-0x4000),  # 2^14 ticks at 16 kHz = 1 second
-##      active = true,                  # Enable the timer.
-##    )
-## 
-## .. note::
-##    Timer 0 is used by `maxmod <maxmod.html>`_ for audio, so don't touch it
-##    unless you know what you're doing.
-
 from ./private/privutils import writeFields
 
 type
@@ -80,6 +51,7 @@ template init*(r: Timer, args: varargs[untyped]) =
   ##      freq = tf16kHz,
   ##      start = cast[uint16](-0x4000),  # 2^14 ticks at 16 kHz = 1 second
   ##      active = true,                  # Enable the timer.
+  ##      irq = true,                     # Fire an interrupt when the timer overflows.
   ##    )
   ## 
   var tmp: Timer
@@ -107,3 +79,16 @@ proc profileStop*(): uint {.importc: "profile_stop", toncinl.}
   ## Stop a profiling run and return the time since its start.
   ## 
   ## Returns number of CPU cycles elapsed since `profileStart` was called.
+
+
+from natu/private/common import natuPlatform
+
+when natuPlatform == "gba":
+  proc getPerfTimer*(): float64 {.error: "getPerfTimer not implemented for GBA platform.".}
+  
+elif natuPlatform == "sdl":
+  import natu/private/sdl/applib
+  proc getPerfTimer*(): float64 = natuMem.getPerfTimer()
+
+else:
+  {.error: "Unknown platform " & natuPlatform.}

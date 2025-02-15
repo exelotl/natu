@@ -28,7 +28,11 @@ void chr4c_drawg_b4cts(uint gid)
 
 	// Inner loop vars
 	u32 amask= 0x11111111;
+#ifdef NON_GBA_TARGET
+	u64 px, pxmask, raw;  // workaround for >>32 (UB) producing bad results on x86
+#else
 	u32 px, pxmask, raw;
+#endif
 	u32 ink=   tc->cattr[TTE_INK];
 	u32 shade= tc->cattr[TTE_SHADOW];
 

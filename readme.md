@@ -1,21 +1,3 @@
-NOTE! Nim and dkP's libtonc don't work together due to conflicing definitions of `bool`.
-
-This is fixed in the **devel** branch of Natu, so it's recommended to use that for now.
-
-Quickstart: After installing [devkitARM](https://devkitpro.org/wiki/Getting_Started) and [Nim](https://nim-lang.org/):
-
-```sh
-git clone https://github.com/exelotl/natu
-cd natu
-git checkout devel              # switch to devel branch
-git submodule update --init     # clone libtonc and maxmod submodules
-nimble install                  # install the lib and asset converter to ~/.nimble
-cd examples/hello_world         # go to an example
-nim build                       # run the "build" nimscript task
-```
-
----
-
 <p align="center"><img width="200" src="https://user-images.githubusercontent.com/569607/85204175-8293f180-b30a-11ea-9fb0-66a502f740ba.png" alt="Natu GBA Logo"></p>
 
 Natu is a package for making Game Boy Advance games in [Nim](https://nim-lang.org/).
@@ -50,7 +32,7 @@ Happy coding! And if you need any help you can reach me (exelotl) on the [gbadev
 
 ### Thanks
 
-[tonc](https://www.coranac.com/tonc/text/) + libtonc by cearn  
+[tonc](https://gbadev.net/tonc/) + libtonc by cearn  
 [maxmod](https://maxmod.devkitpro.org/) sound system by mukunda johnson  
 [libugba](https://github.com/AntonioND/libugba)'s interrupt handler by AntonioND
 [ACSL](https://codeberg.org/pgimeno/ACSL)'s malloc/free by pgimeno

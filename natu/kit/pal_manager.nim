@@ -1,4 +1,18 @@
 import natu/[video, memory, utils]
+import natu/private/common
+
+when natuPlatform == "gba":
+  const numBgPals = 16
+  const numObjPals = 16
+elif natuPlatform == "sdl":
+  const numBgPals = 16
+  const numObjPals = 32
+else:
+  {.error: "Unknown platform " & natuPlatform.}
+
+const numBgColors = numBgPals*16
+const numObjColors = numObjPals*16
+const numTotalColors = numBgColors + numObjColors
 
 # Palette buffers
 # ---------------
@@ -8,31 +22,31 @@ import natu/[video, memory, utils]
 # Be sure to call `flushPals` during vblank to update the real palettes.
 # Or you can use `clrFadeFast` from the `video` module to blend in a certain colour while copying.
 
-var palBuf: array[2, array[16, Palette]]
+var colorBuf: array[numTotalColors, Color]
 
-template colorBuf: ptr array[2, array[256, Color]] =
-  cast[ptr array[2, array[256, Color]]](addr palBuf)
-
-
-template bgPalBuf*: array[16, Palette] = palBuf[0]
+template bgPalBuf*: array[numBgPals, Palette] =
   ## Access the BG PAL RAM buffer as a table of 16-color palettes.
   ## 
   ## This is useful when working when 4bpp backgrounds.
+  cast[ptr array[numBgPals, Palette]](addr colorBuf[0])[]
 
-template objPalBuf*: array[16, Palette] = palBuf[1]
+template objPalBuf*: array[numObjPals, Palette] =
   ## Access the OBJ PAL RAM buffer as a table of 16-color palettes.
   ## 
   ## This is useful when working when 4bpp sprites.
+  cast[ptr array[numObjPals, Palette]](addr colorBuf[numBgColors])[]
 
-template bgColorBuf*: array[256, Color] = colorBuf[0]
+template bgColorBuf*: array[numBgColors, Color] =
   ## Access the BG PAL RAM buffer as a single array of colors.
   ## 
   ## This is useful when working with 8bpp backgrounds, or display mode 4.
+  cast[ptr array[numBgColors, Color]](addr colorBuf[0])[]
 
-template objColorBuf*: array[256, Color] = colorBuf[1]
+template objColorBuf*: array[numObjColors, Color] =
   ## Access the OBJ PAL RAM buffer as a single array of colors.
   ## 
   ## This is useful when working with 8bpp sprites.
+  cast[ptr array[numObjColors, Color]](addr colorBuf[numBgColors])[]
 
 proc flushPals* {.inline.} =
   ## 
@@ -40,7 +54,7 @@ proc flushPals* {.inline.} =
   ## 
   ## This should be called every frame during VBlank.
   ## 
-  memcpy32(addr bgPalMem, addr palBuf, sizeof(palBuf) div sizeof(uint32))
+  memcpy32(addr bgPalMem, addr colorBuf, sizeof(colorBuf) div sizeof(uint32))
 
 
 # Obj PAL RAM allocator
@@ -52,7 +66,7 @@ type
     palUnused = 0
     palUsed = 1
 
-var objPals {.codegenDecl:EWRAM_DATA.}: array[16, PalState]
+var objPals {.codegenDecl:DataInEwram.}: array[numObjPals, PalState]
 
 proc allocObjPal*: int =
   ## Allocate a 4bpp palette in Obj PAL RAM.

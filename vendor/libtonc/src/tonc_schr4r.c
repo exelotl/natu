@@ -65,7 +65,7 @@ INLINE void chr4r_colset(u32 *dstD, uint dstP4,
 	{
 		*dstD= (*dstD &~ mask) | clr;
 		dstD++;
-		if((u32)dstD%32 == 0)
+		if((uintptr_t)dstD%32 == 0)
 			dstD += dstP4-8;
 	}
 }
@@ -209,7 +209,7 @@ void schr4r_vline(const TSurface *dst, int x, int y1, int y2, u32 clr)
 		*dstL= (*dstL &~ mask) | clr;
 		dstL++;
 		
-		if( ((u32)dstL)%32 == 0)
+		if( ((uintptr_t)dstL)%32 == 0)
 			dstL += dstP-8;
 	}
 }

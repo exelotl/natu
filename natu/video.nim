@@ -4,13 +4,15 @@
 
 {.warning[UnusedImport]: off.}
 
-import private/[common, types, memmap, memdef, reg]
+{.pragma: tonc, header:"tonc_video.h".}
+{.pragma: toncinl, header:"tonc_video.h".}  # inline from header.
+
+import std/macros
+import ./private/[common, types]
+from ./private/privutils import writeFields
 import ./math
 import ./utils
-import ./oam
-
-export reg   # TODO: move most of the exposed registers into here.
-export oam   # TODO: delete OAM module, move into here.
+import ./bits
 
 # types
 export
@@ -49,49 +51,23 @@ export
   `[]=`,
   toArray
 
-
-# Palette
-export
-  bgColorMem,
-  bgPalMem,
-  objColorMem,
-  objPalMem
-
-# VRAM
-export
-  bgTileMem,
-  bgTileMem8,
-  objTileMem,
-  objTileMem8,
-  seMem,
-  vidMem,
-  m3Mem,
-  m4Mem,
-  m5Mem,
-  vidMemFront,
-  vidMemBack,
-  m4MemBack,
-  m5MemBack
-
-{.compile(toncPath & "/src/tonc_video.c", toncCFlags).}
-{.compile(toncPath & "/src/tonc_bg_affine.c", toncCFlags).}
-{.compile(toncPath & "/src/tonc_bg.c", toncCFlags).}
-{.compile(toncPath & "/src/tonc_bmp8.c", toncCFlags).}
-{.compile(toncPath & "/src/tonc_bmp16.c", toncCFlags).}
-{.compile(toncPath & "/src/tonc_color.c", toncCFlags).}
-{.compile(toncPath & "/asm/clr_blend_fast.s", toncAsmFlags).}
-{.compile(toncPath & "/asm/clr_fade_fast.s", toncAsmFlags).}
-
-{.pragma: tonc, header: "tonc_video.h".}
-{.pragma: toncinl, header: "tonc_video.h".}  # inline from header.
+export ObjAttr, ObjAffine, ObjAttrPtr, ObjAffinePtr, OamInt, OamUint
 
 # Constants
 # ---------
+
+const natuLcdWidth {.intdefine.} = 240
+const natuLcdHeight {.intdefine.} = 160
+
+when natuPlatform == "gba":
+  static:
+    assert(natuLcdWidth == 240 and natuLcdHeight == 160, "Can't change screen size on a real GBA.")
+
 # Sizes in pixels
 const
-  ScreenWidth* = 240          ## Width in pixels
-  ScreenHeight* = 160         ## Height in pixels
-  ScreenLines* = 228          ## Total number of scanlines (max vcount value)
+  ScreenWidth* = natuLcdWidth        ## Width in pixels
+  ScreenHeight* = natuLcdHeight      ## Height in pixels
+  ScreenLines* = natuLcdHeight + 68  ## Total number of scanlines (max vcount value)
   Mode3Width* = ScreenWidth
   Mode3Height* = ScreenHeight
   Mode4Width* = ScreenWidth
@@ -101,10 +77,441 @@ const
 
 # Size in tiles
 const
-  ScreenWidthInTiles* = (ScreenWidth div 8)    ## Width in tiles
-  ScreenHeightInTiles* = (ScreenHeight div 8)  ## Height in tiles
+  ScreenWidthInTiles* = (ScreenWidth+7) div 8    ## Width in tiles
+  ScreenHeightInTiles* = (ScreenHeight+7) div 8  ## Height in tiles
+
+
+# Display Control Register
+# ------------------------
+
+type
+  DisplayLayer* {.size:4.} = enum
+    lBg0  ## Background 0 enabled.
+    lBg1  ## Background 1 enabled.
+    lBg2  ## Background 2 enabled.
+    lBg3  ## Background 3 enabled.
+    lObj  ## Objects (sprites) enabled.
   
-# Color constants
+  DisplayLayers* {.size:4.} = set[DisplayLayer]
+  
+  DispCnt* = distinct uint16
+    ## Display control type, as used by :xref:`dispcnt`.
+    ## 
+    ## ======== ============== ===== ==================================================
+    ## Field    Type           Bits  Description
+    ## ======== ============== ===== ==================================================
+    ## `mode`   uint16         0-2   Video mode, may have one of the following values:
+    ##                               
+    ##                               - `0` – Tile mode (BG 0,1,2,3 = text)
+    ##                               - `1` – Tile mode (BG 0,1 = text; BG 2 = affine)
+    ##                               - `2` – Tile mode (BG 2 = affine; BG 3 = affine)
+    ##                               - `3` – Bitmap mode (BG 2 = 240x160 direct color)
+    ##                               - `4` – Bitmap mode (BG 2 = 240x160 8bpp indexed)
+    ##                               - `5` – Bitmap mode (BG 2 = 160x128 direct color)
+    ##                               
+    ##                               In bitmap modes, the first half of :xref:`Obj-VRAM <objTileMem>` is not usable,
+    ##                               and BG2 is still subject to affine transforms.
+    ##                               
+    ## `gb`     bool           3     True if cartridge is a GBC game. Read-only. 
+    ## `page`   bool           4     Page select. Modes 4 and 5 can use page flipping for smoother animation.
+    ##                               This bit selects the displayed page (allowing the other one to be drawn on without artifacts). 
+    ## `oamHbl` bool           5     This speeds up access to Obj-VRAM and OAM during HBlank, at the cost of reducing
+    ##                               the number of sprite pixels that can be rendered per scanline.
+    ## `obj1d`  bool           6     Determines whether Obj-VRAM is treated like an array or a matrix when drawing sprites.
+    ##                               Usually you want to set this to `true`.
+    ## `blank`  bool           7     Forced Blank: When set, the GBA will display a white screen.
+    ##                               This allows fast access to VRAM, PAL RAM, OAM.
+    ## `bg0`    bool           8     Enables background layer 0.
+    ## `bg1`    bool           9     Enables background layer 1.
+    ## `bg2`    bool           10    Enables background layer 2.
+    ## `bg3`    bool           11    Enables background layer 3.
+    ## `obj`    bool           12    Enables sprites (a.k.a. objects).
+    ## `win0`   bool           13    Enables window 0.
+    ## `win1`   bool           14    Enables window 1.
+    ## `winObj` bool           15    Enables the object window.
+    ## `layers` DisplayLayers  8-12  A convenient way to enable several layers at once.
+    ##                               e.g. `dispcnt.layers = { lBg0, lBg1, lObj }`
+    ## ======== ============== ===== ==================================================
+
+bitdef DispCnt, 0..2, mode, uint16
+bitdef DispCnt, 3, gb, bool, {ReadOnly}
+bitdef DispCnt, 4, page, bool
+bitdef DispCnt, 5, oamHbl, bool
+bitdef DispCnt, 6, obj1d, bool
+bitdef DispCnt, 7, blank, bool
+
+bitdef DispCnt, 8, bg0, bool
+bitdef DispCnt, 9, bg1, bool
+bitdef DispCnt, 10, bg2, bool
+bitdef DispCnt, 11, bg3, bool
+bitdef DispCnt, 12, obj, bool
+bitdef DispCnt, 13, win0, bool
+bitdef DispCnt, 14, win1, bool
+bitdef DispCnt, 15, winObj, bool
+
+bitdef DispCnt, 8..12, layers_u8, uint8, {Private}
+
+func layers*(dcnt: DispCnt): DisplayLayers =
+  ## Get the currently enabled display layers as a bit-set.
+  cast[DisplayLayers](dcnt.layers_u8)
+
+func `layers=`*(dcnt: var DispCnt, layers: DisplayLayers) =
+  ## Update the currently enabled display layers.
+  dcnt.layers_u8 = cast[uint8](layers)
+
+const allDisplayLayers* = { lBg0, lBg1, lBg2, lBg3, lObj }
+
+
+# Display Status Register
+# -----------------------
+
+type DispStat* = distinct uint16
+  ## Display status type, as used by :xref:`dispstat`.
+  ## 
+  ## ================= ======= ===== ==================================================
+  ## Field             Type    Bits  Description
+  ## ================= ======= ===== ==================================================
+  ## `inVBlank`        bool    0     VBlank status, read only. True during VBlank, false during VDraw.
+  ## `inHBlank`        bool    1     HBlank status, read-only. True during HBlank.
+  ## `inVCountTrigger` bool    2     VCount trigger status, read-only.
+  ## `vblankIrq`       bool    3     VBlank interrupt request. If set, an interrupt will be fired at VBlank.
+  ## `hblankIrq`       bool    4     HBlank interrupt request. If set, an interrupt will be fired at HBlank.
+  ## `vcountIrq`       bool    5     VCount interrupt request. If set, an interrupt will be fired when the current
+  ##                                 scanline matches the scanline trigger (`vcount == dispstat.vcountTrigger`)
+  ## `vcountTrigger`   uint16  8-15  VCount trigger value. If the current scanline is at this value,
+  ##                                 bit 2 is set and an interrupt is fired if requested. 
+  ## ================= ======= ===== ==================================================
+
+bitdef DispStat, 0, inVBlank, bool, {ReadOnly}
+bitdef DispStat, 1, inHBlank, bool, {ReadOnly}
+bitdef DispStat, 2, inVCountTrigger, bool, {ReadOnly}
+bitdef DispStat, 3, vblankIrq, bool
+bitdef DispStat, 4, hblankIrq, bool
+bitdef DispStat, 5, vcountIrq, bool
+bitdef DispStat, 8..15, vcountTrigger, uint16
+
+
+# Background Control Registers
+# ----------------------------
+
+type
+  BgSize* = distinct uint16
+    ## Implicitly convertible from either `RegBgSize` or `AffBgSize`.
+  
+  RegBgSize* {.size:2.} = enum
+    ## Size of a regular background in tiles.
+    reg32x32
+    reg64x32
+    reg32x64
+    reg64x64
+  
+  AffBgSize* {.size:2.} = enum
+    ## Size of an affine background in tiles.
+    aff16x16
+    aff32x32
+    aff64x64
+    aff128x128
+  
+  BgCnt* {.exportc.} = distinct uint16
+    ## Background control type, as used by :xref:`bgcnt[0..3] <bgcnt>`.
+    ## 
+    ## ========= ======= ====== ==================================================
+    ## Field     Type    Bits   Description
+    ## ========= ======= ====== ==================================================
+    ## `prio`    uint16  0-1    Priority value (0..3)
+    ##                          Lower priority BGs will be drawn on top of higher priority BGs.
+    ## `cbb`     uint16  2-3    Character Base Block (0..3)
+    ##                          Determines the base block for tile pixel data
+    ## `mos`     bool    6      Enables mosaic effect.
+    ## `is8bpp`  bool    7      Specifies the color mode of the BG: 4bpp (16 colors) or 8bpp (256 colors)
+    ##                          Has no effect on affine BGs, which are always 8bpp.
+    ## `sbb`     uint16  8-12   Screen Base Block (0..31)
+    ##                          Determines the base block for the tilemap
+    ## `wrap`    bool    13     Affine Wrapping flag.
+    ##                          If set, affine background wrap around at their edges.
+    ##                          Has no effect on regular backgrounds as they wrap around by default. 
+    ## `size`    BgSize  14-15  Value representing the size of the background in tiles.
+    ##                          Regular and affine backgrounds have different sizes available to them, hence
+    ##                          the two different types assignable to this field (`RegBgSize`, `AffBgSize`)
+    ## ========= ======= ====== ==================================================
+
+
+bitdef BgCnt, 0..1, prio, uint16
+bitdef BgCnt, 2..3, cbb, uint16
+bitdef BgCnt, 6, mos, bool
+bitdef BgCnt, 7, is8bpp, bool
+bitdef BgCnt, 8..12, sbb, uint16
+bitdef BgCnt, 13, wrap, bool
+bitdef BgCnt, 14..15, size, BgSize
+    
+converter toBgSize*(r: RegBgSize): BgSize = (r.BgSize)
+converter toBgSize*(a: AffBgSize): BgSize = (a.BgSize)
+
+
+# Window Registers
+# ----------------
+
+when natuPlatform == "gba":
+  type
+    WinInt* = uint8
+    WinH* {.exportc:"WinH".} = object
+      ## Defines the horizontal bounds of a window (left ..< right)
+      right*: uint8
+      left*: uint8
+    WinV* {.exportc:"WinV".} = object
+      ## Defines the vertical bounds of a window (top ..< bottom)
+      bottom*: uint8
+      top*: uint8
+else:
+  type
+    WinInt* = uint16
+    WinH* {.exportc:"WinH".} = object
+      ## Defines the horizontal bounds of a window (left ..< right)
+      left*: uint16
+      right*: uint16
+    WinV* {.exportc:"WinV".} = object
+      ## Defines the vertical bounds of a window (top ..< bottom)
+      top*: uint16
+      bottom*: uint16
+
+type
+  WindowLayer* {.size:1.} = enum
+    wlBg0, wlBg1, wlBg2, wlBg3, wlObj, wlBlend
+  
+  WinCnt* = set[WindowLayer]
+    ## Allows to make changes to one half of a window control register.
+
+const
+  allWindowLayers* = { wlBg0, wlBg1, wlBg2, wlBg3, wlObj, wlBlend }
+
+
+# Mosaic
+# ------
+
+type Mosaic* = distinct uint16
+
+bitdef Mosaic, 0..3, bgh, uint16, {WriteOnly}
+bitdef Mosaic, 4..7, bgv, uint16, {WriteOnly}
+bitdef Mosaic, 8..11, objh, uint16, {WriteOnly}
+bitdef Mosaic, 12..15, objv, uint16, {WriteOnly}
+
+
+# Color Special Effects
+# ---------------------
+
+type
+  BldCnt* = distinct uint16
+    ## Blend control register
+    ## 
+    ## ======== ============= ====== ==================================================
+    ## Field    Type          Bits   Description
+    ## ======== ============= ====== ==================================================
+    ## `a`      BlendLayers   0-5    The upper layers to opt-into color special effects.
+    ## `mode`   BlendMode     6-7    Color special effects mode.
+    ## `b`      BlendLayers   8-13   The lower layers to opt-into color special effects.
+    ## ======== ============= ====== ==================================================
+  
+  BlendMode* {.size:2.} = enum
+    ## Color special effects modes:
+    bmOff    ## Blending disabled
+    bmAlpha  ## Blend A against B using the weights from :xref:`bldalpha`
+    bmWhite  ## Blend A with white using the weight from :xref:`bldy`
+    bmBlack  ## Blend A with black using the weight from :xref:`bldy`
+  
+  BlendLayer* {.size:2.} = enum
+    blBg0, blBg1, blBg2, blBg3, blObj, blBd
+  
+  BlendLayers* {.size:2.} = set[BlendLayer]
+
+const allBlendLayers* = { blBg0, blBg1, blBg2, blBg3, blObj, blBd }
+
+bitdef BldCnt, 0..5, a_u16, uint16, {Private}   # Upper layer of color special effects.
+bitdef BldCnt, 6..7, mode, BlendMode            # Color special effects mode
+bitdef BldCnt, 8..13, b_u16, uint16, {Private}  # Lower layer of color special effects.
+
+func a*(bld: BldCnt): BlendLayers = cast[BlendLayers](bld.a_u16)
+func b*(bld: BldCnt): BlendLayers = cast[BlendLayers](bld.b_u16)
+func `a=`*(bld: var BldCnt, a: BlendLayers) = bld.a_u16 = cast[uint16](a)
+func `b=`*(bld: var BldCnt, b: BlendLayers) = bld.b_u16 = cast[uint16](b)
+
+type
+  BlendAlpha* = distinct uint16
+    ## Alpha blending levels.
+    ## Features two coefficients: ``eva`` for layer ``a``, ``evb`` for layer ``b``.
+    ## 
+    ## ======== ======== ====== ==================================================
+    ## Field    Type     Bits   Description
+    ## ======== ======== ====== ==================================================
+    ## `eva`    uint16   0-4    Upper layer alpha blending coefficient.
+    ##                          Values from 17..31 are treated the same as 16.
+    ## `evb`    uint16   8-12   Lower layer alpha blending coefficient.
+    ##                          Values from 17..31 are treated the same as 16.
+    ## ======== ======== ====== ==================================================
+  
+  BlendBrightness* = distinct uint16
+    ## Brightness level (fade to black or white).
+    ## Has a single coefficient ``evy``.
+    ## 
+    ## ======== ======== ====== ==================================================
+    ## Field    Type     Bits   Description
+    ## ======== ======== ====== ==================================================
+    ## `evy`    uint16   0-4    Brightness coefficient (write-only!)
+    ##                          Values from 17..31 are treated the same as 16.
+    ## ======== ======== ====== ==================================================
+
+bitdef BlendAlpha, 0..7, eva, uint16
+bitdef BlendAlpha, 8..15, evb, uint16
+
+proc `evy=`*(bldy: var BlendBrightness, v: uint16) =
+  bldy = v.BlendBrightness
+
+
+# TODO: improve how BG scroll registers are exposed.
+# You should be able to write to them _and_ take their address, just not read them
+type BgOfs* = BgPoint
+
+
+
+# Init/edit macros
+# ----------------
+
+type
+  ReadWriteRegister = DispCnt | DispStat | BgCnt | WinCnt | BldCnt | BlendAlpha
+  WriteOnlyRegister = BgOfs | BgAffine | WinH | WinV | BlendBrightness | Mosaic
+  WritableRegister = ReadWriteRegister | WriteOnlyRegister
+
+
+template init*[T:WritableRegister](r: T, args: varargs[untyped]) =
+  ## Initialise an IO register to some combination of flags/values.
+  ## E.g.
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   dispcnt.init:
+  ##     mode = mode1
+  ##     bg0 = true
+  ##
+  ## Can also be written as a one-liner:
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   dispcnt.init(mode = mode1, bg0 = true)
+  ## 
+  ## These are both shorthand for:
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   var tmp: DispCnt
+  ##   tmp.mode = mode1
+  ##   tmp.bg0 = true
+  ##   dispcnt = tmp
+  ## 
+  ## Note that we could instead set each field on `dispcnt` directly:
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   dispcnt.clear()
+  ##   dispcnt.mode = mode1
+  ##   dispcnt.bg0 = true
+  ## 
+  ## But this would be slower because `dispcnt` is *volatile*, so the C compiler can't optimise these lines into a single assignment.
+  ## 
+  var tmp: T
+  writeFields(tmp, args)
+  r = tmp
+
+template clear*[T:WritableRegister](r: T) =
+  ## Set all bits in a register to zero.
+  r = default(T)
+
+template edit*[T:ReadWriteRegister](r: T, args: varargs[untyped]) =
+  ## Update the value of some fields in a register.
+  ## This works similarly to `init`, but preserves all other fields besides the ones that are specified.
+  ##
+  ## E.g.
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   dispcnt.edit:
+  ##     bg0 = false
+  ##     obj = true
+  ##     obj1d = true
+  ##
+  ## Is shorthand for:
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   var tmp = dispcnt
+  ##   tmp.bg0 = false
+  ##   tmp.obj = true
+  ##   tmp.obj1d = true
+  ##   dispcnt = tmp
+  ##
+  var tmp = r
+  writeFields(tmp, args)
+  r = tmp
+
+template dup*[T:ReadWriteRegister](r: T, args: varargs[untyped]): T =
+  ## Copy the value of a register, modifying and returning the copy.
+  ## 
+  ## E.g.
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   # Make BG1 use the same tiles as BG0, but different map data.
+  ##   bgcnt[1] = bgcnt[0].dup(sbb = 29)
+  var res = r
+  writeFields(res, args)
+  res
+
+template initDispCnt*(args: varargs[untyped]): DispCnt =
+  ## Create a new display control register value.
+  ## Omitted fields default to zero.
+  var dcnt: DispCnt
+  writeFields(dcnt, args)
+  dcnt
+
+template initBgCnt*(args: varargs[untyped]): BgCnt =
+  ## Create a new background control register value.
+  ## Omitted fields default to zero.
+  var bg: BgCnt
+  writeFields(bg, args)
+  bg
+
+
+# Set operation fixes
+
+type LayerEnum = DisplayLayer | BlendLayer | WindowLayer
+
+macro incl*[T:LayerEnum](x: set[T], y: T) =
+  expectKind(x, nnkCall)
+  let (field, reg) = (x[0], x[1])
+  quote do:
+    `reg`.`field` = `reg`.`field` + {y}
+
+macro incl*[T:LayerEnum](x: set[T], y: set[T]) =
+  expectKind(x, nnkCall)
+  let (field, reg) = (x[0], x[1])
+  quote do:
+    `reg`.`field` = `reg`.`field` + y
+
+macro excl*[T:LayerEnum](x: set[T], y: T) =
+  expectKind(x, nnkCall)
+  let (field, reg) = (x[0], x[1])
+  quote do:
+    `reg`.`field` = `reg`.`field` - {y}
+
+macro excl*[T:LayerEnum](x: set[T], y: set[T]) =
+  expectKind(x, nnkCall)
+  let (field, reg) = (x[0], x[1])
+  quote do:
+    `reg`.`field` = `reg`.`field` - y
+
+
+
+## Colors
+## ------
+
 const
   clrBlack* = 0x0000.Color
   clrRed* = 0x001F.Color
@@ -129,9 +536,6 @@ const
   clrFuchsia* = 0x7C1F.Color
   clrSkyBlue* = 0x7B34.Color
   clrCream* = 0x7BFF.Color
-
-## Colors
-## ------
 
 {.push inline.}
 
@@ -182,10 +586,10 @@ func `b=`*(color: var Color, b: int) =
 
 # TODO: Rework color/pal function signatures?
 
-proc clrRotate*(clrs: ptr Color; nclrs: int; ror: int) {.importc: "clr_rotate", tonc.}
+proc clrRotate*(clrs: ptr Color; nclrs: cint; ror: cint) {.importc: "clr_rotate", tonc.}
   ## Rotate `nclrs` colors at `clrs` to the right by `ror`.
 
-proc clrBlend*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_blend", tonc.}
+proc clrBlend*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: cint; alpha: cint) {.importc: "clr_blend", tonc.}
   ## Blends color arrays `srca` and `srcb` into `dst`.
   ## Specific transitional blending effects can be created by making a 'target' color array
   ## with other routines, then using `alpha` to morph into it.
@@ -196,7 +600,7 @@ proc clrBlend*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: int; alp
   ## :nclrs: Number of colors.
   ## :alpha: Blend weight (range: 0-32). 0 Means full `srca`
 
-proc clrFade*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_fade", tonc.}
+proc clrFade*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: cint; alpha: cint) {.importc: "clr_fade", tonc.}
   ## Fades color arrays `srca` to `clr` into `dst`.
   ## 
   ## :src: Source array.
@@ -205,15 +609,16 @@ proc clrFade*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: int; alpha: int
   ## :nclrs: Number of colors.
   ## :alpha: Blend weight (range: 0-32). 0 Means full `srca`
 
-proc clrGrayscale*(dst: ptr Color; src: ptr Color; nclrs: int) {.importc: "clr_grayscale", tonc.}
+proc clrGrayscale*(dst: ptr Color; src: ptr Color; nclrs: cint) {.importc: "clr_grayscale", tonc.}
   ## Transform colors to grayscale.
   ## 
   ## :dst: Destination color array
   ## :src: Source color array.
   ## :nclrs: Number of colors.
 
-proc clrRgbscale*(dst: ptr Color; src: ptr Color; nclrs: int; clr: Color) {.importc: "clr_rgbscale", tonc.}
+proc clrRgbscale*(dst: ptr Color; src: ptr Color; nclrs: cint; clr: Color) {.importc: "clr_rgbscale", tonc.}
   ## Transform colors to an rgb-scale.
+  ## 
   ## .. note::
   ##    `clr` indicates a color vector in RGB-space. Each source color is converted to a brightness value (i.e. grayscale)
   ##    and then mapped onto that color vector. A grayscale is a special case of this, using a color with R=G=B.
@@ -223,41 +628,44 @@ proc clrRgbscale*(dst: ptr Color; src: ptr Color; nclrs: int; clr: Color) {.impo
   ## :nclrs: Number of colors.
   ## :clr: Destination color vector.
 
-proc clrAdjBrightness*(dst: ptr Color; src: ptr Color; nclrs: int; bright: Fixed) {.importc: "clr_adj_brightness", tonc.}
-  ## Adjust brightness by `bright`
-  ## Operation: `color= color+dB`;
+proc clrAdjBrightness*(dst: ptr Color; src: ptr Color; nclrs: cint; bright: Fixed) {.importc: "clr_adj_brightness", tonc.}
+  ## Adjust brightness by `bright`.
+  ## 
+  ## Operation: `color = color+dB`
   ## 
   ## :dst: Destination color array
   ## :src: Source color array.
   ## :nclrs: Number of colors.
-  ## :bright: Brightness difference, dB (in 24.8f)
+  ## :bright: Brightness difference (`dB`)
 
-proc clrAdjContrast*(dst: ptr Color; src: ptr Color; nclrs: int; contrast: Fixed) {.importc: "clr_adj_contrast", tonc.}
-  ## Adjust contrast by `contrast`
+proc clrAdjContrast*(dst: ptr Color; src: ptr Color; nclrs: cint; contrast: Fixed) {.importc: "clr_adj_contrast", tonc.}
+  ## Adjust contrast by `contrast`.
+  ## 
   ## Operation: `color = color*(1+dC) - MAX*dC/2`
   ## 
   ## :dst: Destination color array
   ## :src: Source color array.
   ## :nclrs: Number of colors.
-  ## :contrast: Contrast difference, dC (in 24.8f)
+  ## :contrast: Contrast difference (`dC`)
 
-proc clrAdjIntensity*(dst: ptr Color; src: ptr Color; nclrs: int; intensity: Fixed) {.importc: "clr_adj_intensity", tonc.}
+proc clrAdjIntensity*(dst: ptr Color; src: ptr Color; nclrs: cint; intensity: Fixed) {.importc: "clr_adj_intensity", tonc.}
   ## Adjust intensity by `intensity`. 
+  ## 
   ## Operation: `color = (1+dI)*color`.
   ## 
   ## :dst: Destination color array
   ## :src: Source color array.
   ## :nclrs: Number of colors.
-  ## :intensity: Intensity difference, dI (in 24.8f)
+  ## :intensity: Intensity difference (`dI`)
 
-proc palGradient*(pal: ptr Color; first: int; last: int) {.importc: "pal_gradient", tonc.}
+proc palGradient*(pal: ptr Color; first: cint; last: cint) {.importc: "pal_gradient", tonc.}
   ## Create a gradient between `pal[first]` and `pal[last]`.
   ## 
   ## :pal: Palette to work on.
   ## :first: First index of gradient.
   ## :last: Last index of gradient.
 
-proc palGradient*(pal: ptr Color; first, last: int; clrFirst, clrLast: Color) {.importc: "pal_gradient_ex", tonc.}
+proc palGradient*(pal: ptr Color; first, last: cint; clrFirst, clrLast: Color) {.importc: "pal_gradient_ex", tonc.}
   ## Create a gradient between `pal[first]` and `pal[last]`.
   ## 
   ## :pal: Palette to work on.
@@ -266,45 +674,198 @@ proc palGradient*(pal: ptr Color; first, last: int; clrFirst, clrLast: Color) {.
   ## :clrFirst: Color of first index.
   ## :clrLast: Color of last index.
 
-proc clrBlendFast*(srca: ptr Color; srcb: ptr Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_blend_fast", tonc.}
-  ## Blends color arrays `srca` and `srcb` into `dst`.
-  ## 
-  ## :srca: Source array A.
-  ## :srcb: Source array B.
-  ## :dst: Destination array.
-  ## :nclrs: Number of colors.
-  ## :alpha: Blend weight (range: 0-32).
-  ## 
-  ## .. note::
-  ##    This is an ARM assembly routine placed in IWRAM, which makes it very fast, but keep in mind that IWRAM is a limited resource.
 
-proc clrFadeFast*(src: ptr Color; clr: Color; dst: ptr Color; nclrs: int; alpha: int) {.importc: "clr_fade_fast", tonc.}
-  ## Fades color arrays `srca` to `clr` into `dst`.
-  ## 
-  ## :src: Source array.
-  ## :clr: Final color (at alpha=32).
-  ## :dst: Destination array.
-  ## :nclrs: Number of colors.
-  ## :alpha: Blend weight (range: 0-32).
-  ## 
-  ## .. note::
-  ##    This is an ARM assembly routine placed in IWRAM, which makes it very fast, but keep in mind that IWRAM is a limited resource.
+# Objects (sprites)
+# -----------------
 
-proc bgIsAffine*(n: int): bool {.importc: "BG_IS_AFFINE", toncinl.}
-proc bgIsAvailable*(n: int): bool {.importc: "BG_IS_AVAIL", toncinl.}
+type
+  ObjMode* {.size:2.} = enum
+    omRegular       ## The object is displayed normally, possibly with horizontal/vertical flipping.
+    omAffine        ## The object is transformed according to the matrix specified by :xref:`affId <ObjAttr>`.
+    omHidden        ## The object is not displayed.
+    omAffineDouble  ## Like `omAffine`, but the sprite's clipping rectangle is doubled in size.
+                    ## |br| This has the side effect of moving the sprite's center down and to-the-right by half its size.
+  
+  ObjFxMode* {.size:2.} = enum
+    fxNone
+      ## Normal object, no special effects.
+    fxBlend
+      ## Alpha blending enabled.
+      ## The object is effectively placed into the :xref:`bldcnt.a <BldCnt>` layer to be blended
+      ## with the :xref:`bldcnt.b <BldCnt>` layer using the coefficients from :xref:`bldalpha <BlendAlpha>`,
+      ## regardless of the current :xref:`bldcnt.mode <BldCnt>` setting.
+    fxWindow
+      ## The sprite becomes part of the object window.
+  
+  ObjSize* {.size:2.} = enum
+    ## Sprite size constants, high-level interface.
+    ## Each corresponds to a pair of fields (`size` in attr0, `shape` in attr1)
+    s8x8, s16x16, s32x32, s64x64,
+    s16x8, s32x8, s32x16, s64x32,
+    s8x16, s8x32, s16x32, s32x64
 
-proc bmp8_plot(x, y: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_plot", tonc.}
-proc bmp8_hline(x1, y, x2: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_hline", tonc.}
-proc bmp8_vline(x, y1, y2: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_vline", tonc.}
-proc bmp8_line(x1, y1, x2: int; y2: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_line", tonc.}
-proc bmp8_rect(left, top, right, bottom: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_rect", tonc.}
-proc bmp8_frame(left, top, right, bottom: int; clrid: uint8; dstBase: pointer; dstP: uint) {.importc:"bmp8_frame", tonc.}
-proc bmp16_plot(x, y, clr: Color; dstBase: pointer; dstP: uint) {.importc:"bmp16_plot", tonc.}
-proc bmp16_hline(x1, y, x2: int; clr: Color; dstBase: pointer; dstP: uint) {.importc:"bmp16_hline", tonc.}
-proc bmp16_vline(x, y1, y2: int; clr: Color; dstBase: pointer; dstP: uint) {.importc:"bmp16_vline", tonc.}
-proc bmp16_line(x1, y1, x2, y2: int; clr: Color; dstBase: pointer; dstP: uint) {.importc:"bmp16_line", tonc.}
-proc bmp16_rect(left, top, right, bottom: int; clr: Color; dstBase: pointer; dstP: uint) {.importc:"bmp16_rect", tonc.}
-proc bmp16_frame(left, top, right, bottom: int; clr: Color; dstBase: pointer; dstP: uint) {.importc:"bmp16_frame", tonc.}
+
+# Platform specific code
+# ----------------------
+
+when natuPlatform == "gba": include ./private/gba/video 
+elif natuPlatform == "sdl": include ./private/sdl/video
+else: {.error: "Unknown platform " & natuPlatform.}
+
+{.push inline.}
+
+# ID shorthands:
+
+func aff*(obj: ObjAttr): int = obj.affId
+func tid*(obj: ObjAttr): int = obj.tileId
+func pal*(obj: ObjAttr): int = obj.palId
+
+func `aff=`*(obj: var ObjAttr; aff: int) = obj.affId = aff
+func `tid=`*(obj: var ObjAttr; tid: int) = obj.tileId = tid
+func `pal=`*(obj: var ObjAttr; pal: int) = obj.palId = pal
+
+
+template initObj*(args: varargs[untyped]): ObjAttr =
+  ## Create a new ObjAttr value.
+  ## 
+  ## **Example:**
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   objMem[0] = initObj(
+  ##     pos = vec2i(100, 100),
+  ##     size = s32x32,
+  ##     tileId = 0,
+  ##     palId = 3
+  ##   )
+  var obj: ObjAttr
+  writeFields(obj, args)
+  obj
+
+template init*(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
+  ## Initialise an object in-place.
+  ## 
+  ## Omitted fields will default to zero.
+  ## 
+  ## **Example:**
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   objMem[0].init(
+  ##     pos = vec2i(100, 100),
+  ##     size = s32x32,
+  ##     tileId = 0,
+  ##     palId = 3
+  ##   )
+  obj.setAttr(0, 0, 0)
+  writeFields(obj, args)
+
+template edit*(obj: ObjAttrPtr | var ObjAttr, args: varargs[untyped]) =
+  ## Change some fields of an object.
+  ## 
+  ## Like `obj.init`, but omitted fields will be left unchanged.
+  ## 
+  ## .. code-block:: nim
+  ## 
+  ##   objMem[0].edit(
+  ##     pos = vec2i(100, 100),
+  ##     size = s32x32,
+  ##     tileId = 0,
+  ##     palId = 3
+  ##   )
+  ## 
+  writeFields(obj, args)
+
+
+template dup*(obj: ObjAttr, args: varargs[untyped]): ObjAttr =
+  ## Duplicate an object, modifying some fields and returning the copy.
+  ## 
+  ## **Example:**
+  ## 
+  ## .. code-block:: nim
+  ##    
+  ##    # Make a copy of Obj 0, but change some properties:
+  ##    objMem[1] = objMem[0].dup(x = 100, hflip = true)
+  ##    
+  var tmp = obj
+  writeFields(tmp, args)
+  tmp
+
+
+# Size helpers:
+
+const oamSizes: array[ObjSize, array[2, uint8]] = [
+  [ 8'u8, 8'u8], [16'u8,16'u8], [32'u8,32'u8], [64'u8,64'u8], 
+  [16'u8, 8'u8], [32'u8, 8'u8], [32'u8,16'u8], [64'u8,32'u8],
+  [ 8'u8,16'u8], [ 8'u8,32'u8], [16'u8,32'u8], [32'u8,64'u8],
+]
+
+func getSize*(size: ObjSize): tuple[w, h: int] =
+  ## Get the width and height in pixels of an `ObjSize` enum value.
+  let arr = oamSizes[size]
+  (arr[0].int, arr[1].int)
+  
+func getWidth*(size: ObjSize): int =
+  ## Get the width in pixels of an `ObjSize` enum value.
+  oamSizes[size][0].int
+
+func getHeight*(size: ObjSize): int =
+  ## Get the height in pixels of an `ObjSize` enum value.
+  oamSizes[size][1].int
+
+func getSize*(obj: ObjAttr | ObjAttrPtr): tuple[w, h: int] =
+  ## Get the width and height of an object in pixels.
+  getSize(obj.size)
+  
+func getWidth*(obj: ObjAttr | ObjAttrPtr): int =
+  ## Get the width of an object in pixels.
+  getWidth(obj.size)
+  
+func getHeight*(obj: ObjAttr | ObjAttrPtr): int =
+  ## Get the height of an object in pixels.
+  getHeight(obj.size)
+
+
+func hide*(obj: var ObjAttr) =
+  ## Hide an object.
+  ## 
+  ## Equivalent to ``obj.mode = omHidden``
+  ## 
+  obj.mode = omHidden
+
+func unhide*(obj: var ObjAttr; mode = omRegular) =
+  ## Unhide an object.
+  ## 
+  ## Equivalent to ``obj.mode = mode``
+  ## 
+  ## **Parameters:**
+  ## 
+  ## obj
+  ##   Object to unhide.
+  ## 
+  ## mode
+  ##   Object mode to unhide to. Necessary because this affects the affine-ness of the object.
+  ## 
+  obj.mode = mode
+
+{.pop.}
+
+
+# proc bgIsAffine*(n: int): bool {.importc: "BG_IS_AFFINE", toncinl.}
+# proc bgIsAvailable*(n: int): bool {.importc: "BG_IS_AVAIL", toncinl.}
+
+proc bmp8_plot(x, y: cint; clrid: uint8; dstBase: pointer; dstP: cuint) {.importc:"bmp8_plot", tonc.}
+proc bmp8_hline(x1, y, x2: cint; clrid: uint8; dstBase: pointer; dstP: cuint) {.importc:"bmp8_hline", tonc.}
+proc bmp8_vline(x, y1, y2: cint; clrid: uint8; dstBase: pointer; dstP: cuint) {.importc:"bmp8_vline", tonc.}
+proc bmp8_line(x1, y1, x2: cint; y2: cint; clrid: uint8; dstBase: pointer; dstP: cuint) {.importc:"bmp8_line", tonc.}
+proc bmp8_rect(left, top, right, bottom: cint; clrid: uint8; dstBase: pointer; dstP: cuint) {.importc:"bmp8_rect", tonc.}
+proc bmp8_frame(left, top, right, bottom: cint; clrid: uint8; dstBase: pointer; dstP: cuint) {.importc:"bmp8_frame", tonc.}
+proc bmp16_plot(x, y, clr: Color; dstBase: pointer; dstP: cuint) {.importc:"bmp16_plot", tonc.}
+proc bmp16_hline(x1, y, x2: cint; clr: Color; dstBase: pointer; dstP: cuint) {.importc:"bmp16_hline", tonc.}
+proc bmp16_vline(x, y1, y2: cint; clr: Color; dstBase: pointer; dstP: cuint) {.importc:"bmp16_vline", tonc.}
+proc bmp16_line(x1, y1, x2, y2: cint; clr: Color; dstBase: pointer; dstP: cuint) {.importc:"bmp16_line", tonc.}
+proc bmp16_rect(left, top, right, bottom: cint; clr: Color; dstBase: pointer; dstP: cuint) {.importc:"bmp16_rect", tonc.}
+proc bmp16_frame(left, top, right, bottom: cint; clr: Color; dstBase: pointer; dstP: cuint) {.importc:"bmp16_frame", tonc.}
 
 
 proc clear*[T: Screenblock | Charblock | Charblock8 | Tile | Tile8 | M3Mem | M4Mem | M5Mem](dst: var T) {.inline.} =
@@ -320,27 +881,27 @@ proc fill*(sbb: var Screenblock; se: ScrEntry) =
   ## Fill screenblock `sbb` with `se`.
   memset32(addr sbb, dup16(se.uint16), sizeof(sbb) div 4)
 
-proc plot*(sbb: var Screenblock; x, y: int; se: ScrEntry) =
+proc plot*(sbb: var Screenblock; x, y: cint; se: ScrEntry) =
   ## Plot a screen entry at (`x`,`y`) of screenblock `sbb`.
   sbb[x,y] = se
 
-proc hline*(sbb: var Screenblock; x0, x1, y: int; se: ScrEntry) =
+proc hline*(sbb: var Screenblock; x0, x1, y: cint; se: ScrEntry) =
   ## Draw a horizontal line on screenblock `sbb` with `se`.
   bmp16_hline(x0, y, x1, se.Color, addr sbb, 32*2)
 
-proc vline*(sbb: var Screenblock; x, y0, y1: int; se: ScrEntry) =
+proc vline*(sbb: var Screenblock; x, y0, y1: cint; se: ScrEntry) =
   ## Draw a vertical line on screenblock `sbb` with `se`.
   bmp16_vline(x, y0, y1, se.Color, addr sbb, 32*2)
 
-proc rect*(sbb: var Screenblock; left, top, right, bottom: int; se: ScrEntry) =
+proc rect*(sbb: var Screenblock; left, top, right, bottom: cint; se: ScrEntry) =
   ## Fill a rectangle on `sbb` with `se`.
   bmp16_rect(left, top, right, bottom, se.Color, addr sbb, 32*2)
 
-proc frame*(sbb: var Screenblock; left, top, right, bottom: int; se: ScrEntry) =
+proc frame*(sbb: var Screenblock; left, top, right, bottom: cint; se: ScrEntry) =
   ## Create a border on `sbb` with `se`.
   bmp16_frame(left, top, right, bottom, se.Color, addr sbb, 32*2)
 
-proc window*(sbb: var Screenblock; left, top, right, bottom: int; se0: ScrEntry) {.importc: "se_window", tonc.}
+proc window*(sbb: var Screenblock; left, top, right, bottom: cint; se0: ScrEntry) {.importc: "se_window", tonc.}
   ## Create a fancy rectangle.
   ## 
   ## In contrast to `frame`, this uses nine tiles starting at `se0` for the frame,
@@ -365,26 +926,25 @@ proc fill*(m: var M3Mem; clr: Color) =
   ## Fill the mode 3 background with color `clr`.
   memset32(addr m, dup16(clr.uint16), sizeof(m) div 4)
 
-proc plot*(m: var M3Mem; x, y: int; clr: Color) =
+proc plot*(m: var M3Mem; x, y: cint; clr: Color) =
   ## Plot a single colored pixel in mode 3 at (`x`, `y`).
   m[y][x] = clr
 
-proc hline*(m: var M3Mem; x1, y, x2: int; clr: Color) =
+proc hline*(m: var M3Mem; x1, y, x2: cint; clr: Color) =
   ## Draw a colored horizontal line in mode 3.
   bmp16_hline(x1, y, x2, clr, addr m, Mode3Width*2)
 
-proc vline*(m: var M3Mem; x, y1, y2: int; clr: Color) =
+proc vline*(m: var M3Mem; x, y1, y2: cint; clr: Color) =
   ## Draw a colored vertical line in mode 3.
   bmp16_vline(x, y1, y2, clr, addr m, Mode3Width*2)
 
-proc line*(m: var M3Mem; x1, y1, x2, y2: int; clr: Color) =
+proc line*(m: var M3Mem; x1, y1, x2, y2: cint; clr: Color) =
   ## Draw a colored line in mode 3.
   bmp16_line(x1, y1, x2, y2, clr, addr m, Mode3Width*2)
 
-proc rect*(m: var M3Mem; left, top, right, bottom: int; clr: Color) =
+proc rect*(m: var M3Mem; left, top, right, bottom: cint; clr: Color) =
   ## Draw a colored rectangle in mode 3.
   ## 
-  ## **Parameters:**
   ## :left: Left side, inclusive.
   ## :top: Top size, inclusive.
   ## :right: Right size, exclusive.
@@ -395,7 +955,7 @@ proc rect*(m: var M3Mem; left, top, right, bottom: int; clr: Color) =
   ##    The rectangle is normalized, but not clipped.
   bmp16_rect(left, top, right, bottom, clr, addr m, Mode3Width*2)
 
-proc frame*(m: var M3Mem; left, top, right, bottom: int; clr: Color) =
+proc frame*(m: var M3Mem; left, top, right, bottom: cint; clr: Color) =
   ## Draw a colored frame in mode 3.
   ## 
   ## :left: Left side, inclusive.
@@ -417,28 +977,23 @@ proc fill*(m: var M4Mem; clrid: uint8) =
   ## Fill the given mode 4 buffer with `clrid`.
   memset32(addr m, quad8(clrid), sizeof(m) div 4)
 
-proc plot*(m: var M4Mem; x, y: int; clrid: uint8) =
+proc plot*(m: var M4Mem; x, y: cint; clrid: uint8) =
   ## Plot a `clrid` pixel on the given mode 4 buffer.
-  let p = cast[ptr UncheckedArray[uint16]](addr m)
-  let dst = addr p[(y * Mode4Width + x) shr 1]
-  if (x and 0b1) != 0:
-    dst[] = (dst[] and 0x00ff) or (clrid shl 8)
-  else:
-    dst[] = (dst[] and 0xff00) or (clrid)
+  bmp8_plot(x, y, clrid, addr m, Mode4Width)
 
-proc hline*(m: var M4Mem; x1, y, x2: int; clrid: uint8) =
+proc hline*(m: var M4Mem; x1, y, x2: cint; clrid: uint8) =
   ## Draw a `clrid` colored horizontal line in mode 4.
   bmp8_hline(x1, y, x2, clrid, addr m, Mode4Width)
 
-proc vline*(m: var M4Mem; x, y1, y2: int; clrid: uint8) =
+proc vline*(m: var M4Mem; x, y1, y2: cint; clrid: uint8) =
   ## Draw a `clrid` colored vertical line in mode 4.
   bmp8_vline(x, y1, y2, clrid, addr m, Mode4Width)
 
-proc line*(m: var M4Mem; x1, y1, x2, y2: int; clrid: uint8) =
+proc line*(m: var M4Mem; x1, y1, x2, y2: cint; clrid: uint8) =
   ## Draw a `clrid` colored line in mode 4.
   bmp8_line(x1, y1, x2, y2, clrid, addr m, Mode4Width)
 
-proc rect*(m: var M4Mem; left, top, right, bottom: int; clrid: uint8) =
+proc rect*(m: var M4Mem; left, top, right, bottom: cint; clrid: uint8) =
   ## Draw a `clrid` colored rectangle in mode 4.
   ## 
   ## :left: Left side, inclusive.
@@ -451,7 +1006,7 @@ proc rect*(m: var M4Mem; left, top, right, bottom: int; clrid: uint8) =
   ##    The rectangle is normalized, but not clipped.
   bmp8_rect(left, top, right, bottom, clrid, addr m, Mode4Width)
 
-proc frame*(m: var M4Mem; left, top, right, bottom: int; clrid: uint8) =
+proc frame*(m: var M4Mem; left, top, right, bottom: cint; clrid: uint8) =
   ## Draw a `clrid` colored frame in mode 4.
   ## 
   ## :left: Left side, inclusive.
@@ -472,23 +1027,23 @@ proc fill*(m: var M5Mem; clr: Color) =
   ## Fill the given mode 5 buffer with `clr`.
   memset32(addr m, dup16(clr.uint16), sizeof(m) div 4)
 
-proc plot*(m: var M5Mem; x, y: int; clr: Color) =
+proc plot*(m: var M5Mem; x, y: cint; clr: Color) =
   ## Plot a `clrid` pixel on the given mode 5 buffer.
   m[y][x] = clr
 
-proc hline*(m: var M5Mem; x1, y, x2: int; clr: Color) =
+proc hline*(m: var M5Mem; x1, y, x2: cint; clr: Color) =
   ## Draw a colored horizontal line in mode 5.
   bmp16_hline(x1, y, x2, clr, addr m, Mode5Width*2)
 
-proc vline*(m: var M5Mem; x, y1, y2: int; clr: Color) =
+proc vline*(m: var M5Mem; x, y1, y2: cint; clr: Color) =
   ## Draw a colored vertical line in mode 5.
   bmp16_vline(x, y1, y2, clr, addr m, Mode5Width*2)
 
-proc line*(m: var M5Mem; x1, y1, x2, y2: int; clr: Color) =
+proc line*(m: var M5Mem; x1, y1, x2, y2: cint; clr: Color) =
   ## Draw a colored line in mode 5.
   bmp16_line(x1, y1, x2, y2, clr, addr m, Mode5Width*2)
 
-proc rect*(m: var M5Mem; left, top, right, bottom: int; clr: Color) =
+proc rect*(m: var M5Mem; left, top, right, bottom: cint; clr: Color) =
   ## Draw a colored rectangle in mode 5.
   ## 
   ## :left: Left side, inclusive.
@@ -501,7 +1056,7 @@ proc rect*(m: var M5Mem; left, top, right, bottom: int; clr: Color) =
   ##    The rectangle is normalized, but not clipped.
   bmp16_rect(left, top, right, bottom, clr, addr m, Mode5Width*2)
 
-proc frame*(m: var M5Mem; left, top, right, bottom: int; clr: Color) =
+proc frame*(m: var M5Mem; left, top, right, bottom: cint; clr: Color) =
   ## Draw a colored frame in mode 5.
   ## 
   ## :left: Left side, inclusive.
@@ -522,63 +1077,68 @@ proc frame*(m: var M5Mem; left, top, right, bottom: int; clr: Color) =
 
 # Convenience procs for working with tile map entries
 
-{.push inline.}
-
-func tileId*(se: ScrEntry): int = (se and SE_ID_MASK).int
-func palId*(se: ScrEntry): int = ((se and SE_PALBANK_MASK) shr SE_PALBANK_SHIFT).int
-func hflip*(se: ScrEntry): bool = (se and SE_HFLIP) != 0
-func vflip*(se: ScrEntry): bool = (se and SE_VFLIP) != 0
-
-func `tileId=`*(se: var ScrEntry, val: int) =  se = ((val.uint16 shl SE_ID_SHIFT) and SE_ID_MASK) or (se and not SE_ID_MASK)
-func `palId=`*(se: var ScrEntry, val: int) =   se = ((val.uint16 shl SE_PALBANK_SHIFT) and SE_PALBANK_MASK) or (se and not SE_PALBANK_MASK)
-func `hflip=`*(se: var ScrEntry, val: bool) =  se = (val.uint16 shl 10) or (se and not SE_HFLIP)
-func `vflip=`*(se: var ScrEntry, val: bool) =  se = (val.uint16 shl 11) or (se and not SE_VFLIP)
+bitdef ScrEntry, 0..9, tileId, int
+bitdef ScrEntry, 10, hflip, bool
+bitdef ScrEntry, 11, vflip, bool
+bitdef ScrEntry, 12..15, palId, int
 
 # shorthands:
-
-func tid*(se: ScrEntry): int = se.tileId
-func pal*(se: ScrEntry): int = se.palId
-
-func `tid=`*(se: var ScrEntry, tid: int) =  se.tileId = tid
-func `pal=`*(se: var ScrEntry, pal: int) =  se.palId = pal
-
-{.pop.}
+bitdef ScrEntry, 0..9, tid, int
+bitdef ScrEntry, 12..15, pal, int
 
 
 # BG affine matrix functions
 # -------------------------- 
 
-proc setTo*(bgaff: var BgAffine; pa, pb, pc, pd: Fixed) {.importc: "bg_aff_set", toncinl.}
+proc init*(bgaff: var BgAffine; pa, pb, pc, pd: Fixed) {.importc: "bg_aff_set", toncinl.}
   ## Set the elements of a bg affine matrix.
 
 proc setToIdentity*(bgaff: var BgAffine) {.importc: "bg_aff_identity", toncinl.}
-  ## Set an bg affine matrix to the identity matrix
+  ## Set a bg affine matrix to the identity matrix
 
-proc setToScale*(bgaff: var BgAffine; sx, sy: Fixed) {.importc: "bg_aff_scale", toncinl.}
+proc setToScaleRaw*(bgaff: var BgAffine; sx, sy: Fixed) {.importc: "bg_aff_scale", toncinl.}
+proc setToShearXRaw*(bgaff: var BgAffine; hx: Fixed) {.importc: "bg_aff_shearx", toncinl.}
+proc setToShearYRaw*(bgaff: var BgAffine; hy: Fixed) {.importc: "bg_aff_sheary", toncinl.}
+proc setToRotationRaw*(bgaff: var BgAffine; alpha: uint16) {.importc: "bg_aff_rotate", tonc.}
+proc setToScaleAndRotationRaw*(bgaff: var BgAffine; sx, sy: Fixed; alpha: uint16) {.importc: "bg_aff_rotscale", tonc.}
+
+proc setToScale*(bgaff: var BgAffine; sx: Fixed, sy = sx) {.inline.} =
   ## Set an bg affine matrix for scaling.
+  when natuPlatform == "sdl":
+    let x = if sx == 0: int16.high.int32 else: ((1 shl 24) div sx.int) shr 8
+    let y = if sy == 0: int16.high.int32 else: ((1 shl 24) div sy.int) shr 8
+  else:
+    let x = ((1 shl 24) div sx.int) shr 8
+    let y = ((1 shl 24) div sy.int) shr 8
+  bgaff.setToScaleRaw(x.Fixed, y.Fixed)
 
-proc setToShearX*(bgaff: var BgAffine; hx: Fixed) {.importc: "bg_aff_shearx", toncinl.}
-proc setToShearY*(bgaff: var BgAffine; hy: Fixed) {.importc: "bg_aff_sheary", toncinl.}
-
-proc setToRotation*(bgaff: var BgAffine; alpha: uint16) {.importc: "bg_aff_rotate", tonc.}
+proc setToRotation*(bgaff: var BgAffine; theta: uint16) {.inline.} =
   ## Set bg matrix to counter-clockwise rotation.
   ## 
   ## :bgaff: BG affine struct to set.
   ## :alpha: CCW angle. full-circle is 0x10000.
+  bgaff.setToRotationRaw(0'u16 - theta)
 
-proc setToScaleAndRotation*(bgaff: var BgAffine; sx, sy: Fixed; alpha: uint16) {.importc: "bg_aff_rotscale", tonc.}
+proc setToShearX*(bgaff: var BgAffine; hx: Fixed) {.inline.} =
+  bgaff.setToShearXRaw(-hx)
+
+proc setToShearY*(bgaff: var BgAffine; hy: Fixed) {.inline.} =
+  bgaff.setToShearYRaw(-hy)
+
+proc setToScaleAndRotation*(bgaff: var BgAffine; sx, sy: Fixed; theta: uint16) {.inline.} =
   ## Set bg matrix to 2d scaling, then counter-clockwise rotation.
   ## 
   ## :bgaff: BG affine struct to set.
   ## :sx:    Horizontal scale (zoom). 24.8 fixed point.
   ## :sy:    Vertical scale (zoom). 24.8 fixed point.
   ## :alpha: CCW angle. full-circle is 0x10000.
-
-proc setToScaleAndRotation*(bgaff: var BgAffine; affSrc: ptr AffSrc) {.importc: "bg_aff_rotscale2", tonc.}
-  ## Set bg matrix to 2d scaling, then counter-clockwise rotation.
-  ## 
-  ## :bgaff: BG affine struct to set.
-  ## :affSrc: Struct with scales and angle.
+  when natuPlatform == "sdl":
+    let x = if sx == 0: int16.high.int32 else: ((1 shl 24) div sx.int) shr 8
+    let y = if sy == 0: int16.high.int32 else: ((1 shl 24) div sy.int) shr 8
+  else:
+    let x = ((1 shl 24) div sx.int) shr 8
+    let y = ((1 shl 24) div sy.int) shr 8
+  bgaff.setToScaleAndRotationRaw(x.Fixed, y.Fixed, 0'u16 - theta)
 
 proc premul*(dst: var BgAffine; src: ptr BgAffine) {.importc: "bg_aff_premul", tonc.}
   ## Pre-multiply the matrix `dst` by `src`
@@ -586,7 +1146,7 @@ proc premul*(dst: var BgAffine; src: ptr BgAffine) {.importc: "bg_aff_premul", t
   ## i.e. ``dst = src * dst``
   ## 
   ## .. warning::
-  ##    Don't use this on `bgaff <#bgaff>`_ registers, as they are write-only.
+  ##    Don't use this on `bgaff <#bgaff>`_ registers directly, as they are write-only.
 
 proc postmul*(dst: var BgAffine; src: ptr BgAffine) {.importc: "bg_aff_postmul", tonc.}
   ## Post-multiply the matrix `dst` by `src`
@@ -594,7 +1154,7 @@ proc postmul*(dst: var BgAffine; src: ptr BgAffine) {.importc: "bg_aff_postmul",
   ## i.e. ``dst = dst * src``
   ## 
   ## .. warning::
-  ##    Don't use this on `bgaff`_ registers, as they are write-only.
+  ##    Don't use this on `bgaff`_ registers directly, as they are write-only.
 
 proc rotscaleEx*(bgaff: var BgAffine; asx: ptr AffSrcEx) {.importc: "bg_rotscale_ex", tonc.}
   ## Set bg affine matrix to a rot/scale around an arbitrary point.
@@ -610,9 +1170,15 @@ proc setWindow*(winId: range[0..1]; bounds: Rect) {.inline.} =
   ## Apply a rectangular window to one of the window registers.
   ## 
   ## The rectangle is clamped to the bounds of the screen.
-  winh[winId] = WinH(right: bounds.right.clamp(0, ScreenWidth).uint8, left: bounds.left.clamp(0, ScreenWidth).uint8)
-  winv[winId] = WinV(bottom: bounds.bottom.clamp(0, ScreenHeight).uint8, top: bounds.top.clamp(0, ScreenHeight).uint8)
+  winh[winId] = WinH(right: bounds.right.clamp(0, ScreenWidth).WinInt, left: bounds.left.clamp(0, ScreenWidth).WinInt)
+  winv[winId] = WinV(bottom: bounds.bottom.clamp(0, ScreenHeight).WinInt, top: bounds.top.clamp(0, ScreenHeight).WinInt)
 
 proc busyWaitForVBlank* {.inline.} =
-  while vcount >= 160: discard
-  while vcount < 160: discard
+  when natuPlatform == "gba":
+    while vcount >= 160: discard
+    while vcount < 160: discard
+  elif natuPlatform == "sdl":
+    # echo "busyWaitForVBlank()"
+    discard
+  else:
+    {.error: "busyWaitForVBlank not implemented".}
